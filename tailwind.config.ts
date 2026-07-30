@@ -27,13 +27,15 @@ const config: Config = {
         success: "#5f7d63",
       },
       fontFamily: {
-        "serif-tc": ["var(--font-serif-tc)", "serif"],
+        // serif-tc 為歷史類名,現映射到圓體標題字(Huninn)
+        "serif-tc": ["var(--font-display)", "sans-serif"],
+        display: ["var(--font-display)", "sans-serif"],
         "sans-tc": ["var(--font-sans-tc)", "sans-serif"],
       },
       borderRadius: {
-        sm: "8px",
-        DEFAULT: "14px",
-        lg: "22px",
+        sm: "10px",
+        DEFAULT: "16px",
+        lg: "26px",
       },
       boxShadow: {
         soft: "0 2px 16px rgba(58, 45, 82, 0.06)",

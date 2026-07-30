@@ -25,76 +25,104 @@ export default async function CourseDetailPage({
     : { hasAccess: false, reason: "none" as const };
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-16">
-      <Link href={`/series/${course.series.slug}`} className="eyebrow hover:text-ink">
-        {SERIES_CATEGORY_LABEL[course.series.category as SeriesCategory]}·
-        {course.series.title}
-      </Link>
-      <h1 className="mt-3 font-serif-tc text-3xl font-semibold">{course.title}</h1>
-      <p className="mt-4 max-w-2xl text-sm leading-7 text-inkdim">{course.description}</p>
+    <div className="mx-auto max-w-5xl px-5 py-12">
+      <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+        {/* 封面 */}
+        <div className="neon-frame overflow-hidden">
+          <div className="relative aspect-[16/10] bg-blush">
+            {course.coverUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={course.coverUrl}
+                alt={course.title}
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+        </div>
 
-      <div className="card mt-8 flex flex-col items-start justify-between gap-5 p-8 sm:flex-row sm:items-center">
-        {access.hasAccess ? (
-          <>
-            <p className="text-sm text-inkdim">
-              {access.reason === "subscription"
-                ? "您正在訂閱此系列,可觀看全部單元。"
-                : "您已擁有此課程,可永久觀看。"}
+        {/* 資訊 + CTA */}
+        <div>
+          <Link
+            href={`/series/${course.series.slug}`}
+            className="tag-lavender transition hover:bg-lavender/25"
+          >
+            {SERIES_CATEGORY_LABEL[course.series.category as SeriesCategory]}·
+            {course.series.title}
+          </Link>
+          <h1 className="mt-4 font-display text-3xl leading-snug text-ink sm:text-4xl">
+            {course.title}
+          </h1>
+          <p className="mt-4 text-[15px] leading-8 text-inkdim">{course.description}</p>
+
+          <div className="card mt-7 p-7">
+            {access.hasAccess ? (
+              <>
+                <p className="text-sm text-inkdim">
+                  {access.reason === "subscription"
+                    ? "您正在訂閱此系列,可觀看全部單元。"
+                    : "您已擁有此課程,可永久觀看。"}
+                </p>
+                <Link href={`/watch/${course.slug}`} className="btn-primary mt-5 w-full">
+                  開始觀看
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline justify-between">
+                  <span className="num font-display text-3xl text-gold">
+                    {formatTwd(course.priceTwd)}
+                  </span>
+                  <span className="text-xs text-inkdim">單堂購買·永久觀看</span>
+                </div>
+                <div className="mt-5 grid gap-3">
+                  <Link href={`/checkout/${course.slug}`} className="btn-primary w-full">
+                    帶回家(立即購買)
+                  </Link>
+                  <Link
+                    href={`/checkout/${course.slug}?gift=1`}
+                    className="btn-secondary w-full"
+                  >
+                    包成禮物送人
+                  </Link>
+                </div>
+              </>
+            )}
+            <p className="mt-4 text-center text-[11px] leading-5 text-inkdim">
+              僅限購買帳號觀看·畫面含觀看者浮水印·禁止側錄轉載
             </p>
-            <Link href={`/watch/${course.slug}`} className="btn-primary whitespace-nowrap">
-              開始觀看
-            </Link>
-          </>
-        ) : (
-          <>
-            <div>
-              <div className="num text-2xl">{formatTwd(course.priceTwd)}</div>
-              <p className="mt-1 text-xs text-inkdim">
-                單堂購買,永久觀看·僅限購買帳號
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link href={`/checkout/${course.slug}`} className="btn-primary">
-                立即購買
-              </Link>
-              <Link href={`/checkout/${course.slug}?gift=1`} className="btn-secondary">
-                買來送禮
-              </Link>
-            </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
-      <hr className="rule-gold my-12" />
-
-      <h2 className="font-serif-tc text-xl font-semibold">課程單元</h2>
-      <ol className="mt-6 space-y-3">
-        {course.lessons.map((l, i) => (
-          <li
-            key={l.id}
-            className="card flex items-center justify-between px-6 py-4 text-sm"
-          >
-            <div className="flex items-center gap-4">
-              <span className="num w-6 text-inkdim">{String(i + 1).padStart(2, "0")}</span>
-              <span>{l.title}</span>
-            </div>
-            {l.isFreePreview ? (
-              <Link
-                href={`/watch/${course.slug}?lesson=${l.id}`}
-                className="text-gold transition hover:text-ink"
-              >
-                免費試看
-              </Link>
-            ) : (
-              <span className="text-xs text-inkdim">{access.hasAccess ? "" : "購買後觀看"}</span>
-            )}
-          </li>
-        ))}
-      </ol>
-
-      <p className="mt-10 text-xs leading-6 text-inkdim">
-        ※ 課程影片僅限購買帳號本人觀看,帳號同時間僅能於一台裝置登入;播放畫面帶有觀看者識別浮水印,禁止側錄、翻攝與轉載。
-      </p>
+      {/* 單元列表 */}
+      <div className="mt-16">
+        <h2 className="text-center font-display text-2xl text-ink">課程單元</h2>
+        <ol className="mx-auto mt-8 max-w-3xl space-y-4">
+          {course.lessons.map((l, i) => (
+            <li key={l.id} className="card flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-4">
+                <span className="clay-dot num h-10 w-10 text-sm font-bold text-plum">
+                  {i + 1}
+                </span>
+                <span className="text-sm font-medium text-ink">{l.title}</span>
+              </div>
+              {l.isFreePreview ? (
+                <Link
+                  href={`/watch/${course.slug}?lesson=${l.id}`}
+                  className="tag-orange transition hover:brightness-95"
+                >
+                  免費試看
+                </Link>
+              ) : (
+                <span className="text-xs text-inkdim">
+                  {access.hasAccess ? "" : "購買後觀看"}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }

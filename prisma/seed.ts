@@ -29,6 +29,7 @@ async function main() {
       monthlyPriceTwd: 399,
       published: true,
       sortOrder: 1,
+      coverUrl: "/covers/series-stress.png",
     },
   });
 
@@ -44,6 +45,7 @@ async function main() {
       monthlyPriceTwd: 499,
       published: true,
       sortOrder: 2,
+      coverUrl: "/covers/series-fortune.png",
     },
   });
 
@@ -99,6 +101,7 @@ async function main() {
         priceTwd: c.priceTwd,
         published: true,
         sortOrder: c.sortOrder,
+        coverUrl: `/covers/${c.slug}.png`,
       },
     });
     const existing = await prisma.lesson.count({ where: { courseId: course.id } });
