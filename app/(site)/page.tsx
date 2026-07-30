@@ -18,17 +18,31 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="text-center lg:text-left">
+      {/* Hero:桌面用橫式 Banner、行動用直式 App 封面 */}
+      <section className="mx-auto max-w-6xl px-5 pb-20 pt-10">
+        <div className="animate-rise overflow-hidden rounded-lg border border-hairline shadow-card">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={brand.bannerImage}
+            alt={`${brand.fullName} 主視覺`}
+            className="hidden w-full sm:block"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={brand.coverImage}
+            alt={`${brand.fullName} 主視覺`}
+            className="w-full sm:hidden"
+          />
+        </div>
+        <div className="mt-12 text-center">
           <p className="eyebrow animate-rise">Online Healing Studio</p>
-          <h1 className="mt-6 animate-rise font-serif-tc text-4xl font-semibold leading-relaxed sm:text-5xl">
+          <h1 className="mt-5 animate-rise font-serif-tc text-4xl font-semibold leading-relaxed sm:text-5xl">
             {brand.tagline}
           </h1>
-          <p className="mt-6 max-w-xl animate-rise text-sm leading-7 text-inkdim lg:pr-8">
+          <p className="mx-auto mt-6 max-w-xl animate-rise text-sm leading-7 text-inkdim">
             {brand.description}
           </p>
-          <div className="mt-10 flex animate-rise items-center justify-center gap-4 lg:justify-start">
+          <div className="mt-10 flex animate-rise items-center justify-center gap-4">
             <Link href="/series" className="btn-primary">
               探索課程
             </Link>
@@ -36,14 +50,6 @@ export default async function HomePage() {
               我收到禮物
             </Link>
           </div>
-        </div>
-        <div className="animate-rise">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={brand.coverImage}
-            alt={`${brand.name} 主視覺`}
-            className="mx-auto w-full max-w-sm rounded-lg border border-hairline shadow-card"
-          />
         </div>
       </section>
 

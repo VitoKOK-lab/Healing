@@ -2,10 +2,10 @@
 export const brand = {
   /** 中文品牌名(依店主提供的 App 封面) */
   name: "解憂商店",
-  /** 拉丁字標(wordmark) */
-  nameEn: "JIEYOU STORE",
+  /** 拉丁字標(wordmark,依店主提供的 Banner) */
+  nameEn: "Jessica",
   /** 完整署名 */
-  fullName: "解憂商店 JIEYOU STORE",
+  fullName: "Jessica 解憂商店",
   tagline: "把煩惱留在門外,把好運帶回家",
   taglineEn: "Leave your worries at the door.",
   description:
@@ -13,6 +13,8 @@ export const brand = {
   contactEmail: "hello@jieyou.example",
   /** 店主的 LINE 官方帳號連結(上線前更新) */
   lineOfficialUrl: "#",
-  /** App 封面主視覺 */
+  /** App 封面主視覺(直式,行動版) */
   coverImage: "/brand/app-cover.jpeg",
+  /** 首頁橫幅(橫式,桌面版) */
+  bannerImage: "/brand/banner-desktop.jpeg",
 } as const;
