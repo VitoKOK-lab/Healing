@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
-// 純白高級系 design tokens — porcelain white base, champagne gold details, soft ink text.
+// 解憂商店色系 — 薰衣草紫為主體、暖橘霓虹點綴、奶白為底(依店主提供的 App 封面配色)。
+// token 名稱維持語意穩定:gold = 主要點綴色(現為暖橘)、ink = 主文字(深梅紫)。
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -10,16 +11,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        porcelain: "#fafaf8",
+        porcelain: "#faf8fd",
         paper: "#ffffff",
-        mist: "#f3f1ec",
-        ink: "#2b2b2b",
-        inkdim: "#8b857b",
-        gold: "#b79a63",
-        goldsoft: "#d8c9a3",
-        goldline: "#e9e2d0",
-        hairline: "#eceae4",
-        blush: "#f7f0ea",
+        mist: "#f3eef9",
+        ink: "#3a2d52",
+        inkdim: "#8d82a6",
+        gold: "#ef8f2f",
+        goldsoft: "#f7bd7a",
+        goldline: "#f2ddc4",
+        hairline: "#e9e2f3",
+        blush: "#f5effb",
+        lavender: "#a78bdb",
+        plum: "#7c5fb8",
         danger: "#b3564f",
         success: "#5f7d63",
       },
@@ -33,9 +36,9 @@ const config: Config = {
         lg: "22px",
       },
       boxShadow: {
-        soft: "0 2px 16px rgba(43, 43, 43, 0.05)",
-        card: "0 10px 40px rgba(43, 43, 43, 0.07)",
-        gold: "0 8px 24px rgba(183, 154, 99, 0.28)",
+        soft: "0 2px 16px rgba(58, 45, 82, 0.06)",
+        card: "0 10px 40px rgba(58, 45, 82, 0.09)",
+        gold: "0 8px 24px rgba(239, 143, 47, 0.32)",
       },
       keyframes: {
         rise: {
