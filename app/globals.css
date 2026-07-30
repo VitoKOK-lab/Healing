@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-serif-tc: "Noto Serif TC", "PMingLiU", serif;
+  --font-sans-tc: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+body {
+  @apply bg-porcelain text-ink font-sans-tc antialiased;
+  background-image: radial-gradient(
+    1200px 500px at 85% -10%,
+    rgba(216, 201, 163, 0.14),
+    transparent 65%
+  );
+}
+
+@layer components {
+  /* 拉丁字標:大寫、寬字距 */
+  .wordmark {
+    @apply uppercase tracking-[0.3em] font-medium;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  /* 小節眉標 */
+  .eyebrow {
+    @apply text-[11px] uppercase tracking-[0.24em] text-gold;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  /* 數字一律 Helvetica 表格數字 */
+  .num {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .card {
+    @apply bg-paper border border-hairline rounded-lg shadow-soft;
+  }
+  /* 漸淡的金色分隔線 */
+  .rule-gold {
+    @apply h-px border-0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(183, 154, 99, 0.55),
+      transparent
+    );
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-ink text-paper
+      px-7 py-3 text-sm tracking-wider transition
+      hover:bg-gold hover:shadow-gold active:scale-[0.98]
+      disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-goldline
+      bg-paper px-7 py-3 text-sm tracking-wider text-ink transition
+      hover:border-gold hover:text-gold active:scale-[0.98]
+      disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .input {
+    @apply w-full rounded-sm border border-hairline bg-paper px-4 py-2.5 text-sm
+      outline-none transition focus:border-gold;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+}
