@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>結帳:呼吸重置|Jessica 解憂商店</title>
-<meta name="description" content="呼吸重置結帳——輸入卡片資訊完成付款,系統將立即開通課程觀看權限。" />
+<title>結帳:AI塔羅占卜|Jessica 解憂商店</title>
+<meta name="description" content="AI塔羅占卜加購——NT$100 可再占卜 3 次,付款後立即開通。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -15,14 +15,14 @@
 
 <main class="wrap-sm rise">
   <p class="breadcrumb">
-    <a href="../courses/breath-reset.html">呼吸重置</a> ／ 結帳
+    <a href="../tarot.html">AI塔羅占卜</a> ／ 結帳
   </p>
 
   <div class="card" style="margin-top:24px;padding:32px;max-width:480px;margin-inline:auto">
     <p class="eyebrow">Checkout</p>
-    <h1 style="font-size:22px;margin-top:8px">呼吸重置:十分鐘找回平靜</h1>
-    <p style="margin-top:4px;font-size:12px;color:var(--inkdim)">舒壓靜心系列 · 單堂購買,永久觀看</p>
-    <div class="price-lg" style="margin-top:18px">NT$690</div>
+    <h1 style="font-size:22px;margin-top:8px">AI塔羅占卜 · 3 次</h1>
+    <p style="margin-top:4px;font-size:12px;color:var(--inkdim)">加購成功後立即可用,無使用期限</p>
+    <div class="price-lg" style="margin-top:18px">NT$100</div>
   </div>
 
   <form class="card pay-card" id="pay-form" style="max-width:480px;margin-inline:auto">
@@ -63,12 +63,7 @@
       </div>
     </div>
 
-    <label class="pay-field gift-field">
-      <span>收件人 Email(禮物碼將發送至此信箱)</span>
-      <input class="pay-input" id="giftEmail" type="email" placeholder="friend@example.com" autocomplete="email" />
-    </label>
-
-    <button type="submit" class="btn-primary pay-submit" id="pay-submit" data-price="NT$690" style="margin-top:26px">確認付款 NT$690</button>
+    <button type="submit" class="btn-primary pay-submit" id="pay-submit" data-price="NT$100" style="margin-top:26px">確認付款 NT$100</button>
     <p id="pay-provider-note" style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
       付款由綠界科技 ECPay 處理,本站不留存您的卡號。
     </p>
@@ -82,17 +77,9 @@
     <div class="pay-check">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
-    <div class="success-default">
-      <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
-      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">呼吸重置:十分鐘找回平靜 已加入您的課程</p>
-      <a class="btn-primary" href="../watch/breath-reset.html" style="margin-top:24px">前往觀看</a>
-    </div>
-    <div class="success-gift">
-      <h2 class="display" style="font-size:22px;margin-top:18px">禮物已送出</h2>
-      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">已產生專屬禮物碼,複製後傳給對方即可兌換《呼吸重置:十分鐘找回平靜》</p>
-      <div class="gift-code" id="giftCode">GIFT-••••-••••</div>
-      <a class="btn-primary" href="../courses/breath-reset.html" style="margin-top:20px">回課程頁</a>
-    </div>
+    <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">已加值 3 次 AI 塔羅占卜</p>
+    <a class="btn-primary" href="../tarot.html" style="margin-top:24px">前往占卜</a>
   </div>
 </main>
 
@@ -112,12 +99,22 @@
 </footer>
 
 <script src="../assets/checkout.js"></script>
+<script src="../assets/tarot-data.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("pay-form");
+  if (!form) return;
+  form.addEventListener("submit", function () {
+    setTimeout(function () { Tarot.addCredits(3); }, 1400);
+  });
+});
+</script>
 <nav class="bottom-nav">
   <a class="bottom-nav-item" href="../index.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 10.5L12 4l8.5 6.5M5.5 9.5V19a1 1 0 001 1h3.5v-5h4v5H17a1 1 0 001-1V9.5"/></svg>
     <span>首頁</span>
   </a>
-  <a class="bottom-nav-item active" href="../series/index.html">
+  <a class="bottom-nav-item" href="../series/index.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.2c-1.6-1-4-1.4-6.2-1.1v12.4c2.2-.3 4.6.1 6.2 1.1m0-12.4c1.6-1 4-1.4 6.2-1.1v12.4c-2.2-.3-4.6.1-6.2 1.1m0-12.4v12.4"/></svg>
     <span>課程系列</span>
   </a>
@@ -129,7 +126,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><path stroke-linecap="round" d="M9.6 9.4a2.5 2.5 0 114 2c-.9.7-1.5 1.2-1.5 2.3"/><circle cx="12" cy="16.6" r=".35" fill="currentColor" stroke="none"/></svg>
     <span>常見問題</span>
   </a>
-  <a class="bottom-nav-item" href="../tarot.html">
+  <a class="bottom-nav-item active" href="../tarot.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
     <span>AI塔羅</span>
   </a>

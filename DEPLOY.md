@@ -73,6 +73,18 @@
 - **後台上傳影片**:展示版不會真的保存(雲端無持久磁碟),接 Cloudflare Stream 後才是真上傳
 - **示範登入按鈕不見了**:檢查環境變數 `DEMO_LOGIN` 是不是被設成 `false`
 
+## 開啟 AI 塔羅占卜(選用)
+
+GitHub Pages 靜態站的「AI塔羅」分頁會呼叫這個 Vercel 專案的 `/api/tarot/reading`,
+用 Google Gemini 即時生成占卜解讀。要讓這功能真的動起來:
+
+1. [aistudio.google.com/apikey](https://aistudio.google.com/apikey) 用 Google 帳號登入 → **Create API key**,
+   複製產生的金鑰(格式為 `AIzaSy` 開頭)
+2. Vercel 專案頁 → **Settings → Environment Variables** → 新增 `GEMINI_API_KEY`,值貼上剛剛的金鑰(Environment 三個都打勾)
+3. **Deployments** → 最新一筆「⋯」→ **Redeploy**
+
+沒有設定 `GEMINI_API_KEY` 也沒關係——占卜頁面照常能抽牌、看牌義,只是最後的 AI 解讀段落會顯示「暫時無法使用」,不影響其他功能。
+
 ## 之後想換成正式帳號登入(Google/LINE)
 
 正式營運前,建議關掉示範登入、改用真帳號:
