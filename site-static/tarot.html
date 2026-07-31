@@ -58,6 +58,15 @@
       <button type="button" class="btn-primary" id="drawBtn" style="width:100%">抽三張牌</button>
     </div>
 
+    <!-- 抽牌動畫:占卜貓發牌,播完才翻開三張牌 -->
+    <div class="draw-stage" id="drawStage" style="display:none">
+      <video id="drawVideo" class="draw-video" playsinline preload="auto" poster="./assets/videos/tarot-draw-poster.jpg">
+        <source src="./assets/videos/tarot-draw.webm" type="video/webm" />
+        <source src="./assets/videos/tarot-draw.mp4" type="video/mp4" />
+      </video>
+      <button type="button" class="draw-skip" id="drawSkip">跳過 ›</button>
+    </div>
+
     <!-- 三張卡片由 JS 依貓咪表情建立 -->
     <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
 
@@ -109,6 +118,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawBtn = document.getElementById("drawBtn");
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
+  var drawStage = document.getElementById("drawStage");
+  var drawVideo = document.getElementById("drawVideo");
+  var drawSkip = document.getElementById("drawSkip");
   var topic = "love";
   var lastCards = null;
 
@@ -263,13 +275,44 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // 先播占卜貓發牌的影片,播完(或按跳過)才進入翻牌。
+  // 影片載不動時直接進翻牌,不讓客人卡住。
+  function playDrawIntro(next) {
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      drawVideo.removeEventListener("ended", finish);
+      drawVideo.removeEventListener("error", finish);
+      drawStage.style.display = "none";
+      drawVideo.pause();
+      next();
+    }
+    drawSkip.onclick = finish;
+    drawVideo.addEventListener("ended", finish);
+    drawVideo.addEventListener("error", finish);
+
+    pickPanel.style.display = "none";
+    drawStage.style.display = "block";
+    drawStage.scrollIntoView({ behavior: "smooth", block: "center" });
+    drawVideo.currentTime = 0;
+    drawVideo.muted = !Tarot.Sound.isOn();
+    var p = drawVideo.play();
+    if (p && p.catch) p.catch(finish);
+    // 保險:影片若始終沒有 ended 事件(例如被瀏覽器擋下),12 秒後自動往下走
+    setTimeout(finish, 12000);
+  }
+
   function drawAndReveal() {
     if (!questionIsReady()) return;
     if (refreshCredits() <= 0) return;
     Tarot.useCredit();
     refreshCredits();
     drawBtn.disabled = true;
+    playDrawIntro(function () { revealCards(); });
+  }
 
+  function revealCards() {
     var cards = Tarot.drawThree();
     lastCards = cards;
     refunded = false;
@@ -315,6 +358,9 @@ document.addEventListener("DOMContentLoaded", function () {
   againBtn.addEventListener("click", function () {
     resetDeck();
     refreshCredits();
+    pickPanel.style.display = "";
+    questionInput.value = "";
+    questionInput.focus();
     pickPanel.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
