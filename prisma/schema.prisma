@@ -1,0 +1,241 @@
+// 正式與開發都用 Postgres(Neon 免費方案即可;本機亦可用 docker postgres)。
+// 狀態欄位刻意用 String 而非 enum(合法值見 lib/types.ts),原始 payload 存字串化 JSON。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Auth.js 標準表 ─────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  entitlements  Entitlement[]
+  subscriptions Subscription[]
+  giftsBought   GiftCode[] @relation("giftPurchaser")
+  giftsRedeemed GiftCode[] @relation("giftRedeemer")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── 內容目錄 ──────────────────────────────────────────
+
+model Series {
+  id              String  @id @default(cuid())
+  slug            String  @unique
+  title           String
+  description     String
+  coverUrl        String?
+  category        String // STRESS_RELIEF | FORTUNE
+  monthlyPriceTwd Int? // null = 此系列不開放訂閱
+  published       Boolean @default(false)
+  sortOrder       Int     @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  courses       Course[]
+  subscriptions Subscription[]
+}
+
+model Course {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  seriesId    String
+  title       String
+  description String
+  coverUrl    String?
+  priceTwd    Int
+  published   Boolean @default(false)
+  sortOrder   Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  series       Series        @relation(fields: [seriesId], references: [id])
+  lessons      Lesson[]
+  entitlements Entitlement[]
+}
+
+model Lesson {
+  id            String  @id @default(cuid())
+  courseId      String
+  title         String
+  description   String?
+  sortOrder     Int     @default(0)
+  isFreePreview Boolean @default(false)
+  videoAssetId  String? @unique
+
+  course     Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videoAsset VideoAsset? @relation(fields: [videoAssetId], references: [id])
+}
+
+model VideoAsset {
+  id              String  @id @default(cuid())
+  provider        String // mock | cloudflare
+  providerAssetId String
+  status          String  @default("UPLOADING") // UPLOADING|PROCESSING|READY|ERROR
+  durationSec     Int?
+  thumbnailUrl    String?
+  meta            String? // stringified JSON
+  createdAt       DateTime @default(now())
+
+  lesson Lesson?
+
+  @@unique([provider, providerAssetId])
+}
+
+// ── 訂單與付款 ────────────────────────────────────────
+
+model Order {
+  id        String    @id @default(cuid())
+  orderNo   String    @unique // = 綠界 MerchantTradeNo,<=20 英數
+  userId    String
+  kind      String // PURCHASE | GIFT | SUBSCRIPTION_INIT
+  status    String    @default("PENDING") // PENDING|PAID|FAILED|EXPIRED
+  amountTwd Int
+  gwTradeNo String? // 綠界 TradeNo
+  paidAt    DateTime?
+  rawReturn String? // 最後一次 webhook 原始 payload(字串化 JSON)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  items        OrderItem[]
+  giftCode     GiftCode?
+  subscription Subscription?
+
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  itemKind      String // COURSE | SUBSCRIPTION
+  courseId      String?
+  seriesId      String?
+  titleSnapshot String
+  unitPriceTwd  Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String
+  seriesId           String
+  status             String // PENDING|ACTIVE|PAST_DUE|CANCELED
+  initOrderId        String?   @unique
+  gwPeriodTradeNo    String? // 定期定額約定的 MerchantTradeNo
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime? // 取消後仍可觀看至此時間
+  canceledAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user      User                  @relation(fields: [userId], references: [id])
+  series    Series                @relation(fields: [seriesId], references: [id])
+  initOrder Order?                @relation(fields: [initOrderId], references: [id])
+  payments  SubscriptionPayment[]
+
+  @@index([userId, seriesId])
+}
+
+model SubscriptionPayment {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  gwAuthCode     String? // 綠界 gwsr:每期扣款唯一編號
+  amountTwd      Int
+  status         String // PAID | FAILED
+  paidAt         DateTime
+  raw            String?
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([subscriptionId, gwAuthCode])
+}
+
+// ── 觀看授權(永久;訂閱存取用算的,不落此表)──────────────
+
+model Entitlement {
+  id               String   @id @default(cuid())
+  userId           String
+  courseId         String
+  kind             String // PURCHASE | GIFT
+  sourceOrderId    String?
+  sourceGiftCodeId String?
+  grantedAt        DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+// ── 禮物碼 ────────────────────────────────────────────
+
+model GiftCode {
+  id               String    @id @default(cuid())
+  code             String    @unique // 16 碼 Crockford base32(不含連字號)
+  orderId          String    @unique
+  courseId         String
+  purchaserUserId  String
+  status           String    @default("PENDING_PAYMENT") // PENDING_PAYMENT|ACTIVE|REDEEMED|VOID
+  message          String?
+  redeemedByUserId String?
+  redeemedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  order      Order @relation(fields: [orderId], references: [id])
+  purchaser  User  @relation("giftPurchaser", fields: [purchaserUserId], references: [id])
+  redeemedBy User? @relation("giftRedeemer", fields: [redeemedByUserId], references: [id])
+}
+
+// ── Webhook 冪等紀錄 ──────────────────────────────────
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String // ecpay
+  dedupeKey   String    @unique
+  payload     String
+  processedAt DateTime?
+  result      String?
+  createdAt   DateTime  @default(now())
+}
