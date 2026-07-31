@@ -38,6 +38,47 @@ export function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
+class GeminiError extends Error {}
+
+async function askGemini(prompt: string): Promise<string> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        // 思考型模型的內部推理也吃這個上限(實測可到 ~2000 tokens),
+        // 留得不夠寬正文就會以 MAX_TOKENS 被腰斬。
+        generationConfig: { temperature: 0.9, maxOutputTokens: 4096 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new GeminiError(`Gemini ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  // 回應可能含多個 part;標記 thought 的是推理內容,不要放進正文。
+  const parts: Array<{ text?: string; thought?: boolean }> =
+    data?.candidates?.[0]?.content?.parts ?? [];
+  return parts
+    .filter((p) => !p.thought && typeof p.text === "string")
+    .map((p) => p.text)
+    .join("")
+    .trim();
+}
+
+// 正常解讀幾乎全是中文;推理外洩的內容充滿數字、括號與英文檢查字樣。
+function looksLikeReading(text: string): boolean {
+  if (text.length < 60) return false;
+  const cjk = (text.match(/[一-鿿]/g) || []).length;
+  if (cjk / text.length < 0.72) return false;
+  if (/\(\d+\)|\d+\.\s/.test(text)) return false;
+  return true;
+}
+
 export async function POST(req: NextRequest) {
   if (!env.GEMINI_API_KEY) {
     return NextResponse.json(
@@ -91,54 +132,31 @@ export async function POST(req: NextRequest) {
 抽到的三張牌(依序代表「現況」「挑戰」「指引」):
 ${cardLines}
 
-請綜合這三張牌,針對主題寫一段連貫的解讀(繁體中文,180～260 字,不要條列、不要標題、不要使用星號或其他 Markdown 符號),
-內容需自然融合三張牌的意象,最後給一句具體、溫柔可執行的小建議作結。只輸出解讀本文。`;
+請綜合這三張牌,針對主題寫一段連貫的解讀,自然融合三張牌的意象,最後給一句具體、溫柔可執行的小建議作結。
+
+輸出規則(務必遵守):
+- 繁體中文,單一段落散文,大約五到七個句子
+- 不要條列、不要編號、不要標題、不要星號或任何 Markdown 符號
+- 不要計算或標註字數
+- 直接輸出解讀本文,不要任何前言、說明或自我檢查`;
 
   try {
-    const model = env.GEMINI_MODEL;
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          // 思考型模型的內部推理也吃這個上限(實測 ~900 tokens),設太低正文會被截斷
-          generationConfig: { temperature: 0.9, maxOutputTokens: 2048 },
-        }),
-      }
-    );
+    let reading = await askGemini(prompt);
+    // 思考型模型偶爾會把自我檢查(逐字編號、英文檢查清單)當成答案吐出來,
+    // 或因思考吃光額度而截斷。攔下來重試一次,通常第二次就正常。
+    if (!looksLikeReading(reading)) {
+      console.warn("Gemini returned non-prose output, retrying once:", reading.slice(0, 120));
+      reading = await askGemini(prompt);
+    }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Gemini API error", res.status, errText);
+    if (!looksLikeReading(reading)) {
       return NextResponse.json(
         { ok: false, error: "AI 解讀暫時無法使用,請稍後再試" },
         { status: 502, headers: CORS_HEADERS }
       );
     }
 
-    const data = await res.json();
-    // 思考型模型可能回傳多個 part(含標記 thought 的推理內容),只取正文
-    const parts: Array<{ text?: string; thought?: boolean }> =
-      data?.candidates?.[0]?.content?.parts ?? [];
-    const reading = parts
-      .filter((p) => !p.thought && typeof p.text === "string")
-      .map((p) => p.text)
-      .join("")
-      .trim();
-
-    if (!reading) {
-      return NextResponse.json(
-        { ok: false, error: "AI 解讀暫時無法使用,請稍後再試" },
-        { status: 502, headers: CORS_HEADERS }
-      );
-    }
-
-    return NextResponse.json(
-      { ok: true, reading: reading.trim() },
-      { headers: CORS_HEADERS }
-    );
+    return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("Gemini request failed", err);
     return NextResponse.json(
