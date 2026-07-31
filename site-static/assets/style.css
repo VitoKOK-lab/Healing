@@ -201,6 +201,35 @@ h2 { font-family: var(--display); font-size: 30px; margin-top: 12px; font-weight
 .lesson-free:hover { text-decoration: underline; }
 .lesson-locked { font-size: 11px; color: var(--inkdim); }
 
+/* 結帳:模擬刷卡付款表單 */
+.pay-card { margin-top: 20px; padding: 32px; }
+.pay-field { display: block; margin-top: 18px; }
+.pay-field:first-of-type { margin-top: 24px; }
+.pay-field span { display: block; font-size: 12px; font-weight: 500; color: var(--inkdim); margin-bottom: 6px; }
+.pay-input {
+  width: 100%; border: 2px solid var(--hairline); border-radius: 14px; padding: 13px 16px;
+  font-size: 15px; font-family: var(--sans); color: var(--ink); background: #fff;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em; transition: border-color .15s;
+}
+.pay-input:focus { outline: none; border-color: var(--lavender); }
+.pay-input::placeholder { color: #c3bcd1; }
+.pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pay-brand-icons { display: flex; gap: 6px; margin-top: 6px; }
+.pay-brand-icons span {
+  font-size: 10px; font-weight: 700; color: var(--inkdim); border: 1px solid var(--hairline);
+  border-radius: 6px; padding: 2px 6px; letter-spacing: .02em;
+}
+.pay-submit { width: 100%; border: none; cursor: pointer; }
+.pay-submit:disabled { cursor: progress; }
+
+.pay-success { padding: 52px 32px; text-align: center; }
+.pay-check {
+  width: 68px; height: 68px; margin: 0 auto; border-radius: 999px; display: flex; align-items: center;
+  justify-content: center; background: linear-gradient(160deg, #7fd39b, #4fae74); color: #fff;
+  box-shadow: 0 12px 28px -6px rgba(79,174,116,.5);
+}
+.pay-check svg { width: 30px; height: 30px; }
+
 /* steps */
 .steps-card { margin-top: 40px; padding: 48px 32px; text-align: center; }
 .steps { display: grid; gap: 36px; margin-top: 40px; }
