@@ -80,6 +80,47 @@ h1 { font-family: var(--display); font-size: clamp(30px, 5vw, 46px); line-height
   border-radius: 999px; margin-top: 34px; text-decoration: none; cursor: pointer;
   background: #fff; border: 2px solid rgba(167,139,219,.5); transition: border-color .15s;
 }
+.btn-disabled {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--display); font-size: 14px; color: #9c93ab; padding: 14px 32px;
+  border-radius: 999px; margin-top: 0; border: none; pointer-events: none;
+  background: #ece7f4; box-shadow: inset 0 2px 0 rgba(255,255,255,.6);
+}
+
+/* 觀看頁示意 */
+.watch-layout { display: grid; gap: 28px; margin-top: 8px; }
+@media (min-width: 960px) { .watch-layout { grid-template-columns: 1fr 300px; } }
+.watch-stage {
+  position: relative; border-radius: 22px; overflow: hidden; background: #2a2035;
+  aspect-ratio: 16/9;
+}
+.watch-stage img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .82; }
+.watch-play {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+}
+.watch-play span {
+  width: 68px; height: 68px; border-radius: 999px; background: rgba(255,255,255,.92);
+  display: flex; align-items: center; justify-content: center; color: var(--plum);
+  box-shadow: 0 12px 32px rgba(0,0,0,.35);
+}
+.watch-play svg { width: 26px; height: 26px; margin-left: 3px; }
+.watch-watermark {
+  position: absolute; right: 18px; bottom: 16px; font-size: 11px; letter-spacing: .04em;
+  color: rgba(255,255,255,.55); text-shadow: 0 0 4px rgba(0,0,0,.5); pointer-events: none;
+}
+.watch-badge {
+  position: absolute; left: 16px; top: 16px; font-size: 11px; font-weight: 500; color: #fff;
+  background: rgba(58,45,82,.55); padding: 5px 12px; border-radius: 999px; backdrop-filter: blur(4px);
+}
+.watch-sidebar-item {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px;
+  background: #fff; border: 1px solid var(--hairline); margin-bottom: 10px; font-size: 13px;
+}
+.watch-sidebar-item.current { border-color: rgba(167,139,219,.6); background: var(--blush); }
+.watch-sidebar-item .lesson-num { flex-shrink: 0; }
+.watch-note {
+  margin-top: 18px; font-size: 11px; line-height: 1.8; color: var(--inkdim); text-align: center;
+}
 .btn-secondary:hover { border-color: var(--lavender); }
 
 /* sections */
@@ -134,7 +175,8 @@ h2 { font-family: var(--display); font-size: 30px; margin-top: 12px; font-weight
   display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 13px; flex-shrink: 0;
 }
 .lesson-title { font-size: 14px; font-weight: 500; flex: 1; }
-.lesson-free { font-size: 11px; color: var(--gold); font-weight: 500; }
+.lesson-free { font-size: 11px; color: var(--gold); font-weight: 500; text-decoration: none; }
+.lesson-free:hover { text-decoration: underline; }
 .lesson-locked { font-size: 11px; color: var(--inkdim); }
 
 /* steps */
