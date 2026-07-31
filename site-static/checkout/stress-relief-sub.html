@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>結帳:深眠儀式|Jessica 解憂商店</title>
-<meta name="description" content="深眠儀式結帳——輸入卡片資訊完成付款,系統將立即開通課程觀看權限。" />
+<title>訂閱:舒壓靜心系列|Jessica 解憂商店</title>
+<meta name="description" content="舒壓靜心系列月訂閱結帳——輸入卡片資訊完成訂閱,系列所有課程立即解鎖觀看。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -28,14 +28,14 @@
 
 <main class="wrap-sm rise">
   <p class="breadcrumb">
-    <a href="../courses/deep-sleep.html">深眠儀式</a> ／ 結帳
+    <a href="../series/stress-relief.html">舒壓靜心系列</a> ／ 訂閱
   </p>
 
   <div class="card" style="margin-top:24px;padding:32px;max-width:480px;margin-inline:auto">
-    <p class="eyebrow">Checkout</p>
-    <h1 style="font-size:22px;margin-top:8px">深眠儀式:夜間放鬆引導</h1>
-    <p style="margin-top:4px;font-size:12px;color:var(--inkdim)">舒壓靜心系列 · 單堂購買,永久觀看</p>
-    <div class="price-lg" style="margin-top:18px">NT$890</div>
+    <p class="eyebrow">Subscribe</p>
+    <h1 style="font-size:22px;margin-top:8px">舒壓靜心系列 · 整個系列看到飽</h1>
+    <p style="margin-top:4px;font-size:12px;color:var(--inkdim)">訂閱期間所有課程(含日後新增)無限觀看,隨時可取消</p>
+    <div class="price-lg" style="margin-top:18px">NT$399<span style="font-size:14px;color:var(--inkdim)">/月</span></div>
   </div>
 
   <form class="card pay-card" id="pay-form" style="max-width:480px;margin-inline:auto">
@@ -61,14 +61,10 @@
       <span>持卡人姓名</span>
       <input class="pay-input" id="cardName" placeholder="與卡片上一致" autocomplete="cc-name" required />
     </label>
-    <label class="pay-field gift-field">
-      <span>收件人 Email(禮物碼將發送至此信箱)</span>
-      <input class="pay-input" id="giftEmail" type="email" placeholder="friend@example.com" autocomplete="email" />
-    </label>
 
-    <button type="submit" class="btn-primary pay-submit" id="pay-submit" style="margin-top:26px">確認付款 NT$890</button>
+    <button type="submit" class="btn-primary pay-submit" id="pay-submit" style="margin-top:26px">確認訂閱 NT$399/月</button>
     <p style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
-      付款由綠界科技 ECPay 處理,本站不留存您的卡號。
+      付款由綠界科技 ECPay 處理,本站不留存您的卡號,可隨時於「我的訂閱」取消。
     </p>
     <p class="pay-trust">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="9" rx="2.2"/><path stroke-linecap="round" d="M8 10.5V7.5a4 4 0 018 0v3"/></svg>
@@ -80,17 +76,9 @@
     <div class="pay-check">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
-    <div class="success-default">
-      <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
-      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">深眠儀式:夜間放鬆引導 已加入您的課程</p>
-      <a class="btn-primary" href="../watch/deep-sleep.html" style="margin-top:24px">前往觀看</a>
-    </div>
-    <div class="success-gift">
-      <h2 class="display" style="font-size:22px;margin-top:18px">禮物已送出</h2>
-      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">已產生專屬禮物碼,複製後傳給對方即可兌換《深眠儀式:夜間放鬆引導》</p>
-      <div class="gift-code" id="giftCode">GIFT-••••-••••</div>
-      <a class="btn-primary" href="../courses/deep-sleep.html" style="margin-top:20px">回課程頁</a>
-    </div>
+    <h2 class="display" style="font-size:22px;margin-top:18px">訂閱成功</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">舒壓靜心系列所有課程已解鎖,立即開始觀看</p>
+    <a class="btn-primary" href="../series/stress-relief.html" style="margin-top:24px">瀏覽系列課程</a>
   </div>
 </main>
 

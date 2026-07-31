@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>結帳:補運對齊|Jessica 解憂商店</title>
-<meta name="description" content="結帳頁面示意——模擬刷卡付款流程,不會實際請款。" />
+<meta name="description" content="補運對齊結帳——輸入卡片資訊完成付款,系統將立即開通課程觀看權限。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -23,7 +23,6 @@
       <a href="../faq.html">常見問題</a>
       <a href="../walkthrough.html">操作示範</a>
     </nav>
-    <span class="nav-badge">完整平台即將上線 ✦</span>
   </div>
 </div>
 
@@ -62,21 +61,36 @@
       <span>持卡人姓名</span>
       <input class="pay-input" id="cardName" placeholder="與卡片上一致" autocomplete="cc-name" required />
     </label>
+    <label class="pay-field gift-field">
+      <span>收件人 Email(禮物碼將發送至此信箱)</span>
+      <input class="pay-input" id="giftEmail" type="email" placeholder="friend@example.com" autocomplete="email" />
+    </label>
 
     <button type="submit" class="btn-primary pay-submit" id="pay-submit" style="margin-top:26px">確認付款 NT$1,290</button>
     <p style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
       付款由綠界科技 ECPay 處理,本站不留存您的卡號。
     </p>
-    <p class="watch-note" style="margin-top:6px">✦ 示意付款流程,不會實際請款 ✦</p>
+    <p class="pay-trust">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="9" rx="2.2"/><path stroke-linecap="round" d="M8 10.5V7.5a4 4 0 018 0v3"/></svg>
+      256 位元 SSL 加密 · 符合 PCI DSS 標準
+    </p>
   </form>
 
   <div class="card pay-success" id="pay-success" style="display:none;max-width:480px;margin-inline:auto">
     <div class="pay-check">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
-    <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
-    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">補運對齊:意念與行動 已加入您的課程</p>
-    <a class="btn-primary" href="../watch/luck-alignment.html" style="margin-top:24px">前往觀看</a>
+    <div class="success-default">
+      <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
+      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">補運對齊:意念與行動 已加入您的課程</p>
+      <a class="btn-primary" href="../watch/luck-alignment.html" style="margin-top:24px">前往觀看</a>
+    </div>
+    <div class="success-gift">
+      <h2 class="display" style="font-size:22px;margin-top:18px">禮物已送出</h2>
+      <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">已產生專屬禮物碼,複製後傳給對方即可兌換《補運對齊:意念與行動》</p>
+      <div class="gift-code" id="giftCode">GIFT-••••-••••</div>
+      <a class="btn-primary" href="../courses/luck-alignment.html" style="margin-top:20px">回課程頁</a>
+    </div>
   </div>
 </main>
 
