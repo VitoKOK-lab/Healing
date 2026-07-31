@@ -15,11 +15,14 @@
    (找不到的話按 Adjust GitHub App Permissions,授權 Healing repo)
 4. 先**不要**按 Deploy,繼續第 2 步
 
-## 第 2 步:加免費資料庫(Neon Postgres)
+## 第 2 步:加免費資料庫(Supabase Postgres)
 
 1. 專案匯入畫面先隨便 Deploy 一次也沒關係(會失敗,正常——還沒有資料庫)
-2. 到專案頁 → **Storage** 分頁 → **Create Database** → 選 **Neon (Postgres)** → Free 方案 → Create
-3. 建好後按 **Connect Project**,把它連到這個專案——Vercel 會自動幫你加上 `DATABASE_URL` 環境變數
+2. 到 [supabase.com](https://supabase.com) 用 GitHub 登入,**New Project** → 選一個名稱與地區(Region 選離你近的,例如 Singapore)→ 設一組資料庫密碼(記得存起來)→ Create
+3. 建好後到專案 **Settings → Database → Connection string**,拿兩組連線字串填進 Vercel 環境變數:
+   - `DATABASE_URL`:選 **Transaction pooler**(port 6543),把 `[YOUR-PASSWORD]` 換成你剛設的密碼,結尾要有 `?pgbouncer=true`
+   - `DIRECT_URL`:選 **Session** 或 **Direct connection**(port 5432),同樣換上密碼——這組只有 `prisma migrate` 建置時會用到,平常跑站不會用
+4. 兩個變數都加到 Vercel 專案的 **Settings → Environment Variables**(Environment 全選)
 
 ## 第 3 步:填環境變數
 
