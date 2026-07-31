@@ -10,6 +10,8 @@ const envSchema = z.object({
   AUTH_LINE_ID: z.string().optional().default(""),
   AUTH_LINE_SECRET: z.string().optional().default(""),
   ADMIN_EMAILS: z.string().optional().default(""),
+  // 示範登入(免 Google/LINE 金鑰,直接輸入名稱即可體驗全站功能)。正式上線前設為 "false" 關閉。
+  DEMO_LOGIN: z.enum(["true", "false"]).default("true"),
   PAYMENT_PROVIDER: z.enum(["mock", "ecpay"]).default("mock"),
   ECPAY_MERCHANT_ID: z.string().optional().default(""),
   ECPAY_HASH_KEY: z.string().optional().default(""),

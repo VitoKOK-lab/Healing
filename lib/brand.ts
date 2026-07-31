@@ -17,4 +17,10 @@ export const brand = {
   coverImage: "/brand/app-cover.jpeg",
   /** 首頁橫幅(橫式,桌面版) */
   bannerImage: "/brand/banner-desktop.jpeg",
+  /** 社群連結(店主已確認的帳號才填,其餘留 "#" 待補) */
+  social: {
+    instagram: "https://www.instagram.com/jessicaasmr20",
+    tiktok: "#",
+    youtube: "#",
+  },
 } as const;

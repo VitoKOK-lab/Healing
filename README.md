@@ -1,6 +1,6 @@
 # 解憂商店 JIEYOU STORE — 線上療癒課程影音平台
 
-舒壓、補運課程影音平台:單堂購買 + 系列訂閱、LINE/Google 登入(單一裝置)、
+舒壓、補運課程影音平台:單堂購買 + 系列訂閱、示範/LINE/Google 登入(單一裝置)、
 綠界 ECPay 金流(開發期為模擬)、送禮(一次性禮物碼)、觀看者浮水印防護、完整管理後台。
 
 ## 快速開始(開發模式,零金鑰)
@@ -14,8 +14,10 @@ npx prisma db seed            # 種子資料:2 系列、4 課程、12 單元
 npm run dev                   # http://localhost:3000
 ```
 
-開發模式下 `PAYMENT_PROVIDER=mock`、`VIDEO_PROVIDER=mock`:
+開發模式下 `PAYMENT_PROVIDER=mock`、`VIDEO_PROVIDER=mock`、`DEMO_LOGIN=true`:
 
+- **示範登入**:登入頁輸入顯示名稱即可(免 Google/LINE 金鑰);Email 欄留空會自動產生示範帳號,
+  填入 `ADMIN_EMAILS` 裡的信箱則可測試後台。正式上線前把 `DEMO_LOGIN` 設為 `false` 關閉。
 - **購買/訂閱模擬**:結帳會跳到「假綠界付款頁」,按「模擬付款成功/失敗」,
   伺服器會像真綠界一樣打 webhook 回本站完成開通。
 - **影片模擬**:所有課程單元播放 `public/dev-videos/sample.mp4`,
@@ -36,7 +38,7 @@ npm run build     # 型別檢查 + 產線建置
 | 層 | 位置 | 說明 |
 |---|---|---|
 | 資料模型 | `prisma/schema.prisma` | Postgres(開發可用 Neon 免費方案或本機 docker) |
-| 登入 | `lib/auth/` | Auth.js v5,Google + LINE;`adapter.ts` 實作單一裝置登入(新登入踢舊裝置) |
+| 登入 | `lib/auth/` | Auth.js v5(Google+LINE)+ `demoLogin.ts` 示範登入;`adapter.ts` 實作單一裝置登入(新登入踢舊裝置) |
 | 金流 | `lib/payments/` | `PaymentProvider` 介面依真綠界塑形;`mock/` 與 `ecpay/` 可切換 |
 | 影片 | `lib/video/` | `VideoProvider` 介面;`mock/`(本機簽名串流)與 `cloudflare/`(Stream signed URL) |
 | 授權 | `lib/entitlements/access.ts` | 購買/受贈=永久;訂閱=至本期結束(含已取消) |
@@ -46,16 +48,17 @@ npm run build     # 型別檢查 + 產線建置
 ## 上線清單
 
 1. **資料庫**:`DATABASE_URL` 指向正式 Postgres(部署見 `DEPLOY.md`,Vercel+Neon 會自動注入),建表由部署時的 `prisma migrate deploy` 完成。
-2. **OAuth**:
+2. **關閉示範登入**:`DEMO_LOGIN` 改為 `false`(正式營運不該讓任何人免驗證登入)。
+3. **OAuth**:
    - Google Cloud Console 建 OAuth 用戶端,redirect URI:`https://你的網域/api/auth/callback/google`
    - LINE Developers 建 LINE Login channel,callback:`https://你的網域/api/auth/callback/line`,
      **記得申請 email 權限**(否則拿不到使用者 email,浮水印會退回顯示名稱+ID)
-3. **綠界**:申請商店取得 MerchantID/HashKey/HashIV,
+4. **綠界**:申請商店取得 MerchantID/HashKey/HashIV,
    `.env` 設 `PAYMENT_PROVIDER=ecpay` 並填入;先用測試環境
    `ECPAY_BASE_URL=https://payment-stage.ecpay.com.tw` 驗證(webhook 需要公開網址)。
-4. **影片**:Cloudflare Stream 開通後 `VIDEO_PROVIDER=cloudflare`,
+5. **影片**:Cloudflare Stream 開通後 `VIDEO_PROVIDER=cloudflare`,
    建簽名金鑰(`POST /accounts/{id}/stream/keys`)填入 `CF_STREAM_SIGNING_KEY_*`。
-5. `APP_BASE_URL`/`AUTH_URL` 改為正式網域,`ADMIN_EMAILS` 填店主 Gmail。
+6. `APP_BASE_URL`/`AUTH_URL` 改為正式網域,`ADMIN_EMAILS` 填店主 Gmail。
 
 ## 防錄影說明(重要)
 
