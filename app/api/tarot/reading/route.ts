@@ -38,7 +38,11 @@ export function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
-class GeminiError extends Error {}
+class GeminiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 async function askGemini(prompt: string): Promise<string> {
   const res = await fetch(
@@ -56,7 +60,7 @@ async function askGemini(prompt: string): Promise<string> {
   );
 
   if (!res.ok) {
-    throw new GeminiError(`Gemini ${res.status}: ${await res.text()}`);
+    throw new GeminiError(`Gemini ${res.status}: ${await res.text()}`, res.status);
   }
 
   const data = await res.json();
@@ -159,6 +163,13 @@ ${cardLines}
     return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("Gemini request failed", err);
+    // 免費方案有每日呼叫上限,講清楚比「暫時無法使用」有用
+    if (err instanceof GeminiError && err.status === 429) {
+      return NextResponse.json(
+        { ok: false, error: "今天的占卜次數已達上限,請明天再來" },
+        { status: 429, headers: CORS_HEADERS }
+      );
+    }
     return NextResponse.json(
       { ok: false, error: "AI 解讀暫時無法使用,請稍後再試" },
       { status: 502, headers: CORS_HEADERS }

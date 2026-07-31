@@ -28,7 +28,7 @@ const envSchema = z.object({
   CF_STREAM_CUSTOMER_CODE: z.string().optional().default(""),
   // 塔羅 AI 占卜:Google AI Studio(aistudio.google.com/apikey)取得的 Gemini 金鑰,留空則該功能停用。
   GEMINI_API_KEY: z.string().optional().default(""),
-  GEMINI_MODEL: z.string().optional().default("gemini-flash-latest"),
+  GEMINI_MODEL: z.string().optional().default("gemini-flash-lite-latest"),
 });
 
 export const env = envSchema.parse(process.env);
