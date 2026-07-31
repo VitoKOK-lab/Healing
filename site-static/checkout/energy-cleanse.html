@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>結帳:能量淨化|Jessica 解憂商店</title>
-<meta name="description" content="結帳頁面示意——正式上線後才能實際付款。" />
+<meta name="description" content="結帳頁面示意——模擬刷卡付款流程,不會實際請款。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -32,21 +32,51 @@
     <a href="../courses/energy-cleanse.html">能量淨化</a> ／ 結帳
   </p>
 
-  <div class="card" style="margin-top:24px;padding:40px;max-width:480px;margin-inline:auto">
-    <p class="eyebrow" style="text-align:center">Checkout</p>
-    <h1 style="font-size:24px;text-align:center;margin-top:10px">能量淨化:清理與歸零</h1>
-    <p style="margin-top:6px;font-size:12px;color:var(--inkdim);text-align:center">補運能量系列 · 單堂購買,永久觀看</p>
+  <div class="card" style="margin-top:24px;padding:32px;max-width:480px;margin-inline:auto">
+    <p class="eyebrow">Checkout</p>
+    <h1 style="font-size:22px;margin-top:8px">能量淨化:清理與歸零</h1>
+    <p style="margin-top:4px;font-size:12px;color:var(--inkdim)">補運能量系列 · 單堂購買,永久觀看</p>
+    <div class="price-lg" style="margin-top:18px">NT$990</div>
+  </div>
 
-    <div class="price-lg" style="text-align:center;margin-top:24px">NT$990</div>
+  <form class="card pay-card" id="pay-form" style="max-width:480px;margin-inline:auto">
+    <p class="eyebrow">Payment</p>
+    <h2 class="display" style="font-size:18px;margin-top:6px">卡片付款</h2>
 
-    <button class="btn-disabled" style="width:100%;margin-top:28px" disabled>前往綠界付款</button>
+    <label class="pay-field">
+      <span>卡號</span>
+      <input class="pay-input" id="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" required />
+      <div class="pay-brand-icons"><span>VISA</span><span>Mastercard</span><span>JCB</span></div>
+    </label>
+    <div class="pay-row">
+      <label class="pay-field">
+        <span>有效期限</span>
+        <input class="pay-input" id="cardExpiry" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" required />
+      </label>
+      <label class="pay-field">
+        <span>安全碼</span>
+        <input class="pay-input" id="cardCvc" inputmode="numeric" placeholder="CVC" maxlength="3" autocomplete="cc-csc" required />
+      </label>
+    </div>
+    <label class="pay-field">
+      <span>持卡人姓名</span>
+      <input class="pay-input" id="cardName" placeholder="與卡片上一致" autocomplete="cc-name" required />
+    </label>
 
+    <button type="submit" class="btn-primary pay-submit" id="pay-submit" style="margin-top:26px">確認付款 NT$990</button>
     <p style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
       付款由綠界科技 ECPay 處理,本站不留存您的卡號。
     </p>
-    <p class="watch-note" style="margin-top:10px">
-      ✦ 示意畫面,正式上線後才能結帳 ✦
-    </p>
+    <p class="watch-note" style="margin-top:6px">✦ 示意付款流程,不會實際請款 ✦</p>
+  </form>
+
+  <div class="card pay-success" id="pay-success" style="display:none;max-width:480px;margin-inline:auto">
+    <div class="pay-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">能量淨化:清理與歸零 已加入您的課程</p>
+    <a class="btn-primary" href="../watch/energy-cleanse.html" style="margin-top:24px">前往觀看</a>
   </div>
 </main>
 
@@ -71,5 +101,6 @@
   </div>
 </footer>
 
+<script src="../assets/checkout.js"></script>
 </body>
 </html>
