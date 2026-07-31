@@ -1,13 +1,47 @@
-// 結帳頁刷卡模擬:純前端、無後端、不會送出任何資料。
+// 結帳頁付款模擬:純前端、無後端、不會送出任何資料。
 // 卡號/效期/安全碼欄位提供輸入格式化,提交後顯示處理中→成功的模擬流程。
 // ?gift=1 會切換成送禮模式:顯示收件人欄位,成功畫面改為產生禮物碼。
+// 信用卡 / LINE Pay 分頁切換:切換時同步更新按鈕文案與付款方說明。
 document.addEventListener("DOMContentLoaded", function () {
   var isGift = new URLSearchParams(location.search).get("gift") === "1";
-  if (isGift) {
-    document.body.classList.add("is-gift");
-    var submitBtn = document.getElementById("pay-submit");
-    if (submitBtn) submitBtn.textContent = submitBtn.textContent.replace("確認付款", "確認付款並贈送");
+  if (isGift) document.body.classList.add("is-gift");
+
+  var submitBtn = document.getElementById("pay-submit");
+  var providerNote = document.getElementById("pay-provider-note");
+  var method = "card";
+
+  function updateSubmitLabel() {
+    if (!submitBtn) return;
+    var price = submitBtn.dataset.price || "";
+    var verb;
+    if (method === "linepay") {
+      verb = isGift ? "LINE Pay 付款並贈送" : "使用 LINE Pay 付款";
+    } else {
+      verb = isGift ? "確認付款並贈送" : submitBtn.dataset.verb || "確認付款";
+    }
+    submitBtn.textContent = price ? verb + " " + price : verb;
+    submitBtn.classList.toggle("is-linepay", method === "linepay");
+    if (providerNote) {
+      providerNote.textContent = method === "linepay"
+        ? "LINE Pay 由 LY Corporation 提供,本站不會取得您的 LINE 付款資訊。"
+        : providerNote.dataset.cardText || providerNote.textContent;
+    }
   }
+
+  var tabs = document.querySelectorAll(".pay-method-tab");
+  var panels = document.querySelectorAll(".pay-method-panel");
+  var cardOnlyInputs = document.querySelectorAll('[data-panel="card"] [required]');
+  if (providerNote) providerNote.dataset.cardText = providerNote.textContent.trim();
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      method = tab.dataset.method;
+      tabs.forEach(function (t) { t.classList.toggle("active", t === tab); });
+      panels.forEach(function (p) { p.classList.toggle("active", p.dataset.panel === method); });
+      cardOnlyInputs.forEach(function (input) { input.required = method === "card"; });
+      updateSubmitLabel();
+    });
+  });
+  updateSubmitLabel();
 
   var cardNumber = document.getElementById("cardNumber");
   if (cardNumber) {

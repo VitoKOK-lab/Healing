@@ -27,34 +27,49 @@
 
   <form class="card pay-card" id="pay-form" style="max-width:480px;margin-inline:auto">
     <p class="eyebrow">Payment</p>
-    <h2 class="display" style="font-size:18px;margin-top:6px">卡片付款</h2>
+    <h2 class="display" style="font-size:18px;margin-top:6px">選擇付款方式</h2>
 
-    <label class="pay-field">
-      <span>卡號</span>
-      <input class="pay-input" id="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" required />
-      <div class="pay-brand-icons"><span>VISA</span><span>Mastercard</span><span>JCB</span></div>
-    </label>
-    <div class="pay-row">
+    <div class="pay-method-tabs">
+      <button type="button" class="pay-method-tab active" data-method="card">信用卡</button>
+      <button type="button" class="pay-method-tab" data-method="linepay">LINE Pay</button>
+    </div>
+
+    <div class="pay-method-panel active" data-panel="card">
       <label class="pay-field">
-        <span>有效期限</span>
-        <input class="pay-input" id="cardExpiry" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" required />
+        <span>卡號</span>
+        <input class="pay-input" id="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" required />
+        <div class="pay-brand-icons"><span>VISA</span><span>Mastercard</span><span>JCB</span></div>
       </label>
+      <div class="pay-row">
+        <label class="pay-field">
+          <span>有效期限</span>
+          <input class="pay-input" id="cardExpiry" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" required />
+        </label>
+        <label class="pay-field">
+          <span>安全碼</span>
+          <input class="pay-input" id="cardCvc" inputmode="numeric" placeholder="CVC" maxlength="3" autocomplete="cc-csc" required />
+        </label>
+      </div>
       <label class="pay-field">
-        <span>安全碼</span>
-        <input class="pay-input" id="cardCvc" inputmode="numeric" placeholder="CVC" maxlength="3" autocomplete="cc-csc" required />
+        <span>持卡人姓名</span>
+        <input class="pay-input" id="cardName" placeholder="與卡片上一致" autocomplete="cc-name" required />
       </label>
     </div>
-    <label class="pay-field">
-      <span>持卡人姓名</span>
-      <input class="pay-input" id="cardName" placeholder="與卡片上一致" autocomplete="cc-name" required />
-    </label>
+
+    <div class="pay-method-panel" data-panel="linepay">
+      <div class="linepay-panel">
+        <span class="linepay-badge">LINE Pay</span>
+        <p>將以您的 LINE 帳號快速核帳,免輸入卡號,確認付款後自動完成。</p>
+      </div>
+    </div>
+
     <label class="pay-field gift-field">
       <span>收件人 Email(禮物碼將發送至此信箱)</span>
       <input class="pay-input" id="giftEmail" type="email" placeholder="friend@example.com" autocomplete="email" />
     </label>
 
-    <button type="submit" class="btn-primary pay-submit" id="pay-submit" style="margin-top:26px">確認付款 NT$890</button>
-    <p style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
+    <button type="submit" class="btn-primary pay-submit" id="pay-submit" data-price="NT$890" style="margin-top:26px">確認付款 NT$890</button>
+    <p id="pay-provider-note" style="margin-top:14px;font-size:11px;color:var(--inkdim);text-align:center">
       付款由綠界科技 ECPay 處理,本站不留存您的卡號。
     </p>
     <p class="pay-trust">
