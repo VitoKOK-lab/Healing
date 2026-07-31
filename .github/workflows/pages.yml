@@ -1,0 +1,40 @@
+# 部署品牌形象頁(site-static/)到 GitHub Pages
+# 完整平台(Next.js app)不在此部署範圍——它需要伺服器環境(見 DEPLOY.md 的 Vercel 流程)。
+name: Deploy brand page to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site-static/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Pages(自動啟用)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-static
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
