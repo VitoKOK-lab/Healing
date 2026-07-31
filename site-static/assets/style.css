@@ -213,6 +213,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
 }
 .pay-submit { width: 100%; border: none; cursor: pointer; }
 .pay-submit:disabled { cursor: progress; }
+.pay-submit.is-linepay {
+  background: linear-gradient(160deg, #2fdb7e 0%, #06c755 55%, #04a745 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.35), 0 4px 0 rgba(4,167,69,.35), 0 12px 32px -6px rgba(6,199,85,.5);
+}
+
+/* 付款方式分頁:信用卡 / LINE Pay */
+.pay-method-tabs { display: flex; gap: 8px; margin-top: 20px; }
+.pay-method-tab {
+  flex: 1; padding: 11px 12px; border-radius: 14px; border: 2px solid var(--hairline); background: #fff;
+  font-family: var(--display); font-size: 13px; color: var(--inkdim); cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+}
+.pay-method-tab.active { border-color: var(--lavender); color: var(--plum); background: var(--blush); }
+.pay-method-panel { display: none; }
+.pay-method-panel.active { display: block; }
+.linepay-panel {
+  margin-top: 24px; padding: 22px; border-radius: 16px; background: #f0fdf6; border: 1px solid rgba(6,199,85,.25);
+  text-align: center;
+}
+.linepay-badge {
+  display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 999px;
+  background: #06c755; color: #fff; font-family: var(--display); font-size: 13px; font-weight: 500;
+}
+.linepay-panel p { margin-top: 12px; font-size: 12px; line-height: 1.8; color: var(--inkdim); }
 .gift-field { display: none; }
 .is-gift .gift-field { display: block; }
 .success-gift { display: none; }
