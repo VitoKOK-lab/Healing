@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
       el.style.animationDelay = i * 0.09 + "s";
       el.innerHTML =
         '<div class="tarot-card-inner">' +
-          '<div class="tarot-card-face tarot-card-back">' + Tarot.catFace("sleepy", true) + "</div>" +
+          '<div class="tarot-card-face tarot-card-back"></div>' +
           '<div class="tarot-card-face tarot-card-front">' + Tarot.catFace(c.mood, false) +
             '<div class="name">' + c.name + "</div>" +
             '<div class="orientation">' + (c.orientation === "upright" ? "正位" : "逆位") + "</div>" +
