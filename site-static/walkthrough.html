@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>操作示範|Jessica 解憂商店</title>
+<meta name="description" content="登入、購買、觀看、送禮、後台管理——解憂商店平台的完整操作流程截圖。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="./index.html">
+      <span class="zh">解憂商店</span><span class="en">Jessica</span>
+    </a>
+    <nav class="nav-links">
+      <a href="./series/index.html">課程系列</a>
+      <a href="./about.html">我是誰</a>
+      <a href="./faq.html">常見問題</a>
+      <a href="./walkthrough.html" class="active">操作示範</a>
+    </nav>
+    <span class="nav-badge">完整平台即將上線 ✦</span>
+  </div>
+</div>
+
+<main class="wrap rise">
+  <div class="page-head">
+    <p class="eyebrow">✦ Prototype ✦</p>
+    <h1>操作示範</h1>
+    <p class="lead" style="margin-inline:auto">
+      平台的登入、購買、觀看、送禮、後台管理都已經開發完成。
+      以下是實際跑起來的畫面截圖(不是設計稿)——付款走的是模擬綠界流程,
+      影片是內建範例片,其餘登入、授權、浮水印、單一裝置踢出、送禮兌換都是真實運作的功能。
+    </p>
+  </div>
+
+  <div class="gallery">
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/01-login.png" alt="示範登入畫面" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">1</span>示範登入</h3>
+        <p>不需要 Google/LINE 帳號,登入頁輸入顯示名稱即可體驗完整平台。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/02-course.png" alt="課程詳情頁" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">2</span>課程詳情</h3>
+        <p>瀏覽課程介紹與單元列表,選擇「立即購買」或「包成禮物送人」。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/03-checkout.png" alt="結帳頁" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">3</span>結帳</h3>
+        <p>確認金額後前往綠界付款(開發環境使用模擬綠界)。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/04-mock-ecpay.png" alt="模擬綠界付款頁" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">4</span>模擬綠界付款</h3>
+        <p>跳轉流程與簽章邏輯完全比照真實綠界,可模擬付款成功或失敗。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/05-payment-success.png" alt="付款完成畫面" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">5</span>付款完成</h3>
+        <p>系統即時輪詢訂單狀態,webhook 確認付款後自動開通課程觀看權。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/06-watch.png" alt="觀看頁含浮水印" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">6</span>觀看(浮水印)</h3>
+        <p>播放課程影片,畫面帶有觀看者帳號浮水印,並隨機移動位置防止側錄外流。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/07-gift-checkout.png" alt="買課程送禮" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">7</span>買課送禮</h3>
+        <p>選「包成禮物送人」並可附上一段留言,一起送給重要的人。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/08-gift-code.png" alt="取得禮物碼" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">8</span>取得禮物碼</h3>
+        <p>付款完成後產生一組專屬禮物碼與分享連結,可直接傳給對方。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/09-gift-redeemed.png" alt="朋友帳號兌換成功" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">9</span>兌換成功</h3>
+        <p>收禮人登入後輸入禮物碼即可兌換,課程永久綁定收禮帳號,僅限一人使用。</p>
+      </div>
+    </div>
+    <div class="card gallery-item">
+      <img src="./assets/walkthrough/10-admin.png" alt="管理後台總覽" />
+      <div class="gallery-caption">
+        <h3><span class="gallery-num">10</span>管理後台</h3>
+        <p>店主登入後可管理系列、課程、訂單、會員、禮物碼與訂閱,一鍵載入示範資料。</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="cta" style="padding-bottom:24px">
+    <div class="card" style="padding:48px 24px">
+      <p class="eyebrow">Coming soon</p>
+      <h2>想自己動手點點看?</h2>
+      <p class="lead">完整平台正在準備上線,敬請期待。</p>
+      <a class="btn-primary" href="./index.html">回首頁</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <div class="zh">解憂商店</div>
+    <div class="en">JESSICA</div>
+    <div class="tagline">把煩惱留在門外,把好運帶回家</div>
+    <nav class="foot-nav">
+      <a href="./series/index.html">課程系列</a>
+      <a href="./about.html">我是誰</a>
+      <a href="./faq.html">常見問題</a>
+      <a href="./walkthrough.html">操作示範</a>
+    </nav>
+    <div class="foot-social">
+      <a href="https://www.instagram.com/jessicaasmr20" target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+    <div class="foot-rule"></div>
+    <p class="fine">© 2026 Jessica 解憂商店·課程影片僅限購買帳號觀看,禁止側錄與轉載</p>
+  </div>
+</footer>
+
+</body>
+</html>
