@@ -1,6 +1,14 @@
 // 結帳頁刷卡模擬:純前端、無後端、不會送出任何資料。
 // 卡號/效期/安全碼欄位提供輸入格式化,提交後顯示處理中→成功的模擬流程。
+// ?gift=1 會切換成送禮模式:顯示收件人欄位,成功畫面改為產生禮物碼。
 document.addEventListener("DOMContentLoaded", function () {
+  var isGift = new URLSearchParams(location.search).get("gift") === "1";
+  if (isGift) {
+    document.body.classList.add("is-gift");
+    var submitBtn = document.getElementById("pay-submit");
+    if (submitBtn) submitBtn.textContent = submitBtn.textContent.replace("確認付款", "確認付款並贈送");
+  }
+
   var cardNumber = document.getElementById("cardNumber");
   if (cardNumber) {
     cardNumber.addEventListener("input", function (e) {
@@ -36,6 +44,18 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.style.opacity = ".65";
       setTimeout(function () {
         form.style.display = "none";
+        if (isGift) {
+          var codeEl = document.getElementById("giftCode");
+          if (codeEl) {
+            var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var seg = function () {
+              var s = "";
+              for (var i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+              return s;
+            };
+            codeEl.textContent = "GIFT-" + seg() + "-" + seg();
+          }
+        }
         document.getElementById("pay-success").style.display = "block";
         document.getElementById("pay-success").scrollIntoView({ behavior: "smooth", block: "center" });
       }, 1400);
