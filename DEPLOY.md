@@ -78,8 +78,7 @@
 GitHub Pages 靜態站的「AI塔羅」分頁會呼叫這個 Vercel 專案的 `/api/tarot/reading`,
 用 Google Gemini 即時生成占卜解讀。要讓這功能真的動起來:
 
-1. [aistudio.google.com/apikey](https://aistudio.google.com/apikey) 用 Google 帳號登入 → **Create API key**,
-   複製產生的金鑰(格式為 `AIzaSy` 開頭)
+1. [aistudio.google.com/apikey](https://aistudio.google.com/apikey) 用 Google 帳號登入 → **Create API key**,複製產生的金鑰
 2. Vercel 專案頁 → **Settings → Environment Variables** → 新增 `GEMINI_API_KEY`,值貼上剛剛的金鑰(Environment 三個都打勾)
 3. **Deployments** → 最新一筆「⋯」→ **Redeploy**
 
