@@ -8,6 +8,10 @@ const PROTECTED_PREFIXES = ["/my", "/watch", "/account", "/gift", "/admin", "/ch
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // 品牌靜態站(public/ 內的 *.html,含 /checkout/tarot.html、/watch/*.html)免登入
+  if (pathname.endsWith(".html")) {
+    return NextResponse.next();
+  }
   if (!PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
