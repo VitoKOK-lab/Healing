@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI塔羅占卜|Jessica 解憂商店</title>
+<meta name="description" content="抽三張牌,由 AI 為你即時解讀感情、工作、金錢或人生抉擇。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./assets/style.css" />
+</head>
+<body>
+
+
+<main class="wrap-sm rise">
+  <div class="page-head">
+    <p class="eyebrow">✦ AI Tarot ✦</p>
+    <h1>AI塔羅占卜</h1>
+    <p class="lead" style="margin-inline:auto">
+      選一個想問的主題,抽三張牌,AI 會綜合牌義為你寫一段專屬解讀。
+    </p>
+    <div class="tarot-credits" id="creditsBadge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+      <span id="creditsText">剩餘 3 次</span>
+    </div>
+  </div>
+
+  <!-- 額度用完:導向購買 -->
+  <div class="card tarot-locked" id="lockedPanel" style="display:none">
+    <div class="dot" style="margin-inline:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
+    <h2 class="display" style="font-size:19px;margin-top:14px">占卜次數已用完</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">NT$100 可再加購 3 次 AI 塔羅占卜</p>
+    <a class="btn-primary" href="./checkout/tarot.html">前往加購</a>
+  </div>
+
+  <!-- 主要占卜流程 -->
+  <div id="tarotFlow">
+    <div class="card" style="margin-top:28px;padding:32px" id="pickPanel">
+      <p class="eyebrow">Step 1</p>
+      <h2 class="display" style="font-size:18px;margin-top:6px">今天想問什麼?</h2>
+      <div class="topic-chips" id="topicChips">
+        <button type="button" class="topic-chip active" data-topic="love">感情</button>
+        <button type="button" class="topic-chip" data-topic="career">工作</button>
+        <button type="button" class="topic-chip" data-topic="money">金錢</button>
+        <button type="button" class="topic-chip" data-topic="decision">抉擇</button>
+        <button type="button" class="topic-chip" data-topic="other">其他</button>
+      </div>
+      <label class="pay-field tarot-question">
+        <span>想問的具體問題(選填)</span>
+        <input class="pay-input" id="questionInput" placeholder="例如:這段關係該不該繼續?" maxlength="60" />
+      </label>
+      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">抽三張牌</button>
+    </div>
+
+    <div class="tarot-deck" id="tarotDeck" style="display:none">
+      <div class="tarot-card" data-i="0">
+        <div class="tarot-card-inner">
+          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
+          <div class="tarot-card-face tarot-card-front">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+            <div class="name"></div>
+            <div class="orientation"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tarot-card" data-i="1">
+        <div class="tarot-card-inner">
+          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
+          <div class="tarot-card-face tarot-card-front">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+            <div class="name"></div>
+            <div class="orientation"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tarot-card" data-i="2">
+        <div class="tarot-card-inner">
+          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
+          <div class="tarot-card-face tarot-card-front">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+            <div class="name"></div>
+            <div class="orientation"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tarot-result" id="resultPanel">
+      <p class="eyebrow">Reading</p>
+      <h2 class="display" style="font-size:18px;margin-top:6px">牌面解讀</h2>
+      <ul class="reading-list" id="cardSummary"></ul>
+      <div class="tarot-loading" id="loadingNote" style="display:none">AI 正在為你解讀⋯</div>
+      <div class="tarot-error" id="errorNote" style="display:none"></div>
+      <p class="tarot-reading-text" id="readingText"></p>
+      <div class="tarot-actions">
+        <button type="button" class="btn-secondary" id="retryBtn" style="display:none">重新請 AI 解讀</button>
+        <button type="button" class="btn-primary" id="againBtn">再抽一次</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <div class="zh">解憂商店</div>
+    <div class="en">JESSICA</div>
+    <div class="tagline">把煩惱留在門外,把好運帶回家</div>
+    <div class="foot-social">
+      <a href="https://www.instagram.com/jessicaasmr20" target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+    <div class="foot-rule"></div>
+    <p class="fine">© 2026 Jessica 解憂商店·課程影片僅限購買帳號觀看,禁止側錄與轉載</p>
+  </div>
+</footer>
+
+<script src="./assets/tarot-data.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var creditsText = document.getElementById("creditsText");
+  var lockedPanel = document.getElementById("lockedPanel");
+  var tarotFlow = document.getElementById("tarotFlow");
+  var pickPanel = document.getElementById("pickPanel");
+  var tarotDeck = document.getElementById("tarotDeck");
+  var resultPanel = document.getElementById("resultPanel");
+  var cardSummary = document.getElementById("cardSummary");
+  var loadingNote = document.getElementById("loadingNote");
+  var errorNote = document.getElementById("errorNote");
+  var readingText = document.getElementById("readingText");
+  var retryBtn = document.getElementById("retryBtn");
+  var againBtn = document.getElementById("againBtn");
+  var drawBtn = document.getElementById("drawBtn");
+  var questionInput = document.getElementById("questionInput");
+  var topic = "love";
+  var lastCards = null;
+
+  function refreshCredits() {
+    var n = Tarot.getCredits();
+    creditsText.textContent = "剩餘 " + n + " 次";
+    if (n <= 0) {
+      lockedPanel.style.display = "block";
+      tarotFlow.style.display = "none";
+    } else {
+      lockedPanel.style.display = "none";
+      tarotFlow.style.display = "block";
+    }
+    return n;
+  }
+
+  document.querySelectorAll(".topic-chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
+      chip.classList.add("active");
+      topic = chip.dataset.topic;
+    });
+  });
+
+  function resetDeck() {
+    tarotDeck.style.display = "none";
+    resultPanel.classList.remove("show");
+    document.querySelectorAll(".tarot-card").forEach(function (card) {
+      card.classList.remove("flipped");
+    });
+  }
+
+  function requestReading(cards) {
+    loadingNote.style.display = "block";
+    errorNote.style.display = "none";
+    retryBtn.style.display = "none";
+    readingText.textContent = "";
+
+    var controller = "AbortController" in window ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
+
+    fetch(Tarot.API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: topic,
+        question: questionInput.value,
+        cards: cards.map(function (c) { return { name: c.name, orientation: c.orientation, keyword: c.keyword }; })
+      }),
+      signal: controller ? controller.signal : undefined
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (timer) clearTimeout(timer);
+        loadingNote.style.display = "none";
+        if (data && data.ok) {
+          readingText.textContent = data.reading;
+        } else {
+          errorNote.textContent = (data && data.error) || "AI 解讀暫時無法使用,請稍後再試";
+          errorNote.style.display = "block";
+          retryBtn.style.display = "inline-flex";
+        }
+      })
+      .catch(function () {
+        if (timer) clearTimeout(timer);
+        loadingNote.style.display = "none";
+        errorNote.textContent = "連線逾時,請確認網路後再試一次";
+        errorNote.style.display = "block";
+        retryBtn.style.display = "inline-flex";
+      });
+  }
+
+  function drawAndReveal() {
+    if (refreshCredits() <= 0) return;
+    Tarot.useCredit();
+    refreshCredits();
+    drawBtn.disabled = true;
+
+    var cards = Tarot.drawThree();
+    lastCards = cards;
+    var cardEls = document.querySelectorAll(".tarot-card");
+    cardEls.forEach(function (el, i) {
+      el.classList.add("pending");
+      el.classList.remove("flipped");
+      var front = el.querySelector(".tarot-card-front");
+      front.querySelector(".name").textContent = cards[i].name;
+      front.querySelector(".orientation").textContent = cards[i].orientation === "upright" ? "正位" : "逆位";
+    });
+    tarotDeck.style.display = "grid";
+    cardSummary.innerHTML = "";
+    resultPanel.classList.add("show");
+    resultPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    cards.forEach(function (c, i) {
+      setTimeout(function () {
+        cardEls[i].classList.remove("pending");
+        cardEls[i].classList.add("flipped");
+        var li = document.createElement("li");
+        li.innerHTML = "<b>" + c.name + (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
+        cardSummary.appendChild(li);
+      }, 500 + i * 450);
+    });
+
+    setTimeout(function () {
+      drawBtn.disabled = false;
+      requestReading(cards);
+    }, 500 + cards.length * 450 + 300);
+  }
+
+  drawBtn.addEventListener("click", drawAndReveal);
+  retryBtn.addEventListener("click", function () {
+    if (lastCards) requestReading(lastCards);
+  });
+  againBtn.addEventListener("click", function () {
+    resetDeck();
+    refreshCredits();
+    pickPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  refreshCredits();
+});
+</script>
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="./index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 10.5L12 4l8.5 6.5M5.5 9.5V19a1 1 0 001 1h3.5v-5h4v5H17a1 1 0 001-1V9.5"/></svg>
+    <span>首頁</span>
+  </a>
+  <a class="bottom-nav-item" href="./series/index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.2c-1.6-1-4-1.4-6.2-1.1v12.4c2.2-.3 4.6.1 6.2 1.1m0-12.4c1.6-1 4-1.4 6.2-1.1v12.4c-2.2-.3-4.6.1-6.2 1.1m0-12.4v12.4"/></svg>
+    <span>課程系列</span>
+  </a>
+  <a class="bottom-nav-item" href="./about.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="4" width="6" height="9" rx="3"/><path stroke-linecap="round" d="M5.2 20a6.8 6.8 0 0113.6 0"/></svg>
+    <span>我是誰</span>
+  </a>
+  <a class="bottom-nav-item" href="./faq.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><path stroke-linecap="round" d="M9.6 9.4a2.5 2.5 0 114 2c-.9.7-1.5 1.2-1.5 2.3"/><circle cx="12" cy="16.6" r=".35" fill="currentColor" stroke="none"/></svg>
+    <span>常見問題</span>
+  </a>
+  <a class="bottom-nav-item active" href="./tarot.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+    <span>AI塔羅</span>
+  </a>
+</nav>
+</body>
+</html>
