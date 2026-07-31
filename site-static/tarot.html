@@ -190,6 +190,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // 解讀失敗就把這次的額度還給客人(只退一次,之後重試不再重複扣或退)
+  var refunded = false;
+  function failReading(msg) {
+    loadingNote.style.display = "none";
+    errorNote.textContent = msg;
+    errorNote.style.display = "block";
+    retryBtn.style.display = "inline-flex";
+    if (!refunded) {
+      refunded = true;
+      Tarot.addCredits(1);
+      refreshCredits();
+    }
+  }
+
   function requestReading(cards) {
     loadingNote.style.display = "block";
     errorNote.style.display = "none";
@@ -216,17 +230,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (data && data.ok) {
           readingText.textContent = data.reading;
         } else {
-          errorNote.textContent = (data && data.error) || "AI 解讀暫時無法使用,請稍後再試";
-          errorNote.style.display = "block";
-          retryBtn.style.display = "inline-flex";
+          failReading((data && data.error) || "AI 解讀暫時無法使用,請稍後再試");
         }
       })
       .catch(function () {
         if (timer) clearTimeout(timer);
-        loadingNote.style.display = "none";
-        errorNote.textContent = "連線逾時,請確認網路後再試一次";
-        errorNote.style.display = "block";
-        retryBtn.style.display = "inline-flex";
+        failReading("連線逾時,請確認網路後再試一次");
       });
   }
 
@@ -263,6 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var cards = Tarot.drawThree();
     lastCards = cards;
+    refunded = false;
     var cardEls = buildDeck(cards);
     tarotDeck.style.display = "grid";
     cardSummary.innerHTML = "";
