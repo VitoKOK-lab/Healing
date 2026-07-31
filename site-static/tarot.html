@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./assets/style.css" />
 </head>
-<body>
+<body class="tarot-page">
 
 
 <main class="wrap-sm rise">
@@ -24,6 +24,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
       <span id="creditsText">剩餘 3 次</span>
     </div>
+    <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
+      <span id="soundLabel">貓叫聲</span>
+    </button>
   </div>
 
   <!-- 額度用完:導向購買 -->
@@ -53,38 +57,8 @@
       <button type="button" class="btn-primary" id="drawBtn" style="width:100%">抽三張牌</button>
     </div>
 
-    <div class="tarot-deck" id="tarotDeck" style="display:none">
-      <div class="tarot-card" data-i="0">
-        <div class="tarot-card-inner">
-          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
-          <div class="tarot-card-face tarot-card-front">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-            <div class="name"></div>
-            <div class="orientation"></div>
-          </div>
-        </div>
-      </div>
-      <div class="tarot-card" data-i="1">
-        <div class="tarot-card-inner">
-          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
-          <div class="tarot-card-face tarot-card-front">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-            <div class="name"></div>
-            <div class="orientation"></div>
-          </div>
-        </div>
-      </div>
-      <div class="tarot-card" data-i="2">
-        <div class="tarot-card-inner">
-          <div class="tarot-card-face tarot-card-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
-          <div class="tarot-card-face tarot-card-front">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-            <div class="name"></div>
-            <div class="orientation"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 三張卡片由 JS 依貓咪表情建立 -->
+    <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
 
     <div class="card tarot-result" id="resultPanel">
       <p class="eyebrow">Reading</p>
@@ -149,6 +123,22 @@ document.addEventListener("DOMContentLoaded", function () {
     return n;
   }
 
+  var soundToggle = document.getElementById("soundToggle");
+  var soundLabel = document.getElementById("soundLabel");
+  function paintSound() {
+    var on = Tarot.Sound.isOn();
+    soundToggle.classList.toggle("off", !on);
+    soundToggle.setAttribute("aria-pressed", String(on));
+    soundLabel.textContent = on ? "貓叫聲" : "已靜音";
+    soundToggle.querySelector(".wave").style.display = on ? "" : "none";
+    soundToggle.querySelector(".cross").style.display = on ? "none" : "";
+  }
+  soundToggle.addEventListener("click", function () {
+    Tarot.Sound.toggle();
+    paintSound();
+  });
+  paintSound();
+
   document.querySelectorAll(".topic-chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
       document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
@@ -159,10 +149,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function resetDeck() {
     tarotDeck.style.display = "none";
+    tarotDeck.innerHTML = "";
     resultPanel.classList.remove("show");
-    document.querySelectorAll(".tarot-card").forEach(function (card) {
-      card.classList.remove("flipped");
+  }
+
+  // 依抽到的牌建立三張卡片:背面是打瞌睡的貓,正面依牌義換一種表情。
+  function buildDeck(cards) {
+    tarotDeck.innerHTML = "";
+    cards.forEach(function (c, i) {
+      var el = document.createElement("div");
+      el.className = "tarot-card pending";
+      el.style.animationDelay = i * 0.09 + "s";
+      el.innerHTML =
+        '<div class="tarot-card-inner">' +
+          '<div class="tarot-card-face tarot-card-back">' + Tarot.catFace("sleepy", true) + "</div>" +
+          '<div class="tarot-card-face tarot-card-front">' + Tarot.catFace(c.mood, false) +
+            '<div class="name">' + c.name + "</div>" +
+            '<div class="orientation">' + (c.orientation === "upright" ? "正位" : "逆位") + "</div>" +
+          "</div>" +
+        "</div>";
+      tarotDeck.appendChild(el);
     });
+    return tarotDeck.querySelectorAll(".tarot-card");
+  }
+
+  // 翻牌瞬間從卡片中心散出的小星星
+  function sparkle(el) {
+    for (var i = 0; i < 7; i++) {
+      var s = document.createElement("span");
+      s.className = "cat-sparkle";
+      var angle = (Math.PI * 2 * i) / 7 + Math.random() * 0.5;
+      var dist = 26 + Math.random() * 20;
+      s.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+      s.style.setProperty("--dy", Math.sin(angle) * dist + "px");
+      s.style.animationDelay = Math.random() * 0.12 + "s";
+      el.appendChild(s);
+      setTimeout(function (node) { return function () { node.remove(); }; }(s), 950);
+    }
   }
 
   function requestReading(cards) {
@@ -213,33 +236,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var cards = Tarot.drawThree();
     lastCards = cards;
-    var cardEls = document.querySelectorAll(".tarot-card");
-    cardEls.forEach(function (el, i) {
-      el.classList.add("pending");
-      el.classList.remove("flipped");
-      var front = el.querySelector(".tarot-card-front");
-      front.querySelector(".name").textContent = cards[i].name;
-      front.querySelector(".orientation").textContent = cards[i].orientation === "upright" ? "正位" : "逆位";
-    });
+    var cardEls = buildDeck(cards);
     tarotDeck.style.display = "grid";
     cardSummary.innerHTML = "";
     resultPanel.classList.add("show");
     resultPanel.scrollIntoView({ behavior: "smooth", block: "center" });
 
+    // 洗牌:三張一起晃兩下,再依序翻開
+    var SHUFFLE_MS = 840;
+    cardEls.forEach(function (el) { el.classList.add("shuffling"); });
+    setTimeout(function () {
+      cardEls.forEach(function (el) { el.classList.remove("shuffling"); });
+    }, SHUFFLE_MS);
+
     cards.forEach(function (c, i) {
       setTimeout(function () {
-        cardEls[i].classList.remove("pending");
-        cardEls[i].classList.add("flipped");
+        var el = cardEls[i];
+        el.classList.remove("pending");
+        el.classList.add("flipped", "just-flipped");
+        sparkle(el);
+        Tarot.Sound.meow(0, 560 + i * 90); // 三張音高略高一階,像三隻不同的貓
+        setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
+
         var li = document.createElement("li");
         li.innerHTML = "<b>" + c.name + (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
         cardSummary.appendChild(li);
-      }, 500 + i * 450);
+      }, SHUFFLE_MS + i * 520);
     });
 
     setTimeout(function () {
       drawBtn.disabled = false;
+      Tarot.Sound.purr(2.2); // 開始解讀時的呼嚕聲
       requestReading(cards);
-    }, 500 + cards.length * 450 + 300);
+    }, SHUFFLE_MS + cards.length * 520 + 250);
   }
 
   drawBtn.addEventListener("click", drawAndReveal);
