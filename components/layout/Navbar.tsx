@@ -25,6 +25,12 @@ export default async function Navbar() {
             課程系列
           </Link>
           <Link
+            href="/about"
+            className="hidden text-ink transition hover:text-plum md:block"
+          >
+            我是誰
+          </Link>
+          <Link
             href="/gift/redeem"
             className="hidden text-ink transition hover:text-plum sm:block"
           >
