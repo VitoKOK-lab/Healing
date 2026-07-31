@@ -22,46 +22,22 @@ a { color: inherit; }
 .wrap-sm { max-width: 760px; margin: 0 auto; padding: 0 20px; }
 .display { font-family: var(--display); }
 
-/* navbar */
-.nav { position: sticky; top: 0; z-index: 40; padding: 12px 12px 0; }
-.nav-inner {
-  max-width: 1120px; margin: 0 auto; min-height: 60px; display: flex; align-items: center;
-  justify-content: space-between; padding: 10px 26px; border-radius: 999px; flex-wrap: nowrap; gap: 10px;
-  background: rgba(255,255,255,.85); backdrop-filter: blur(10px); border: 1px solid #fff;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 10px 30px -10px rgba(124,95,184,.35);
+/* 底部固定分頁列:取代原本頂部浮動膠囊導覽,像 App 一樣快速切換主要區塊 */
+body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+.bottom-nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(14px); border-top: 1px solid var(--hairline);
+  box-shadow: 0 -8px 28px -12px rgba(124,95,184,.3);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
 }
-.nav-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.nav-brand .zh { font-family: var(--display); font-size: 20px; color: var(--plum); }
-.nav-brand .en { font-size: 11px; letter-spacing: .18em; color: var(--gold); font-weight: 500; }
-
-/* 手機版導覽:兩排乾淨排版,避免整排文字被硬擠成一坨換行、撐大整個藥丸形狀 */
-@media (max-width: 640px) {
-  .nav { padding: 8px 8px 0; }
-  .nav-inner {
-    flex-wrap: wrap; row-gap: 6px; border-radius: 20px; padding: 12px 16px; justify-content: center;
-  }
-  .nav-brand { order: 1; }
-  .nav-brand .zh { font-size: 17px; }
-  .nav-brand .en { display: none; }
-  .nav-links {
-    order: 3; flex-basis: 100%; flex-wrap: nowrap; justify-content: flex-start; gap: 14px; font-size: 12px;
-    overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 2px; padding-bottom: 2px;
-    scrollbar-width: none;
-  }
-  .nav-links::-webkit-scrollbar { display: none; }
-  .nav-links a { flex-shrink: 0; }
+.bottom-nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  text-decoration: none; color: var(--inkdim); font-size: 10px; font-weight: 500; padding: 6px 2px;
+  border-radius: 14px; transition: color .15s, background .15s;
 }
-.nav-links { display: flex; align-items: center; gap: 18px; font-size: 13px; font-weight: 500; flex-wrap: wrap; }
-.nav-links a { text-decoration: none; color: var(--ink); transition: color .15s; }
-.nav-links a:hover, .nav-links a.active { color: var(--plum); }
-
-/* 首頁:導覽列融入主視覺圖片,像 app 開場畫面一樣沒有標題文字 */
-.nav-overlay .nav-inner {
-  background: transparent; backdrop-filter: none; border: none; box-shadow: none;
-  justify-content: center; padding-top: 16px;
-}
-.nav-overlay .nav-links a { color: #fff; text-shadow: 0 1px 6px rgba(20,14,30,.5); }
-.nav-overlay .nav-links a:hover, .nav-overlay .nav-links a.active { color: var(--goldsoft); }
+.bottom-nav-item svg { width: 22px; height: 22px; }
+.bottom-nav-item:active { background: var(--blush); }
+.bottom-nav-item.active { color: var(--plum); }
 
 /* hero */
 .hero { padding-top: 0; }
@@ -74,14 +50,10 @@ img.hero-banner { display: none; }
 img.hero-cover { display: block; }
 @media (min-width: 640px) { img.hero-banner { display: block; } img.hero-cover { display: none; } }
 .hero-bleed {
-  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); margin-top: -70px;
-  position: relative; border-radius: 0; border: none; box-shadow: 0 24px 60px -24px rgba(58,45,82,.4);
+  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+  border-radius: 0; border: none; box-shadow: 0 24px 60px -24px rgba(58,45,82,.4);
 }
-.hero-bleed::before {
-  content: ""; position: absolute; inset: 0 0 auto 0; height: 170px; z-index: 1; pointer-events: none;
-  background: linear-gradient(180deg, rgba(20,14,30,.55), transparent);
-}
-.hero-text { max-width: 660px; margin: 64px auto 0; text-align: center; }
+.hero-text { max-width: 660px; margin: 40px auto 0; text-align: center; }
 .eyebrow { font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: rgba(124,95,184,.7); font-weight: 500; }
 h1 { font-family: var(--display); font-size: clamp(34px, 6vw, 58px); line-height: 1.28; letter-spacing: -.01em; margin-top: 18px; font-weight: 500; }
 .lead { margin: 22px auto 0; max-width: 540px; font-size: 15px; line-height: 1.9; color: var(--inkdim); }
