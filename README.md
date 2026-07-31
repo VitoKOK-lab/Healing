@@ -47,7 +47,7 @@ npm run build     # 型別檢查 + 產線建置
 
 ## 上線清單
 
-1. **資料庫**:`DATABASE_URL` 指向正式 Postgres(部署見 `DEPLOY.md`,Vercel+Neon 會自動注入),建表由部署時的 `prisma migrate deploy` 完成。
+1. **資料庫**:`DATABASE_URL`(連線池)與 `DIRECT_URL`(直連,供 migrate 用)指向正式 Postgres(部署見 `DEPLOY.md`,用 Supabase 免費方案),建表由部署時的 `prisma migrate deploy` 完成。
 2. **關閉示範登入**:`DEMO_LOGIN` 改為 `false`(正式營運不該讓任何人免驗證登入)。
 3. **OAuth**:
    - Google Cloud Console 建 OAuth 用戶端,redirect URI:`https://你的網域/api/auth/callback/google`
