@@ -96,3 +96,5 @@ GitHub Pages 靜態站的「AI塔羅」分頁會呼叫這個 Vercel 專案的 `/
    (OpenID Connect → Email address permission,需附畫面截圖審核),
    把 Channel ID / Channel secret 填入 `AUTH_LINE_ID` / `AUTH_LINE_SECRET`
 3. 兩者填好後,把 `DEMO_LOGIN` 改成 `false` → Redeploy,登入頁就只剩正式登入方式
+
+> 小提醒:Vercel 專案的 Git 連結對象是 `VitoKOK-lab/Healing`;若部署一直沒更新,到 Settings → Git 確認沒有連到其他 repo。
