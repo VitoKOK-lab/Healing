@@ -55,8 +55,16 @@ a { color: inherit; }
 .nav-links a { text-decoration: none; color: var(--ink); transition: color .15s; }
 .nav-links a:hover, .nav-links a.active { color: var(--plum); }
 
+/* 首頁:導覽列融入主視覺圖片,像 app 開場畫面一樣沒有標題文字 */
+.nav-overlay .nav-inner {
+  background: transparent; backdrop-filter: none; border: none; box-shadow: none;
+  justify-content: center; padding-top: 16px;
+}
+.nav-overlay .nav-links a { color: #fff; text-shadow: 0 1px 6px rgba(20,14,30,.5); }
+.nav-overlay .nav-links a:hover, .nav-overlay .nav-links a.active { color: var(--goldsoft); }
+
 /* hero */
-.hero { padding-top: 20px; }
+.hero { padding-top: 0; }
 .neon {
   border-radius: 28px; overflow: hidden; border: 1px solid rgba(167,139,219,.4);
   box-shadow: 0 1px 0 rgba(255,255,255,.6), 0 32px 64px -20px rgba(58,45,82,.4);
@@ -66,8 +74,12 @@ img.hero-banner { display: none; }
 img.hero-cover { display: block; }
 @media (min-width: 640px) { img.hero-banner { display: block; } img.hero-cover { display: none; } }
 .hero-bleed {
-  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
-  border-radius: 0; border: none; box-shadow: 0 24px 60px -24px rgba(58,45,82,.4);
+  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); margin-top: -70px;
+  position: relative; border-radius: 0; border: none; box-shadow: 0 24px 60px -24px rgba(58,45,82,.4);
+}
+.hero-bleed::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 170px; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(20,14,30,.55), transparent);
 }
 .hero-text { max-width: 660px; margin: 64px auto 0; text-align: center; }
 .eyebrow { font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: rgba(124,95,184,.7); font-weight: 500; }
