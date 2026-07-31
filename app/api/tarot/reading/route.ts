@@ -103,7 +103,8 @@ ${cardLines}
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.9, maxOutputTokens: 400 },
+          // 思考型模型的內部推理也吃這個上限(實測 ~900 tokens),設太低正文會被截斷
+          generationConfig: { temperature: 0.9, maxOutputTokens: 2048 },
         }),
       }
     );
@@ -118,8 +119,14 @@ ${cardLines}
     }
 
     const data = await res.json();
-    const reading: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // 思考型模型可能回傳多個 part(含標記 thought 的推理內容),只取正文
+    const parts: Array<{ text?: string; thought?: boolean }> =
+      data?.candidates?.[0]?.content?.parts ?? [];
+    const reading = parts
+      .filter((p) => !p.thought && typeof p.text === "string")
+      .map((p) => p.text)
+      .join("")
+      .trim();
 
     if (!reading) {
       return NextResponse.json(
