@@ -28,6 +28,7 @@ export default async function SubscribeCheckoutPage({
     <div className="px-5 py-16">
       <CheckoutClient
         mode="subscription"
+        demoMode={process.env.PAYMENT_PROVIDER !== "ecpay"}
         title={`訂閱:${series.title}`}
         subtitle="每月自動扣款(綠界定期定額),訂閱期間系列課程看到飽,可隨時取消。"
         amountTwd={series.monthlyPriceTwd}

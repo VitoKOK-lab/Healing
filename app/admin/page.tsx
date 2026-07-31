@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ORDER_STATUS_LABEL, formatTwd, type OrderStatus } from "@/lib/types";
 import { AdminHeading, AdminTable, EmptyRow, StatusPill } from "@/components/admin/ui";
 import { ORDER_KIND_LABEL } from "@/components/admin/labels";
+import DemoSeedButton from "@/components/admin/DemoSeedButton";
 import { fmtDateTime } from "./_lib/utils";
 
 export const metadata = { title: "總覽|管理後台" };
@@ -49,7 +50,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <AdminHeading eyebrow="Dashboard" title="總覽" />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <AdminHeading eyebrow="Dashboard" title="總覽" />
+        <DemoSeedButton />
+      </div>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s) => (

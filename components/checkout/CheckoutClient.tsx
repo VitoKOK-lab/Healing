@@ -8,6 +8,7 @@ import { formatTwd } from "@/lib/types";
 interface Props {
   mode: "course" | "subscription";
   gift?: boolean;
+  demoMode?: boolean;
   title: string;
   subtitle: string;
   amountTwd: number;
@@ -16,7 +17,7 @@ interface Props {
   >;
 }
 
-export default function CheckoutClient({ mode, gift, title, subtitle, amountTwd, onSubmit }: Props) {
+export default function CheckoutClient({ mode, gift, demoMode, title, subtitle, amountTwd, onSubmit }: Props) {
   const [redirect, setRedirect] = useState<CheckoutRedirect | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -78,6 +79,11 @@ export default function CheckoutClient({ mode, gift, title, subtitle, amountTwd,
       <p className="mt-4 text-center text-xs text-inkdim">
         付款由綠界科技 ECPay 處理,本站不留存您的卡號。
       </p>
+      {demoMode && (
+        <p className="mt-2 rounded-2xl bg-blush px-4 py-2.5 text-center text-xs text-plum">
+          展示版:付款為模擬流程,不會實際扣款。
+        </p>
+      )}
     </div>
   );
 }

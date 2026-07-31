@@ -1,12 +1,12 @@
-// 開發用 SQLite;正式環境將 provider 改為 "postgresql" 並換 DATABASE_URL 即可。
-// 因 SQLite 不支援 enum / Json,狀態欄位一律 String(合法值見 lib/types.ts),原始 payload 存字串化 JSON。
+// 正式與開發都用 Postgres(Neon 免費方案即可;本機亦可用 docker postgres)。
+// 狀態欄位刻意用 String 而非 enum(合法值見 lib/types.ts),原始 payload 存字串化 JSON。
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

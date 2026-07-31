@@ -32,6 +32,7 @@ export default async function CourseCheckoutPage({
     <div className="px-5 py-16">
       <CheckoutClient
         mode="course"
+        demoMode={process.env.PAYMENT_PROVIDER !== "ecpay"}
         gift={gift}
         title={gift ? `送禮:${course.title}` : course.title}
         subtitle={`${course.series.title}·單堂購買,永久觀看`}

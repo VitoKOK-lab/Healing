@@ -15,6 +15,9 @@ export default function LoginPage({
 }) {
   const reason = searchParams.reason ? REASON_MESSAGES[searchParams.reason] : null;
   const callbackUrl = searchParams.callbackUrl || "/my/courses";
+  // 未設定金鑰的登入方式不顯示(展示版可先只開 Google,LINE channel 之後補)
+  const lineEnabled = Boolean(process.env.AUTH_LINE_ID);
+  const googleEnabled = Boolean(process.env.AUTH_GOOGLE_ID);
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-5 py-24 text-center">
@@ -26,24 +29,33 @@ export default function LoginPage({
         </p>
       )}
       <div className="mt-10 w-full space-y-4">
-        <form
-          action={async () => {
-            "use server";
-            await signIn("line", { redirectTo: callbackUrl });
-          }}
-        >
-          <button className="w-full rounded-full bg-[#06C755] py-3 text-sm tracking-wider text-white transition hover:opacity-90 active:scale-[0.98]">
-            使用 LINE 登入
-          </button>
-        </form>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google", { redirectTo: callbackUrl });
-          }}
-        >
-          <button className="btn-secondary w-full">使用 Google(Gmail)登入</button>
-        </form>
+        {lineEnabled && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("line", { redirectTo: callbackUrl });
+            }}
+          >
+            <button className="w-full cursor-pointer rounded-full bg-[#06C755] py-3.5 font-display text-sm tracking-wider text-white transition hover:opacity-90 active:scale-95">
+              使用 LINE 登入
+            </button>
+          </form>
+        )}
+        {googleEnabled && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("google", { redirectTo: callbackUrl });
+            }}
+          >
+            <button className="btn-secondary w-full">使用 Google(Gmail)登入</button>
+          </form>
+        )}
+        {!lineEnabled && !googleEnabled && (
+          <p className="rounded-2xl bg-blush px-4 py-3 text-sm text-inkdim">
+            尚未設定登入服務(需在環境變數填入 Google/LINE 金鑰)。
+          </p>
+        )}
       </div>
       <p className="mt-8 text-xs leading-6 text-inkdim">
         課程與訂閱權益綁定您登入的帳號,請每次固定使用同一種方式登入。

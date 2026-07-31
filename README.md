@@ -7,8 +7,9 @@
 
 ```bash
 npm install
-cp .env.example .env          # 填 AUTH_SECRET(openssl rand -base64 32)與 ADMIN_EMAILS
-npx prisma migrate dev        # 建立 SQLite 資料庫
+cp .env.example .env          # 填 AUTH_SECRET(openssl rand -base64 32)、ADMIN_EMAILS、DATABASE_URL(Postgres,
+                              # 可用 Neon 免費方案或 docker run -e POSTGRES_PASSWORD=pw -p 5432:5432 postgres)
+npx prisma migrate deploy     # 建立資料表
 npx prisma db seed            # 種子資料:2 系列、4 課程、12 單元
 npm run dev                   # http://localhost:3000
 ```
@@ -34,7 +35,7 @@ npm run build     # 型別檢查 + 產線建置
 
 | 層 | 位置 | 說明 |
 |---|---|---|
-| 資料模型 | `prisma/schema.prisma` | SQLite(開發)/ Postgres(正式,改 datasource provider 即可) |
+| 資料模型 | `prisma/schema.prisma` | Postgres(開發可用 Neon 免費方案或本機 docker) |
 | 登入 | `lib/auth/` | Auth.js v5,Google + LINE;`adapter.ts` 實作單一裝置登入(新登入踢舊裝置) |
 | 金流 | `lib/payments/` | `PaymentProvider` 介面依真綠界塑形;`mock/` 與 `ecpay/` 可切換 |
 | 影片 | `lib/video/` | `VideoProvider` 介面;`mock/`(本機簽名串流)與 `cloudflare/`(Stream signed URL) |
@@ -44,8 +45,7 @@ npm run build     # 型別檢查 + 產線建置
 
 ## 上線清單
 
-1. **資料庫**:`prisma/schema.prisma` 的 `provider` 改為 `postgresql`,
-   `DATABASE_URL` 指向 Postgres,執行 `npx prisma migrate deploy`。
+1. **資料庫**:`DATABASE_URL` 指向正式 Postgres(部署見 `DEPLOY.md`,Vercel+Neon 會自動注入),建表由部署時的 `prisma migrate deploy` 完成。
 2. **OAuth**:
    - Google Cloud Console 建 OAuth 用戶端,redirect URI:`https://你的網域/api/auth/callback/google`
    - LINE Developers 建 LINE Login channel,callback:`https://你的網域/api/auth/callback/line`,
