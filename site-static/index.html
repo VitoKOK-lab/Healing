@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jessica 解憂商店|線上療癒課程</title>
+<meta name="description" content="解憂商店線上療癒學院——舒壓與補運課程影音平台,隨時隨地,為自己留一段安放心情的時光。完整平台即將上線。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --porcelain: #faf8fd; --paper: #fff; --mist: #f3eef9; --ink: #3a2d52;
+    --inkdim: #8d82a6; --gold: #ef8f2f; --goldsoft: #f7bd7a; --hairline: #e9e2f3;
+    --blush: #f5effb; --lavender: #a78bdb; --plum: #7c5fb8;
+    --display: "Huninn", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    --sans: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--sans); color: var(--ink); background: var(--porcelain);
+    background-image:
+      radial-gradient(900px 420px at 92% -6%, rgba(255,178,102,.22), transparent 60%),
+      radial-gradient(1100px 520px at -6% 4%, rgba(167,139,219,.26), transparent 58%),
+      linear-gradient(180deg, #f6f1fd 0%, #faf8fd 45%, #fdf6ef 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  .display { font-family: var(--display); }
+
+  /* navbar */
+  .nav { position: sticky; top: 0; z-index: 40; padding: 12px 12px 0; }
+  .nav-inner {
+    max-width: 1120px; margin: 0 auto; height: 60px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 26px; border-radius: 999px;
+    background: rgba(255,255,255,.85); backdrop-filter: blur(10px); border: 1px solid #fff;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 10px 30px -10px rgba(124,95,184,.35);
+  }
+  .nav-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+  .nav-brand .zh { font-family: var(--display); font-size: 20px; color: var(--plum); }
+  .nav-brand .en { font-size: 11px; letter-spacing: .18em; color: var(--gold); font-weight: 500; }
+  .nav-badge {
+    font-family: var(--display); font-size: 12px; color: #fff; padding: 8px 18px; border-radius: 999px;
+    background: linear-gradient(160deg, #ffb266 0%, #ef8f2f 55%, #e07a1f 100%);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.45), 0 4px 0 rgba(224,122,31,.35), 0 12px 32px -6px rgba(239,143,47,.55);
+  }
+
+  /* hero */
+  .hero { padding-top: 32px; }
+  .neon {
+    border-radius: 30px; overflow: hidden; border: 2px solid rgba(167,139,219,.6);
+    box-shadow: 0 0 0 6px rgba(167,139,219,.12), 0 0 32px rgba(167,139,219,.35), 0 24px 56px -12px rgba(124,95,184,.35);
+  }
+  .neon img { display: block; width: 100%; }
+  img.hero-banner { display: none; }
+  img.hero-cover { display: block; }
+  @media (min-width: 640px) { img.hero-banner { display: block; } img.hero-cover { display: none; } }
+  .hero-text { max-width: 640px; margin: 56px auto 0; text-align: center; }
+  .eyebrow { font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: rgba(124,95,184,.7); font-weight: 500; }
+  h1 { font-family: var(--display); font-size: clamp(30px, 5vw, 46px); line-height: 1.4; margin-top: 16px; font-weight: 400; }
+  .lead { margin: 20px auto 0; max-width: 560px; font-size: 15px; line-height: 2; color: var(--inkdim); }
+
+  .btn-soon {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: var(--display); font-size: 14px; color: #fff; padding: 14px 32px;
+    border-radius: 999px; margin-top: 34px; cursor: default;
+    background: linear-gradient(160deg, #ffb266 0%, #ef8f2f 55%, #e07a1f 100%);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.45), 0 4px 0 rgba(224,122,31,.35), 0 12px 32px -6px rgba(239,143,47,.55);
+  }
+
+  /* sections */
+  section { padding-top: 88px; }
+  .sec-head { text-align: center; }
+  h2 { font-family: var(--display); font-size: 30px; margin-top: 12px; font-weight: 400; }
+
+  .card {
+    border-radius: 26px; border: 1px solid #fff; background: rgba(255,255,255,.9); overflow: hidden;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 4px 0 rgba(124,95,184,.05), 0 18px 44px -12px rgba(124,95,184,.22);
+  }
+  .grid2 { display: grid; gap: 28px; margin-top: 40px; }
+  .grid4 { display: grid; gap: 28px; margin-top: 40px; }
+  @media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } .grid4 { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .grid4 { grid-template-columns: repeat(4, 1fr); } }
+
+  .cover { position: relative; }
+  .cover img { display: block; width: 100%; aspect-ratio: 21/9; object-fit: cover; }
+  .grid4 .cover img { aspect-ratio: 16/9; }
+  .tag {
+    position: absolute; left: 14px; top: 14px; font-size: 12px; font-weight: 500;
+    padding: 5px 14px; border-radius: 999px; background: #fff1e2; color: #d97a1c;
+    box-shadow: 0 2px 10px rgba(58,45,82,.1);
+  }
+  .card-body { padding: 24px 26px 26px; }
+  .card-body h3 { font-family: var(--display); font-size: 21px; font-weight: 400; }
+  .card-body p { margin-top: 10px; font-size: 14px; line-height: 1.9; color: var(--inkdim); }
+  .card-foot { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .price { font-family: var(--display); font-size: 19px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .pill-lav { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 999px; background: var(--blush); color: var(--plum); }
+  .soon {
+    font-family: var(--display); font-size: 12px; color: var(--plum);
+    border: 2px solid rgba(167,139,219,.5); border-radius: 999px; padding: 6px 14px; background: #fff;
+  }
+
+  /* steps */
+  .steps-card { margin-top: 40px; padding: 48px 32px; text-align: center; }
+  .steps { display: grid; gap: 36px; margin-top: 40px; }
+  @media (min-width: 720px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .dot {
+    width: 62px; height: 62px; margin: 0 auto; border-radius: 999px; background: #fff;
+    display: flex; align-items: center; justify-content: center; color: var(--plum);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 4px 0 rgba(124,95,184,.06), 0 12px 28px -8px rgba(124,95,184,.28);
+  }
+  .dot svg { width: 26px; height: 26px; }
+  .steps h3 { font-family: var(--display); font-size: 19px; margin-top: 14px; font-weight: 400; }
+  .steps p { margin: 8px auto 0; max-width: 230px; font-size: 13px; line-height: 1.8; color: var(--inkdim); }
+
+  /* cta + footer */
+  .cta { text-align: center; }
+  .cta .card { padding: 56px 24px; }
+  footer { margin-top: 88px; padding: 0 12px 16px; }
+  .foot-inner {
+    max-width: 1120px; margin: 0 auto; border-radius: 30px; padding: 48px 24px; text-align: center; color: #fff;
+    background: linear-gradient(160deg, #8f6fc9 0%, #6c4fa8 100%);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.25), 0 24px 56px -16px rgba(108,79,168,.55);
+  }
+  .foot-inner .zh { font-family: var(--display); font-size: 24px; }
+  .foot-inner .en { margin-top: 4px; font-size: 11px; letter-spacing: .22em; color: #ffcf9e; font-weight: 500; }
+  .foot-inner .tagline { margin-top: 16px; font-family: var(--display); font-size: 14px; color: rgba(255,255,255,.9); }
+  .foot-rule { width: 176px; height: 1px; margin: 24px auto; background: linear-gradient(to right, transparent, rgba(255,207,158,.8), transparent); }
+  .foot-inner .fine { font-size: 12px; line-height: 1.9; color: rgba(255,255,255,.7); }
+
+  .rise { animation: rise .6s ease-out both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="#">
+      <span class="zh">解憂商店</span><span class="en">Jessica</span>
+    </a>
+    <span class="nav-badge">完整平台即將上線 ✦</span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="hero rise">
+    <div class="neon">
+      <img class="hero-banner" src="./assets/banner-desktop.jpeg" alt="Jessica 解憂商店主視覺" />
+      <img class="hero-cover" src="./assets/app-cover.jpeg" alt="Jessica 解憂商店主視覺" />
+    </div>
+    <div class="hero-text">
+      <p class="eyebrow">✦ Online Healing Studio ✦</p>
+      <h1>把煩惱留在門外,<br />把好運帶回家</h1>
+      <p class="lead">
+        歡迎光臨解憂商店。這裡有為你準備的舒壓與補運影音課程,
+        像走進一間溫暖的小店,挑一份適合今天心情的療癒。
+        線上平台正在做最後準備,很快與你見面。
+      </p>
+      <span class="btn-soon">平台即將開放 ✦</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Collections</p>
+      <h2>兩座療癒小房間</h2>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="cover"><img src="./assets/series-stress.png" alt="舒壓靜心系列" /><span class="tag">舒壓</span></div>
+        <div class="card-body">
+          <h3>舒壓靜心系列</h3>
+          <p>在忙碌與焦慮之間,為自己留一段安靜的時光。呼吸、冥想、肢體釋放,一步步放下緊繃。</p>
+          <div class="card-foot"><span class="pill-lav">月訂閱 NT$399</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cover"><img src="./assets/series-fortune.png" alt="補運能量系列" /><span class="tag">補運</span></div>
+        <div class="card-body">
+          <h3>補運能量系列</h3>
+          <p>梳理自身的能量狀態,以儀式與意念練習迎接流動的好運,替生活重新對齊方向。</p>
+          <div class="card-foot"><span class="pill-lav">月訂閱 NT$499</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Courses</p>
+      <h2>首波開課</h2>
+    </div>
+    <div class="grid4">
+      <div class="card">
+        <div class="cover"><img src="./assets/breath-reset.png" alt="呼吸重置" /></div>
+        <div class="card-body">
+          <h3>呼吸重置:十分鐘找回平靜</h3>
+          <p>以簡單而深層的呼吸法,快速安定神經系統。</p>
+          <div class="card-foot"><span class="price">NT$690</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cover"><img src="./assets/deep-sleep.png" alt="深眠儀式" /></div>
+        <div class="card-body">
+          <h3>深眠儀式:夜間放鬆引導</h3>
+          <p>一套完整的睡前放鬆儀式,陪你入睡。</p>
+          <div class="card-foot"><span class="price">NT$890</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cover"><img src="./assets/energy-cleanse.png" alt="能量淨化" /></div>
+        <div class="card-body">
+          <h3>能量淨化:清理與歸零</h3>
+          <p>清理累積的沉重能量,讓好運有位置進來。</p>
+          <div class="card-foot"><span class="price">NT$990</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cover"><img src="./assets/luck-alignment.png" alt="補運對齊" /></div>
+        <div class="card-body">
+          <h3>補運對齊:意念與行動</h3>
+          <p>以意念設定與具體行動,溫柔推動改變。</p>
+          <div class="card-foot"><span class="price">NT$1,290</span><span class="soon">即將開放</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card steps-card">
+      <p class="eyebrow">How it works</p>
+      <h2>三步開始你的療癒時光</h2>
+      <div class="steps">
+        <div>
+          <div class="dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"/></svg>
+          </div>
+          <h3>1. 登入</h3>
+          <p>用 LINE 或 Google 帳號一鍵進門,不用記密碼。</p>
+        </div>
+        <div>
+          <div class="dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.5l1.6 12.3a1.5 1.5 0 001.5 1.2h10.8a1.5 1.5 0 001.47-1.18L21 7.5H5.1M9 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm9 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+          </div>
+          <h3>2. 選課</h3>
+          <p>單堂買了永久看,或訂閱整個系列看到飽,也能買一份送給重要的人。</p>
+        </div>
+        <div>
+          <div class="dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.65c0-1.16 1.26-1.88 2.26-1.3l11.05 6.35a1.5 1.5 0 010 2.6L7.51 19.65c-1 .58-2.26-.14-2.26-1.3V5.65z"/></svg>
+          </div>
+          <h3>3. 觀看</h3>
+          <p>手機、平板、電腦隨時播放,專屬於你的療癒時光。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="card">
+      <p class="eyebrow">Coming soon</p>
+      <h2>完整平台即將上線</h2>
+      <p class="lead">課程購買、系列訂閱、禮物贈送——都在準備中。<br />敬請期待,祝你今天也被溫柔以待。</p>
+      <span class="btn-soon">敬請期待 ✦</span>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <div class="zh">解憂商店</div>
+    <div class="en">JESSICA</div>
+    <div class="tagline">把煩惱留在門外,把好運帶回家</div>
+    <div class="foot-rule"></div>
+    <p class="fine">© 2026 Jessica 解憂商店·完整平台即將上線</p>
+  </div>
+</footer>
+
+</body>
+</html>
