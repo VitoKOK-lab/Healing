@@ -142,5 +142,20 @@
   </div>
 </footer>
 
+<div class="lightbox" id="lightbox"><img id="lightbox-img" src="" alt="" /></div>
+<span class="lightbox-hint">點擊圖片可放大細看,再點一下關閉</span>
+<script>
+  var lb = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lightbox-img');
+  document.querySelectorAll('.gallery-item img').forEach(function (img) {
+    img.addEventListener('click', function () {
+      lbImg.src = img.src;
+      lbImg.alt = img.alt;
+      lb.classList.add('open');
+    });
+  });
+  lb.addEventListener('click', function () { lb.classList.remove('open'); });
+</script>
+
 </body>
 </html>
