@@ -51,8 +51,9 @@
         <button type="button" class="topic-chip" data-topic="other">其他</button>
       </div>
       <label class="pay-field tarot-question">
-        <span>想問的具體問題(選填)</span>
-        <input class="pay-input" id="questionInput" placeholder="例如:這段關係該不該繼續?" maxlength="60" />
+        <span>想問的具體問題</span>
+        <input class="pay-input" id="questionInput" placeholder="例如:這段關係該不該繼續?" maxlength="60" required />
+        <p class="field-hint" id="questionHint">把心裡真正想問的事寫下來,解讀才會貼近你的狀況</p>
       </label>
       <button type="button" class="btn-primary" id="drawBtn" style="width:100%">抽三張牌</button>
     </div>
@@ -107,6 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var againBtn = document.getElementById("againBtn");
   var drawBtn = document.getElementById("drawBtn");
   var questionInput = document.getElementById("questionInput");
+  var questionHint = document.getElementById("questionHint");
   var topic = "love";
   var lastCards = null;
 
@@ -228,7 +230,32 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // 沒寫下想問的事就不讓他抽——牌義要貼合問題才有意義,也避免白白扣一次額度。
+  function questionIsReady() {
+    var q = questionInput.value.trim();
+    if (q.length >= 3) {
+      questionHint.textContent = "把心裡真正想問的事寫下來,解讀才會貼近你的狀況";
+      questionHint.classList.remove("is-error");
+      questionInput.classList.remove("is-error");
+      return true;
+    }
+    questionHint.textContent = q.length
+      ? "再多寫幾個字吧,說得越具體,牌面給你的回應就越準"
+      : "先告訴我你心裡真正想問的是什麼,再開始抽牌";
+    questionHint.classList.add("is-error");
+    questionInput.classList.add("is-error");
+    questionInput.focus();
+    return false;
+  }
+
+  questionInput.addEventListener("input", function () {
+    if (questionHint.classList.contains("is-error") && questionInput.value.trim().length >= 3) {
+      questionIsReady();
+    }
+  });
+
   function drawAndReveal() {
+    if (!questionIsReady()) return;
     if (refreshCredits() <= 0) return;
     Tarot.useCredit();
     refreshCredits();
