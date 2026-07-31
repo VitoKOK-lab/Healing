@@ -26,13 +26,35 @@ a { color: inherit; }
 .nav { position: sticky; top: 0; z-index: 40; padding: 12px 12px 0; }
 .nav-inner {
   max-width: 1120px; margin: 0 auto; min-height: 60px; display: flex; align-items: center;
-  justify-content: space-between; padding: 10px 26px; border-radius: 999px; flex-wrap: wrap; gap: 10px;
+  justify-content: space-between; padding: 10px 26px; border-radius: 999px; flex-wrap: nowrap; gap: 10px;
   background: rgba(255,255,255,.85); backdrop-filter: blur(10px); border: 1px solid #fff;
   box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 10px 30px -10px rgba(124,95,184,.35);
 }
-.nav-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
+.nav-brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; flex-shrink: 0; }
 .nav-brand .zh { font-family: var(--display); font-size: 20px; color: var(--plum); }
 .nav-brand .en { font-size: 11px; letter-spacing: .18em; color: var(--gold); font-weight: 500; }
+
+/* 手機版導覽:兩排乾淨排版,避免整排文字被硬擠成一坨換行、撐大整個藥丸形狀 */
+@media (max-width: 640px) {
+  .nav { padding: 8px 8px 0; }
+  .nav-inner {
+    flex-wrap: wrap; row-gap: 6px; border-radius: 20px; padding: 10px 16px;
+  }
+  .nav-brand { order: 1; }
+  .nav-brand .zh { font-size: 16px; }
+  .nav-brand .en { display: none; }
+  .nav-badge {
+    order: 2; margin-left: auto; font-size: 10px !important; padding: 6px 12px !important;
+    margin-top: 0 !important; white-space: nowrap;
+  }
+  .nav-links {
+    order: 3; flex-basis: 100%; flex-wrap: nowrap; justify-content: flex-start; gap: 14px; font-size: 12px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; padding-top: 2px; padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a { flex-shrink: 0; }
+}
 .nav-links { display: flex; align-items: center; gap: 18px; font-size: 13px; font-weight: 500; flex-wrap: wrap; }
 .nav-links a { text-decoration: none; color: var(--ink); transition: color .15s; }
 .nav-links a:hover, .nav-links a.active { color: var(--plum); }
@@ -236,6 +258,22 @@ h2 { font-family: var(--display); font-size: 30px; margin-top: 12px; font-weight
 .gallery-caption { padding: 18px 22px; }
 .gallery-caption h3 { font-family: var(--display); font-size: 15px; font-weight: 400; display: flex; align-items: center; }
 .gallery-caption p { margin-top: 6px; font-size: 13px; line-height: 1.8; color: var(--inkdim); }
+.gallery-item img { cursor: zoom-in; }
+
+/* 截圖點擊放大(手機上文字太小時可點圖放大細看) */
+.lightbox {
+  position: fixed; inset: 0; z-index: 200; background: rgba(20,14,30,.92);
+  display: none; align-items: flex-start; justify-content: center; padding: 24px 12px;
+  overflow: auto; -webkit-overflow-scrolling: touch;
+}
+.lightbox.open { display: flex; }
+.lightbox img { width: 1100px; max-width: none; border-radius: 12px; cursor: zoom-out; }
+.lightbox-hint {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 201;
+  font-size: 12px; color: #fff; background: rgba(0,0,0,.4); padding: 6px 16px; border-radius: 999px;
+  display: none; pointer-events: none;
+}
+.lightbox.open ~ .lightbox-hint { display: block; }
 
 /* cta + footer */
 .cta { text-align: center; }
