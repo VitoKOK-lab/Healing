@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AI塔羅占卜|Jessica 解憂商店</title>
-<meta name="description" content="抽三張牌,由 AI 為你即時解讀感情、工作、金錢或人生抉擇。" />
+<title>喵喵占卜|Jessica 解憂商店</title>
+<meta name="description" content="抽三張牌,由本喵占卜師為你解讀感情、工作、金錢或人生抉擇。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -12,18 +12,20 @@
 </head>
 <body class="tarot-page">
 
+<!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
+<div class="draw-overlay" id="drawOverlay" style="display:none">
+  <video id="drawVideo" class="draw-overlay-video" playsinline preload="auto" poster="./assets/videos/tarot-draw-poster.jpg">
+    <source src="./assets/videos/tarot-draw.webm" type="video/webm" />
+    <source src="./assets/videos/tarot-draw.mp4" type="video/mp4" />
+  </video>
+</div>
 
 <main class="wrap-sm rise">
-  <div class="page-head">
-    <p class="eyebrow">✦ AI Tarot ✦</p>
-    <h1>AI塔羅占卜</h1>
-    <p class="lead" style="margin-inline:auto">
-      選一個想問的主題,抽三張牌,AI 會綜合牌義為你寫一段專屬解讀。
-    </p>
-    <div class="tarot-credits" id="creditsBadge">
+  <div class="tarot-bar">
+    <span class="tarot-credits" id="creditsBadge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
       <span id="creditsText">剩餘 3 次</span>
-    </div>
+    </span>
     <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
       <span id="soundLabel">貓叫聲</span>
@@ -34,40 +36,42 @@
   <div class="card tarot-locked" id="lockedPanel" style="display:none">
     <div class="dot" style="margin-inline:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
     <h2 class="display" style="font-size:19px;margin-top:14px">占卜次數已用完</h2>
-    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">NT$100 可再加購 3 次 AI 塔羅占卜</p>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">NT$100 可再加購 3 次喵喵占卜</p>
     <a class="btn-primary" href="./checkout/tarot.html">前往加購</a>
   </div>
 
-  <!-- 主要占卜流程 -->
   <div id="tarotFlow">
-    <div class="card" style="margin-top:28px;padding:32px" id="pickPanel">
-      <p class="eyebrow">Step 1</p>
-      <h2 class="display" style="font-size:18px;margin-top:6px">今天想問什麼?</h2>
+    <!-- 本喵占卜師:整段流程都透過這個對話框跟客人說話 -->
+    <div class="cat-dialogue" id="catDialogue">
+      <div class="cat-dialogue-top">
+        <span class="cat-dialogue-avatar" id="dialogueAvatar"></span>
+        <span class="cat-dialogue-name">喵喵占卜師</span>
+      </div>
+      <p class="cat-dialogue-text" id="dialogueText"></p>
+      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">▼</span>
+    </div>
+
+    <!-- 說完開場白才出現 -->
+    <div class="step-panel" id="topicPanel" style="display:none">
       <div class="topic-chips" id="topicChips">
-        <button type="button" class="topic-chip active" data-topic="love">感情</button>
+        <button type="button" class="topic-chip" data-topic="love">感情</button>
         <button type="button" class="topic-chip" data-topic="career">工作</button>
         <button type="button" class="topic-chip" data-topic="money">金錢</button>
         <button type="button" class="topic-chip" data-topic="decision">抉擇</button>
         <button type="button" class="topic-chip" data-topic="other">其他</button>
       </div>
+    </div>
+
+    <!-- 選好主題才出現 -->
+    <div class="step-panel" id="questionPanel" style="display:none">
       <label class="pay-field tarot-question">
-        <span>想問的具體問題</span>
-        <input class="pay-input" id="questionInput" placeholder="例如:這段關係該不該繼續?" maxlength="60" required />
-        <p class="field-hint" id="questionHint">把心裡真正想問的事寫下來,解讀才會貼近你的狀況</p>
+        <input class="pay-input" id="questionInput" placeholder="把想問的事寫在這裡⋯" maxlength="60" />
+        <p class="field-hint" id="questionHint">至少寫五個字,本喵才聽得清楚</p>
       </label>
-      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">抽三張牌</button>
+      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
     </div>
 
-    <!-- 抽牌動畫:占卜貓發牌,播完才翻開三張牌 -->
-    <div class="draw-stage" id="drawStage" style="display:none">
-      <video id="drawVideo" class="draw-video" playsinline preload="auto" poster="./assets/videos/tarot-draw-poster.jpg">
-        <source src="./assets/videos/tarot-draw.webm" type="video/webm" />
-        <source src="./assets/videos/tarot-draw.mp4" type="video/mp4" />
-      </video>
-      <button type="button" class="draw-skip" id="drawSkip">跳過 ›</button>
-    </div>
-
-    <!-- 三張卡片由 JS 依貓咪表情建立 -->
+    <!-- 三張卡片由 JS 建立 -->
     <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
 
     <div class="card tarot-result" id="resultPanel">
@@ -80,17 +84,6 @@
       </div>
       <div class="tarot-error" id="errorNote" style="display:none"></div>
 
-      <!-- 喵喵占卜師一句一句說話(點一下可跳過該句) -->
-      <div class="cat-dialogue" id="catDialogue" style="display:none">
-        <div class="cat-dialogue-top">
-          <span class="cat-dialogue-avatar" id="dialogueAvatar"></span>
-          <span class="cat-dialogue-name">喵喵占卜師</span>
-        </div>
-        <p class="cat-dialogue-text" id="dialogueText"></p>
-        <span class="cat-dialogue-caret" id="dialogueCaret">▼</span>
-      </div>
-
-      <!-- 全部說完後列出整段解讀 -->
       <div class="reading-summary" id="readingSummary" style="display:none">
         <p class="eyebrow">Summary</p>
         <h3 class="display">喵喵占卜師的完整解讀</h3>
@@ -98,7 +91,7 @@
       </div>
 
       <div class="tarot-actions">
-        <button type="button" class="btn-secondary" id="retryBtn" style="display:none">重新請 AI 解讀</button>
+        <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
         <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
     </div>
@@ -126,44 +119,110 @@ document.addEventListener("DOMContentLoaded", function () {
   var creditsText = document.getElementById("creditsText");
   var lockedPanel = document.getElementById("lockedPanel");
   var tarotFlow = document.getElementById("tarotFlow");
-  var pickPanel = document.getElementById("pickPanel");
+  var catDialogue = document.getElementById("catDialogue");
+  var dialogueAvatar = document.getElementById("dialogueAvatar");
+  var dialogueText = document.getElementById("dialogueText");
+  var dialogueCaret = document.getElementById("dialogueCaret");
+  var topicPanel = document.getElementById("topicPanel");
+  var questionPanel = document.getElementById("questionPanel");
+  var questionInput = document.getElementById("questionInput");
+  var questionHint = document.getElementById("questionHint");
+  var drawBtn = document.getElementById("drawBtn");
+  var drawOverlay = document.getElementById("drawOverlay");
+  var drawVideo = document.getElementById("drawVideo");
   var tarotDeck = document.getElementById("tarotDeck");
   var resultPanel = document.getElementById("resultPanel");
   var cardSummary = document.getElementById("cardSummary");
   var loadingNote = document.getElementById("loadingNote");
   var errorNote = document.getElementById("errorNote");
-  var retryBtn = document.getElementById("retryBtn");
-  var againBtn = document.getElementById("againBtn");
-  var drawBtn = document.getElementById("drawBtn");
-  var questionInput = document.getElementById("questionInput");
-  var questionHint = document.getElementById("questionHint");
-  var drawStage = document.getElementById("drawStage");
-  var drawVideo = document.getElementById("drawVideo");
-  var drawSkip = document.getElementById("drawSkip");
-  var catDialogue = document.getElementById("catDialogue");
-  var dialogueAvatar = document.getElementById("dialogueAvatar");
-  var dialogueText = document.getElementById("dialogueText");
-  var dialogueCaret = document.getElementById("dialogueCaret");
   var readingSummary = document.getElementById("readingSummary");
   var summaryList = document.getElementById("summaryList");
-  var topic = "love";
-  var lastCards = null;
+  var retryBtn = document.getElementById("retryBtn");
+  var againBtn = document.getElementById("againBtn");
+  var soundToggle = document.getElementById("soundToggle");
+  var soundLabel = document.getElementById("soundLabel");
 
+  var topic = null;
+  var lastCards = null;
+  var refunded = false;
+
+  var TOPIC_REPLY = {
+    love: "感情的事啊⋯⋯本喵最懂了。",
+    career: "工作上的煩惱嗎?讓本喵看看。",
+    money: "金錢的來去,牌面看得很清楚。",
+    decision: "在猶豫對不對?那就讓牌推你一把。",
+    other: "嗯,說來聽聽吧。"
+  };
+
+  // ── 對話引擎:一句一句打字,點一下可跳過該句 ─────────────
+  var typeTimer = null;
+
+  function speak(lines, onDone) {
+    clearTimeout(typeTimer);
+    catDialogue.style.display = "block";
+    var li = 0, ci = 0, typing = false;
+
+    function typeLine() {
+      typing = true;
+      dialogueCaret.style.display = "none";
+      dialogueText.textContent = "";
+      ci = 0;
+      var line = lines[li];
+      (function step() {
+        if (ci >= line.length) {
+          typing = false;
+          dialogueCaret.style.display = "";
+          typeTimer = setTimeout(next, 900);
+          return;
+        }
+        dialogueText.textContent = line.slice(0, ++ci);
+        if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
+        typeTimer = setTimeout(step, 42);
+      })();
+    }
+
+    function next() {
+      clearTimeout(typeTimer);
+      li += 1;
+      if (li >= lines.length) {
+        catDialogue.onclick = null;
+        dialogueCaret.style.display = "none";
+        if (onDone) onDone();
+      } else {
+        typeLine();
+      }
+    }
+
+    catDialogue.onclick = function () {
+      if (typing) {
+        clearTimeout(typeTimer);
+        typing = false;
+        dialogueText.textContent = lines[li];
+        dialogueCaret.style.display = "";
+        typeTimer = setTimeout(next, 900);
+      } else {
+        next();
+      }
+    };
+
+    typeLine();
+  }
+
+  function splitSentences(text) {
+    var parts = text.trim().match(/[^。！？!?\n]+[。！？!?]?/g) || [text];
+    return parts.map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  // ── 額度 ──────────────────────────────────────────
   function refreshCredits() {
     var n = Tarot.getCredits();
     creditsText.textContent = "剩餘 " + n + " 次";
-    if (n <= 0) {
-      lockedPanel.style.display = "block";
-      tarotFlow.style.display = "none";
-    } else {
-      lockedPanel.style.display = "none";
-      tarotFlow.style.display = "block";
-    }
+    lockedPanel.style.display = n <= 0 ? "block" : "none";
+    tarotFlow.style.display = n <= 0 ? "none" : "block";
     return n;
   }
 
-  var soundToggle = document.getElementById("soundToggle");
-  var soundLabel = document.getElementById("soundLabel");
+  // ── 音效開關 ───────────────────────────────────────
   function paintSound() {
     var on = Tarot.Sound.isOn();
     soundToggle.classList.toggle("off", !on);
@@ -172,34 +231,111 @@ document.addEventListener("DOMContentLoaded", function () {
     soundToggle.querySelector(".wave").style.display = on ? "" : "none";
     soundToggle.querySelector(".cross").style.display = on ? "none" : "";
   }
-  soundToggle.addEventListener("click", function () {
-    Tarot.Sound.toggle();
-    paintSound();
-  });
-  paintSound();
-  document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
+  soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
+  // ── 第一步:本喵先開口,說完才給選主題 ────────────────────
+  function startIntro() {
+    topicPanel.style.display = "none";
+    questionPanel.style.display = "none";
+    tarotDeck.style.display = "none";
+    tarotDeck.innerHTML = "";
+    resultPanel.classList.remove("show");
+    speak([
+      "歡迎光臨解憂商店,本喵是這裡的占卜師。",
+      "把心裡放不下的事交給我,牌會告訴你答案。",
+      "先說說看,今天想問的是哪方面呢?"
+    ], function () {
+      topicPanel.style.display = "block";
+      topicPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
+  // ── 第二步:選主題,本喵回話,說完才給打字 ─────────────────
   document.querySelectorAll(".topic-chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
       document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
       chip.classList.add("active");
       topic = chip.dataset.topic;
+      questionPanel.style.display = "none";
+      speak([TOPIC_REPLY[topic], "那麼,把你想問的事寫下來給本喵看吧。"], function () {
+        questionPanel.style.display = "block";
+        questionInput.focus();
+        questionPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
     });
   });
 
-  function resetDeck() {
-    tarotDeck.style.display = "none";
-    tarotDeck.innerHTML = "";
-    resultPanel.classList.remove("show");
-    stopSpeaking();
+  // ── 第三步:至少五個字,不夠本喵會提醒 ─────────────────────
+  function questionIsReady() {
+    var q = questionInput.value.trim();
+    if (q.length >= 5) {
+      questionHint.textContent = "至少寫五個字,本喵才聽得清楚";
+      questionHint.classList.remove("is-error");
+      questionInput.classList.remove("is-error");
+      return true;
+    }
+    questionHint.textContent = "你說的有點少,再多寫一點讓本喵聽清楚";
+    questionHint.classList.add("is-error");
+    questionInput.classList.add("is-error");
+    questionInput.focus();
+    return false;
   }
 
-  // 依抽到的牌建立三張卡片:背面是打瞌睡的貓,正面依牌義換一種表情。
+  questionInput.addEventListener("input", function () {
+    if (questionHint.classList.contains("is-error") && questionInput.value.trim().length >= 5) {
+      questionIsReady();
+    }
+  });
+
+  drawBtn.addEventListener("click", function () {
+    if (!questionIsReady()) return;
+    if (refreshCredits() <= 0) return;
+    questionPanel.style.display = "none";
+    topicPanel.style.display = "none";
+    speak(["要在心中默念你的心意喔,本喵要開始了。"], function () {
+      Tarot.useCredit();
+      refreshCredits();
+      playShuffle(revealCards);
+    });
+  });
+
+  // ── 第四步:滿版洗牌動畫,鎖住捲動、看完才淡出 ───────────────
+  function playShuffle(next) {
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      drawVideo.removeEventListener("ended", finish);
+      drawVideo.removeEventListener("error", finish);
+      drawOverlay.classList.add("fading");
+      setTimeout(function () {
+        drawOverlay.style.display = "none";
+        drawOverlay.classList.remove("fading");
+        drawVideo.pause();
+        document.body.classList.remove("no-scroll");
+        next();
+      }, 900);
+    }
+    drawVideo.addEventListener("ended", finish);
+    drawVideo.addEventListener("error", finish);
+
+    document.body.classList.add("no-scroll");
+    drawOverlay.style.display = "block";
+    drawVideo.currentTime = 0;
+    drawVideo.muted = !Tarot.Sound.isOn();
+    var p = drawVideo.play();
+    if (p && p.catch) p.catch(finish);
+    // 保險:影片始終沒有 ended(被瀏覽器擋下等)時不讓客人卡在黑畫面
+    setTimeout(finish, 15000);
+  }
+
+  // ── 第五步:翻牌 ───────────────────────────────────
   function buildDeck(cards) {
     tarotDeck.innerHTML = "";
     cards.forEach(function (c, i) {
       var el = document.createElement("div");
       el.className = "tarot-card pending";
+      el.dataset.i = i;
       el.style.animationDelay = i * 0.09 + "s";
       el.innerHTML =
         '<div class="tarot-card-inner">' +
@@ -214,7 +350,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return tarotDeck.querySelectorAll(".tarot-card");
   }
 
-  // 翻牌瞬間從卡片中心散出的小星星
   function sparkle(el) {
     for (var i = 0; i < 7; i++) {
       var s = document.createElement("span");
@@ -229,25 +364,41 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // ── 喵喵占卜師說話:一句一句打字,打完全部再列成總表 ──────────
-  var typeTimer = null;
+  function revealCards() {
+    var cards = Tarot.drawThree();
+    lastCards = cards;
+    refunded = false;
+    var cardEls = buildDeck(cards);
+    tarotDeck.style.display = "grid";
+    cardSummary.innerHTML = "";
+    resultPanel.classList.add("show");
+    tarotDeck.scrollIntoView({ behavior: "smooth", block: "center" });
 
-  function splitSentences(text) {
-    var parts = text.trim().match(/[^。！？!?\n]+[。！？!?]?/g) || [text];
-    return parts.map(function (s) { return s.trim(); }).filter(Boolean);
+    cards.forEach(function (c, i) {
+      setTimeout(function () {
+        var el = cardEls[i];
+        el.classList.remove("pending");
+        el.classList.add("flipped", "just-flipped");
+        sparkle(el);
+        Tarot.Sound.meow(0, 560 + i * 90);
+        setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
+
+        var li = document.createElement("li");
+        li.innerHTML = "<b>" + c.name + (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
+        cardSummary.appendChild(li);
+      }, 300 + i * 520);
+    });
+
+    setTimeout(function () {
+      Tarot.Sound.purr(2.2);
+      requestReading(cards);
+    }, 300 + cards.length * 520 + 250);
   }
 
+  // ── 第六步:本喵一句一句說解讀,說完列成總表 ────────────────
   function speakReading(text) {
     var lines = splitSentences(text);
-    dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
-    catDialogue.style.display = "block";
-    catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    var li = 0;          // 目前第幾句
-    var ci = 0;          // 目前打到第幾個字
-    var typing = false;
-
-    function showSummary() {
+    speak(lines, function () {
       summaryList.innerHTML = "";
       lines.forEach(function (s) {
         var el = document.createElement("li");
@@ -259,62 +410,10 @@ document.addEventListener("DOMContentLoaded", function () {
       againBtn.style.display = "inline-flex";
       Tarot.Sound.purr(1.6);
       readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    function typeLine() {
-      typing = true;
-      dialogueCaret.style.display = "none";
-      dialogueText.textContent = "";
-      ci = 0;
-      var line = lines[li];
-      (function step() {
-        if (ci >= line.length) {
-          typing = false;
-          dialogueCaret.style.display = "";
-          // 說完停一下再接下一句;客人也可以點一下提早往下
-          typeTimer = setTimeout(nextLine, 900);
-          return;
-        }
-        dialogueText.textContent = line.slice(0, ++ci);
-        if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
-        typeTimer = setTimeout(step, 42);
-      })();
-    }
-
-    function nextLine() {
-      clearTimeout(typeTimer);
-      li += 1;
-      if (li >= lines.length) showSummary();
-      else typeLine();
-    }
-
-    // 點對話框:打字中就直接顯示整句,已打完就跳下一句
-    catDialogue.onclick = function () {
-      if (typing) {
-        clearTimeout(typeTimer);
-        typing = false;
-        dialogueText.textContent = lines[li];
-        dialogueCaret.style.display = "";
-        typeTimer = setTimeout(nextLine, 900);
-      } else {
-        nextLine();
-      }
-    };
-
-    typeLine();
+    });
+    catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function stopSpeaking() {
-    clearTimeout(typeTimer);
-    catDialogue.style.display = "none";
-    catDialogue.onclick = null;
-    readingSummary.style.display = "none";
-    dialogueText.textContent = "";
-    summaryList.innerHTML = "";
-  }
-
-  // 解讀失敗就把這次的額度還給客人(只退一次,之後重試不再重複扣或退)
-  var refunded = false;
   function failReading(msg) {
     loadingNote.style.display = "none";
     errorNote.textContent = msg;
@@ -333,16 +432,17 @@ document.addEventListener("DOMContentLoaded", function () {
     errorNote.style.display = "none";
     retryBtn.style.display = "none";
     againBtn.style.display = "none";
-    stopSpeaking();
+    readingSummary.style.display = "none";
+    catDialogue.style.display = "none";
 
     var controller = "AbortController" in window ? new AbortController() : null;
-    var timer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 25000) : null;
 
     fetch(Tarot.API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        topic: topic,
+        topic: topic || "other",
         question: questionInput.value,
         cards: cards.map(function (c) { return { name: c.name, orientation: c.orientation, keyword: c.keyword }; })
       }),
@@ -352,11 +452,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function (data) {
         if (timer) clearTimeout(timer);
         loadingNote.style.display = "none";
-        if (data && data.ok) {
-          speakReading(data.reading);
-        } else {
-          failReading((data && data.error) || "AI 解讀暫時無法使用,請稍後再試");
-        }
+        if (data && data.ok) speakReading(data.reading);
+        else failReading((data && data.error) || "本喵現在有點累,請稍後再試");
       })
       .catch(function () {
         if (timer) clearTimeout(timer);
@@ -364,120 +461,28 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // 沒寫下想問的事就不讓他抽——牌義要貼合問題才有意義,也避免白白扣一次額度。
-  function questionIsReady() {
-    var q = questionInput.value.trim();
-    if (q.length >= 3) {
-      questionHint.textContent = "把心裡真正想問的事寫下來,解讀才會貼近你的狀況";
-      questionHint.classList.remove("is-error");
-      questionInput.classList.remove("is-error");
-      return true;
-    }
-    questionHint.textContent = q.length
-      ? "再多寫幾個字吧,說得越具體,牌面給你的回應就越準"
-      : "先告訴我你心裡真正想問的是什麼,再開始抽牌";
-    questionHint.classList.add("is-error");
-    questionInput.classList.add("is-error");
-    questionInput.focus();
-    return false;
-  }
-
-  questionInput.addEventListener("input", function () {
-    if (questionHint.classList.contains("is-error") && questionInput.value.trim().length >= 3) {
-      questionIsReady();
-    }
-  });
-
-  // 先播占卜貓發牌的影片,播完(或按跳過)才進入翻牌。
-  // 影片載不動時直接進翻牌,不讓客人卡住。
-  function playDrawIntro(next) {
-    var done = false;
-    function finish() {
-      if (done) return;
-      done = true;
-      drawVideo.removeEventListener("ended", finish);
-      drawVideo.removeEventListener("error", finish);
-      drawStage.style.display = "none";
-      drawVideo.pause();
-      next();
-    }
-    drawSkip.onclick = finish;
-    drawVideo.addEventListener("ended", finish);
-    drawVideo.addEventListener("error", finish);
-
-    pickPanel.style.display = "none";
-    drawStage.style.display = "block";
-    drawStage.scrollIntoView({ behavior: "smooth", block: "center" });
-    drawVideo.currentTime = 0;
-    drawVideo.muted = !Tarot.Sound.isOn();
-    var p = drawVideo.play();
-    if (p && p.catch) p.catch(finish);
-    // 保險:影片若始終沒有 ended 事件(例如被瀏覽器擋下),12 秒後自動往下走
-    setTimeout(finish, 12000);
-  }
-
-  function drawAndReveal() {
-    if (!questionIsReady()) return;
-    if (refreshCredits() <= 0) return;
-    Tarot.useCredit();
-    refreshCredits();
-    drawBtn.disabled = true;
-    playDrawIntro(function () { revealCards(); });
-  }
-
-  function revealCards() {
-    var cards = Tarot.drawThree();
-    lastCards = cards;
-    refunded = false;
-    var cardEls = buildDeck(cards);
-    tarotDeck.style.display = "grid";
-    cardSummary.innerHTML = "";
-    resultPanel.classList.add("show");
-    resultPanel.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    // 洗牌:三張一起晃兩下,再依序翻開
-    var SHUFFLE_MS = 840;
-    cardEls.forEach(function (el) { el.classList.add("shuffling"); });
-    setTimeout(function () {
-      cardEls.forEach(function (el) { el.classList.remove("shuffling"); });
-    }, SHUFFLE_MS);
-
-    cards.forEach(function (c, i) {
-      setTimeout(function () {
-        var el = cardEls[i];
-        el.classList.remove("pending");
-        el.classList.add("flipped", "just-flipped");
-        sparkle(el);
-        Tarot.Sound.meow(0, 560 + i * 90); // 三張音高略高一階,像三隻不同的貓
-        setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
-
-        var li = document.createElement("li");
-        li.innerHTML = "<b>" + c.name + (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
-        cardSummary.appendChild(li);
-      }, SHUFFLE_MS + i * 520);
-    });
-
-    setTimeout(function () {
-      drawBtn.disabled = false;
-      Tarot.Sound.purr(2.2); // 開始解讀時的呼嚕聲
-      requestReading(cards);
-    }, SHUFFLE_MS + cards.length * 520 + 250);
-  }
-
-  drawBtn.addEventListener("click", drawAndReveal);
   retryBtn.addEventListener("click", function () {
     if (lastCards) requestReading(lastCards);
   });
+
   againBtn.addEventListener("click", function () {
-    resetDeck();
-    refreshCredits();
-    pickPanel.style.display = "";
+    clearTimeout(typeTimer);
+    readingSummary.style.display = "none";
+    againBtn.style.display = "none";
+    retryBtn.style.display = "none";
+    errorNote.style.display = "none";
     questionInput.value = "";
-    questionInput.focus();
-    pickPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+    topic = null;
+    document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
+    refreshCredits();
+    startIntro();
+    catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  refreshCredits();
+  dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
+  document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
+  paintSound();
+  if (refreshCredits() > 0) startIntro();
 });
 </script>
 <nav class="bottom-nav">
@@ -499,7 +504,7 @@ document.addEventListener("DOMContentLoaded", function () {
   </a>
   <a class="bottom-nav-item active" href="./tarot.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-    <span>AI塔羅</span>
+    <span>喵喵占卜</span>
   </a>
 </nav>
 </body>
