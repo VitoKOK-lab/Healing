@@ -45,11 +45,14 @@ function suitSignal(names: string[]): string {
     const s = suitOf(n);
     if (s) counts.set(s.prefix, (counts.get(s.prefix) ?? 0) + 1);
   }
-  for (const [prefix, count] of counts) {
-    if (count >= 2) {
-      const s = SUITS.find((x) => x.prefix === prefix)!;
-      return `${count} 張${prefix}(${s.element}元素)——重心明顯落在${s.domain}上`;
-    }
+  // 牌多的時候好幾個牌組都會過 2 張,取最多的那個才有意義
+  let top: [string, number] | null = null;
+  for (const entry of counts) {
+    if (!top || entry[1] > top[1]) top = entry;
+  }
+  if (top && top[1] >= 2) {
+    const s = SUITS.find((x) => x.prefix === top![0])!;
+    return `${top[1]} 張${top[0]}(${s.element}元素)——重心明顯落在${s.domain}上`;
   }
   return "";
 }
@@ -85,7 +88,67 @@ const SPREADS: Record<
     ],
     how:
       "這是在比較兩條路。先看現況,再把 A 與 B 各自的「過程 + 結果」當成一組整體來比," +
-      "說清楚兩邊各自要付出什麼、得到什麼。可以有傾向,但不要替客人做決定。",
+      "說清楚兩邊各自要付出什麼、得到什麼,然後——牌面偏向哪一邊,就明講是哪一邊," +
+      "並指出是哪幾張牌讓你這樣判斷。不准兩邊各打五十大板、用「沒有絕對的好壞」收尾," +
+      "客人是為了拿到一個方向才來的。真的勢均力敵時,就給一個判斷用的標準" +
+      "(「如果你更在意 X,選這邊;更在意 Y,選那邊」),而不是把問題丟回去。",
+  },
+  relation: {
+    name: "關係十字",
+    positions: [
+      { label: "你的心", hint: "客人在這段關係裡的心態與期待" },
+      { label: "對方的心", hint: "對方目前的想法或狀態" },
+      { label: "橫在中間的", hint: "關係裡的障礙或挑戰" },
+      { label: "關係的根", hint: "兩人之間真正的基礎" },
+      { label: "往下走的樣子", hint: "這段關係的發展展望" },
+    ],
+    how:
+      "這是在看兩個人之間的動力。重點是「你的心」與「對方的心」之間的落差——" +
+      "兩人是朝同一個方向,還是各自看著別處?再看橫在中間的東西是外力還是誤解," +
+      "以及底下那個根撐不撐得住。談對方時要留餘地,說的是牌面顯示的狀態,不是替對方下定論。",
+  },
+  celtic: {
+    name: "賽爾特十字",
+    positions: [
+      { label: "現況", hint: "事情此刻的核心" },
+      { label: "橫跨的挑戰", hint: "正面擋著客人的那股力量" },
+      { label: "根源", hint: "潛意識裡的基礎,客人沒說出口的部分" },
+      { label: "剛過去的", hint: "正在退場、但影響還在的事" },
+      { label: "心裡想的", hint: "客人意識到的目標或期待" },
+      { label: "快來的", hint: "短期內就要發生的變化" },
+      { label: "你自己", hint: "客人在這件事裡的姿態" },
+      { label: "周圍的人事", hint: "環境與他人帶來的影響" },
+      { label: "希望與恐懼", hint: "客人既期待又害怕的那件事" },
+      { label: "最後落點", hint: "這條路走下去的終點" },
+    ],
+    how:
+      "十張牌不是十件事,而是同一件事的十個切面。骨架這樣抓:" +
+      "現況與橫跨的挑戰是一組張力,根源與剛過去的解釋它為什麼會變成這樣," +
+      "心裡想的與希望恐懼常常互相矛盾——那個矛盾往往就是整個牌陣的核心," +
+      "你自己與周圍的人事說明力量在誰手上,最後落點是順著現在走下去的結果,不是判決。" +
+      "只挑其中三到四個最關鍵的切面深講,其餘融進脈絡裡帶過,不要十個位置逐一交代。",
+  },
+  tree: {
+    name: "生命之樹",
+    positions: [
+      { label: "王冠", hint: "這件事對客人最高的意義與目的" },
+      { label: "智慧", hint: "推動客人的那股原始衝動" },
+      { label: "理解", hint: "客人對它的認識與既有框架" },
+      { label: "慈悲", hint: "客人願意付出、想擴張的部分" },
+      { label: "嚴厲", hint: "客人需要節制或切斷的部分" },
+      { label: "美", hint: "整件事的核心平衡點" },
+      { label: "勝利", hint: "客人的熱情與人際能量" },
+      { label: "榮耀", hint: "客人的理性與溝通方式" },
+      { label: "基礎", hint: "潛意識與日常習慣" },
+      { label: "王國", hint: "落實到現實生活裡的樣子" },
+      { label: "總結", hint: "整棵樹合起來要告訴客人的事" },
+    ],
+    how:
+      "生命之樹是由上往下的:從王冠的目的,一路落到王國的現實生活。" +
+      "左柱(理解、嚴厲、榮耀)是收束與界限,右柱(智慧、慈悲、勝利)是擴張與給予," +
+      "中柱(王冠、美、基礎、王國)是這兩股力量最後平衡出來的樣子。" +
+      "看的重點是:哪一柱明顯偏重?偏重的地方就是客人失衡的地方。" +
+      "最後用總結那張把整棵樹收成一句話。這是自我探索,不是預測,語氣要像陪人照鏡子。",
   },
 };
 
@@ -107,6 +170,19 @@ function numberTrend(nums: number[]): string {
   if (falling) return `牌號 ${seq}(遞減,能量往內收斂、回頭整理)`;
   return `牌號 ${seq}(起伏,過程中有轉折)`;
 }
+
+// 每次隨機挑一個切入角度。沒有這個,模型會每一次都用同一套起承轉合
+// (招呼→喝茶→講牌→叫人早點睡),讀起來像罐頭。
+const ANGLES = [
+  "這一次:直接從牌陣裡最強烈的那張牌切進去,第一句就講出它在說什麼,不要寒暄。",
+  "這一次:先點出客人自己可能還沒察覺的矛盾,再用牌去解釋這個矛盾從哪來。",
+  "這一次:用一個具體的生活畫面開場(例如某個時刻、某個念頭),再把牌接上去。",
+  "這一次:先給結論,再回頭用牌解釋你為什麼這樣說。",
+  "這一次:從客人問題裡的某個字詞切入,問他是不是其實在意的是別的事。",
+  "這一次:像在覆述你看到的東西那樣開場——你看到了什麼樣的能量在流動。",
+  "這一次:先講這副牌裡最溫柔的部分,再帶到需要面對的地方。",
+  "這一次:開門見山地說出這件事的核心是什麼,整段圍繞這一句展開。",
+];
 
 const TOPIC_LABELS: Record<string, string> = {
   love: "感情",
@@ -185,6 +261,27 @@ function unwrapCardNameHighlights(text: string, cardNames: string[]): string {
   });
 }
 
+// 對誰都成立、等於沒說的句子,以及一直重複的罐頭開場/收尾。
+// 抓到就重生一次——這些話出現代表這次解讀在打太極,客人看完不知道要幹嘛。
+const FILLER = [
+  /相信(自己|直覺|answer|答案)/,
+  /答案(就)?在你(的)?心(裡|中)/,
+  /順著(你的)?直覺/,
+  /好好(愛|疼)(自己|惜自己)/,
+  /保持(開放|平常)的?心/,
+  /沒有(絕對的?)?(好|對)(與|和|跟)?(壞|錯)/,
+  /閉上(雙)?眼(睛)?,?\s*想像/,
+  /喝杯?(熱)?茶|泡(了)?(一)?杯/,
+  /歡迎(來到|光臨)解憂商店/,
+  /(今晚|今天晚上)(先)?(別|不要)/,
+  /好好睡(一)?(覺|個好覺)/,
+  /明天(早上)?(再|醒來)/,
+];
+
+function isConcrete(text: string): boolean {
+  return !FILLER.some((re) => re.test(text));
+}
+
 // 正常解讀幾乎全是中文;推理外洩的內容充滿數字、括號與英文檢查字樣。
 function looksLikeReading(text: string): boolean {
   if (text.length < 60) return false;
@@ -246,8 +343,8 @@ export async function POST(req: NextRequest) {
     typeof scenario === "string" ? scenario.trim().slice(0, 40) : "";
 
   // 二擇一時把「選 A / 選 B」換成客人自己講的兩條路,解讀才不會通篇 A 來 B 去。
-  const optA = typeof optionA === "string" ? optionA.trim().slice(0, 20) : "";
-  const optB = typeof optionB === "string" ? optionB.trim().slice(0, 20) : "";
+  const optA = typeof optionA === "string" ? optionA.trim().slice(0, 60) : "";
+  const optB = typeof optionB === "string" ? optionB.trim().slice(0, 60) : "";
   const named = Boolean(optA && optB);
   // 連同「選 A」後面那個空格一起吃掉,不然會變成「選「⋯」 的過程」
   const label = (raw: string) =>
@@ -264,6 +361,7 @@ export async function POST(req: NextRequest) {
     })
     .join("\n");
 
+  const angleIndex = Math.floor(Math.random() * ANGLES.length);
   const total = drawn.length;
   const reversed = drawn.filter((c) => c.orientation === "reversed").length;
   const majors = drawn.filter((c) => MAJOR_NUMBERS[c.name] !== undefined).length;
@@ -278,7 +376,10 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
     .join("\n");
 
-  const prompt = `你是「解憂商店」的塔羅占卜師,語氣溫暖、細膩、給人安定感,像在跟熟識的朋友聊天,絕不使用恐嚇或宿命式的斷言。
+  const prompt = `你是「解憂商店」的塔羅占卜師。語氣溫暖、細膩、給人安定感,但溫暖不等於含糊——
+你敢說實話,也敢下判斷,只是說得讓人接得住。不恐嚇、不用宿命論嚇人,但也不和稀泥。
+真正的占卜師每次開口都不一樣,因為每次的牌與每個人的處境都不一樣。
+${ANGLES[angleIndex]}
 
 【客人想問的】
 主題:${topicLabel}${trimmedScenario ? `\n處境:${trimmedScenario}` : ""}${trimmedQuestion ? `\n問題:${trimmedQuestion}` : ""}
@@ -307,10 +408,31 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 可以自然提到牌名(例如「逆位的教皇提醒著」),也可以提到位置的語意(例如「往前看的那一段」),
 但不可以用「第幾張」來組織段落。
 
-最後給一句具體、溫柔可執行的小建議作結。
+【解讀必須落地——這是客人付錢的理由】
+客人看完如果還是不知道該怎麼辦,這次占卜就是失敗的。所以:
+1. 不要只描述心情與能量。每講一件事,都要能回答「所以呢?」
+2. 敢下判斷。牌面指向哪裡就說哪裡,不要每個結論都加上「不過也可能⋯」來自保。
+3. 結尾必須給一到兩件【明天就能做、而且做完看得出來有沒有做】的事。
+   ✓「明天找主管把你想要的那個職位直接講出來,不要再等他問你」
+   ✓「這週把兩份工作的薪水、通勤時間、加班時數寫成一張表,攤開來比」
+   ✓「下次他又這樣說的時候,當場告訴他你不舒服,不要回家才生氣」
+   ✗「閉上眼睛想像自己在哪裡比較快樂」——想像不是行動
+   ✗「順著直覺去感受」「相信答案在你心裡」「好好愛自己」「保持開放的心」
+     ——這些話對誰都成立,等於什麼都沒說
+4. 那件事要是從這副牌長出來的,不是通用的心靈雞湯。
+   說得出「因為牌面顯示 X,所以你該做 Y」的因果關係。
+
+【每次都要不一樣——絕對禁止的罐頭寫法】
+以下這些是上一版一直重複的毛病,一個都不准出現:
+✗ 開場寒暄:「歡迎來到解憂商店」「先坐下來喝杯熱茶」「為你泡了一杯茶」
+  ——不要招呼、不要奉茶、不要描述客人的表情或黑眼圈,直接進入正題。
+✗ 結尾套路:「今晚先別想」「好好睡一覺」「明天早上再決定」「先泡個澡」
+  ——不要用睡覺、洗澡、明天再說來收尾。
+✗ 任何固定的起手式或收尾句型。結尾要從這副牌自己長出來,
+  可以是一句提醒、一個問句、一個畫面、一句斷言,但不可以每次都同一種。
 
 輸出規則(務必遵守):
-- 繁體中文,單一段落散文,${total === 1 ? "大約四到五個句子" : total >= 5 ? "大約七到九個句子" : "大約五到七個句子"}
+- 繁體中文,單一段落散文,${total === 1 ? "大約四到五個句子" : total >= 8 ? "大約十到十四個句子" : total >= 5 ? "大約七到九個句子" : "大約五到七個句子"}
 - 不要出現「第一張/第二張/第三張」這種逐張報牌的說法,要讀成一個整體
 - 挑出 3～5 個最關鍵的詞或短句,各用【】框起來(例如:心裡其實已經有了【自己的答案】),
   讓讀者一眼看到重點;每個【】內以 2～8 個字為宜,不要整句都框起來
@@ -321,11 +443,22 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 
   try {
     let reading = await askGemini(prompt);
-    // 思考型模型偶爾會把自我檢查(逐字編號、英文檢查清單)當成答案吐出來,
-    // 或因思考吃光額度而截斷。攔下來重試一次,通常第二次就正常。
-    if (!looksLikeReading(reading)) {
-      console.warn("Gemini returned non-prose output, retrying once:", reading.slice(0, 120));
-      reading = await askGemini(prompt);
+    // 兩種要重來的情況:
+    // (a) 思考型模型把自我檢查(逐字編號、英文檢查清單)當答案吐出來,或被截斷;
+    // (b) 內容是罐頭廢話——溫暖但什麼都沒說,客人看完還是不知道要幹嘛。
+    if (!looksLikeReading(reading) || !isConcrete(reading)) {
+      console.warn(
+        `retrying: prose=${looksLikeReading(reading)} concrete=${isConcrete(reading)}`,
+        reading.slice(0, 120)
+      );
+      // 重試時把罐頭寫法再點名一次,並換一個切入角度
+      const retryPrompt =
+        prompt.replace(ANGLES[angleIndex], ANGLES[(angleIndex + 3) % ANGLES.length]) +
+        "\n\n(重要:上一次的產出是空泛的場面話。這次務必給出從牌面長出來的具體判斷與可執行的行動," +
+        "不要出現「相信自己」「答案在你心裡」「沒有絕對的好壞」這類對誰都成立的句子。)";
+      const second = await askGemini(retryPrompt);
+      // 第二次若仍不合格,取兩者中比較好的那個,而不是直接失敗
+      if (looksLikeReading(second)) reading = second;
     }
 
     if (!looksLikeReading(reading)) {

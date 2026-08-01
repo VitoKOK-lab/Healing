@@ -307,6 +307,55 @@
         { label: "選 A 的結果", hint: "A 最後會走到哪裡" },
         { label: "選 B 的結果", hint: "B 最後會走到哪裡" }
       ]
+    },
+    // 以下三個牌陣的牌不是排成一列,而是有固定的圖形。
+    // area 對應 CSS 的 grid-template-areas,位置本身就是意義的一部分。
+    relation: {
+      id: "relation",
+      name: "關係十字",
+      layout: "cross",
+      positions: [
+        { label: "你的心", hint: "你在這段關係裡的心態與期待", area: "me" },
+        { label: "對方的心", hint: "對方目前的想法或狀態", area: "you" },
+        { label: "橫在中間的", hint: "關係裡的障礙或挑戰", area: "block" },
+        { label: "關係的根", hint: "你們之間真正的基礎", area: "base" },
+        { label: "往下走的樣子", hint: "這段關係的發展展望", area: "hope" }
+      ]
+    },
+    celtic: {
+      id: "celtic",
+      name: "賽爾特十字",
+      layout: "celtic",
+      positions: [
+        { label: "現況", hint: "事情此刻的核心", area: "p1" },
+        { label: "橫跨的挑戰", hint: "正面擋著你的那股力量", area: "p2" },
+        { label: "根源", hint: "潛意識裡的基礎,你沒說出口的部分", area: "p3" },
+        { label: "剛過去的", hint: "正在退場、但影響還在的事", area: "p4" },
+        { label: "心裡想的", hint: "你意識到的目標或期待", area: "p5" },
+        { label: "快來的", hint: "短期內就要發生的變化", area: "p6" },
+        { label: "你自己", hint: "你在這件事裡的姿態", area: "p7" },
+        { label: "周圍的人事", hint: "環境與他人帶來的影響", area: "p8" },
+        { label: "希望與恐懼", hint: "你既期待又害怕的那件事", area: "p9" },
+        { label: "最後落點", hint: "這條路走下去的終點", area: "p10" }
+      ]
+    },
+    tree: {
+      id: "tree",
+      name: "生命之樹",
+      layout: "tree",
+      positions: [
+        { label: "王冠", hint: "這件事對你最高的意義與目的", area: "t1" },
+        { label: "智慧", hint: "推動你的那股原始衝動", area: "t2" },
+        { label: "理解", hint: "你對它的認識與既有框架", area: "t3" },
+        { label: "慈悲", hint: "你願意付出、想擴張的部分", area: "t4" },
+        { label: "嚴厲", hint: "你需要節制或切斷的部分", area: "t5" },
+        { label: "美", hint: "整件事的核心平衡點", area: "t6" },
+        { label: "勝利", hint: "你的熱情與人際能量", area: "t7" },
+        { label: "榮耀", hint: "你的理性與溝通方式", area: "t8" },
+        { label: "基礎", hint: "潛意識與日常習慣", area: "t9" },
+        { label: "王國", hint: "落實到現實生活裡的樣子", area: "t10" },
+        { label: "總結", hint: "整棵樹合起來要告訴你的事", area: "t11" }
+      ]
     }
   };
 
@@ -315,12 +364,15 @@
     love: [
       { id: "love-single", label: "想看看有沒有新的緣分", spread: "flow" },
       { id: "love-now", label: "這段關係接下來會怎麼走", spread: "flow" },
+      { id: "love-two", label: "想知道對方怎麼想", spread: "relation" },
+      { id: "love-trouble", label: "我們之間出了問題", spread: "relation" },
       { id: "love-stay", label: "要不要繼續走下去", spread: "choice" }
     ],
     career: [
       { id: "career-switch", label: "現在這份工作該不該換", spread: "choice" },
       { id: "career-new", label: "新的計畫值不值得投入", spread: "flow" },
-      { id: "career-stuck", label: "職場上卡住了", spread: "flow" }
+      { id: "career-stuck", label: "職場上卡住了", spread: "flow" },
+      { id: "career-rise", label: "想升遷或突破,要全面看一次", spread: "celtic" }
     ],
     money: [
       { id: "money-trend", label: "最近的財務走向", spread: "flow" },
@@ -329,11 +381,14 @@
     ],
     decision: [
       { id: "decision-two", label: "有兩個選項在猶豫", spread: "choice" },
-      { id: "decision-flow", label: "想知道事情會怎麼發展", spread: "flow" }
+      { id: "decision-flow", label: "想知道事情會怎麼發展", spread: "flow" },
+      { id: "decision-deep", label: "這件事很重要,要看得徹底一點", spread: "celtic" }
     ],
     other: [
       { id: "other-today", label: "給我今天的一句話", spread: "single" },
-      { id: "other-flow", label: "看看最近的整體走向", spread: "flow" }
+      { id: "other-flow", label: "看看最近的整體走向", spread: "flow" },
+      { id: "other-people", label: "跟某個人之間的關係", spread: "relation" },
+      { id: "other-self", label: "想好好認識自己一次", spread: "tree" }
     ]
   };
 
@@ -396,6 +451,7 @@
         mood: moodFor(c.n),
         position: labelWithOptions(pos.label, options),
         positionHint: pos.hint,
+        area: pos.area || "",
         orientation: upright ? "upright" : "reversed",
         meaning: upright ? c.upright : c.reversed
       };
