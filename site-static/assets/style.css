@@ -774,7 +774,10 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   border: 1px solid rgba(146,110,214,.32); border-radius: 6px;
   padding: 1px 6px; margin: 0 2px; white-space: nowrap;
 }
-body.tarot-page .reading-summary .card-ref { color: #cbb4ff; border-color: rgba(203,180,255,.4); background: rgba(203,180,255,.14); }
+/* 塔羅頁整頁都是深紫底(對話框也是),標籤必須用亮色才看得見 */
+body.tarot-page .card-ref {
+  color: #e2d2ff; border-color: rgba(214,190,255,.55); background: rgba(150,115,230,.3);
+}
 /* 對話不會自動前進,所以這個提示要看得見——它是唯一往下走的方法 */
 .cat-dialogue-caret {
   position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: var(--gold);
