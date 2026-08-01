@@ -463,6 +463,14 @@ body.tarot-page .card {
 }
 body.tarot-page .card p, body.tarot-page .reading-list li { color: rgba(246,238,255,.8); }
 body.tarot-page .reading-list b, body.tarot-page .tarot-reading-text { color: #fff; }
+body.tarot-page .cat-dialogue {
+  background: linear-gradient(165deg, rgba(52,26,74,.9), rgba(36,16,56,.92));
+  border-color: rgba(214,178,104,.45);
+}
+body.tarot-page .cat-dialogue-text { color: #fdf6ff; }
+body.tarot-page .cat-dialogue-name { color: #ffd08a; }
+body.tarot-page .reading-summary { border-top-color: rgba(214,178,104,.35); }
+body.tarot-page .reading-summary li { color: rgba(246,238,255,.8); }
 body.tarot-page .pay-field span { color: rgba(246,238,255,.7); }
 body.tarot-page .field-hint { color: rgba(246,238,255,.55); }
 body.tarot-page .field-hint.is-error { color: #ff9ab4; }
@@ -527,7 +535,45 @@ body.tarot-page .bottom-nav-item:active { background: rgba(255,255,255,.1); }
 .tarot-result .reading-list li { font-size: 13px; color: var(--inkdim); display: flex; gap: 8px; }
 .tarot-result .reading-list b { font-family: var(--display); font-weight: 400; color: var(--ink); flex-shrink: 0; }
 .tarot-reading-text { margin-top: 20px; font-size: 14px; line-height: 2; color: var(--ink); }
-.tarot-loading { margin-top: 20px; font-size: 13px; color: var(--inkdim); text-align: center; }
+.tarot-loading {
+  margin-top: 20px; font-size: 13px; color: var(--inkdim);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.thinking-cat { width: 30px; flex-shrink: 0; display: block; animation: catThink 1.8s ease-in-out infinite; }
+.thinking-cat .cat-art { width: 100%; color: var(--lavender); }
+@keyframes catThink { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.tarot-loading .dots i { font-style: normal; animation: dotBlink 1.2s infinite; }
+.tarot-loading .dots i:nth-child(2) { animation-delay: .2s; }
+.tarot-loading .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes dotBlink { 0%,60%,100% { opacity: .25; } 30% { opacity: 1; } }
+
+/* 喵喵占卜師對話框:像遊戲一樣一句一句說 */
+.cat-dialogue {
+  position: relative; margin-top: 22px; padding: 18px 20px 26px; border-radius: 18px; cursor: pointer;
+  background: linear-gradient(165deg, rgba(255,255,255,.96), rgba(250,245,255,.96));
+  border: 1px solid rgba(196,160,86,.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 14px 32px -12px rgba(58,45,82,.4);
+  min-height: 132px;
+}
+.cat-dialogue-top { display: flex; align-items: center; gap: 9px; }
+.cat-dialogue-avatar { width: 34px; flex-shrink: 0; display: block; }
+.cat-dialogue-avatar .cat-art { width: 100%; color: #b79ae4; }
+.cat-dialogue-name { font-family: var(--display); font-size: 13px; color: var(--plum); }
+.cat-dialogue-text {
+  margin-top: 12px; font-size: 15px; line-height: 1.95; color: var(--ink); min-height: 60px;
+}
+.cat-dialogue-caret {
+  position: absolute; right: 16px; bottom: 12px; font-size: 11px; color: var(--gold);
+  animation: caretBob .9s ease-in-out infinite;
+}
+@keyframes caretBob { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(3px); opacity: 1; } }
+
+/* 說完後的完整解讀總表 */
+.reading-summary { margin-top: 22px; padding-top: 20px; border-top: 1px dashed rgba(196,160,86,.4); }
+.reading-summary h3 { font-size: 16px; font-weight: 400; margin-top: 5px; }
+.reading-summary ol { margin: 14px 0 0; padding-left: 20px; display: grid; gap: 9px; }
+.reading-summary li { font-size: 13.5px; line-height: 1.9; color: var(--inkdim); }
+.reading-summary li::marker { color: var(--gold); font-family: var(--display); }
 .tarot-error { margin-top: 20px; font-size: 13px; color: #c2483a; text-align: center; }
 .tarot-actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .tarot-actions .btn-secondary, .tarot-actions .btn-primary { margin-top: 0; }
