@@ -603,6 +603,9 @@
     // 站台同時部署在 Vercel(與 API 同網域)與 GitHub Pages(需跨網域呼叫)
     API_URL: /\.vercel\.app$/.test(location.hostname)
       ? "/api/tarot/reading"
-      : "https://healingasmr.vercel.app/api/tarot/reading"
+      : "https://healingasmr.vercel.app/api/tarot/reading",
+    CLARIFY_URL: /\.vercel\.app$/.test(location.hostname)
+      ? "/api/tarot/clarify"
+      : "https://healingasmr.vercel.app/api/tarot/clarify"
   };
 })(window);
