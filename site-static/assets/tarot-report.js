@@ -5,10 +5,14 @@
 (function (global) {
   var W = 1080;                    // LINE 上看起來剛好的寬度
   var PAD = 64;
-  var INK = "#f6eeff";
-  var DIM = "rgba(246,238,255,.62)";
-  var GOLD = "#ffcf87";
-  var CARD_REF = "#cbb4ff";
+  // 報告書是拿來「讀」的,不是拿來營造氣氛的。整張深紫看久了眼睛很累,
+  // 所以改成白底深字;牌面本身已經夠華麗,底色安靜一點反而好看。
+  var INK = "#33244a";             // 主文
+  var DIM = "#7d6f92";             // 次要資訊
+  var GOLD = "#a9741c";            // 重點字(白底上金色要壓深才看得清楚)
+  var CARD_REF = "#6b4bb0";        // 牌名出處
+  var LINE = "#e6ddf2";            // 分隔線
+  var SITE = "vitokok-lab.github.io/Healing";
 
   function font(size, weight, display) {
     var family = display
@@ -124,28 +128,25 @@
           + 46 + qLines.length * 48 + 40           // 你問的
           + rows * rowH + 30                       // 牌面
           + 46 + rLines.length * 52 + 44           // 解讀
-          + 84;                                    // 頁尾
+          + 26 + 108 + 40 + 52;                    // 頁尾:邀請框 + 一行小字 + 底部留白
 
         var cv = document.createElement("canvas");
         cv.width = W; cv.height = H;
         var ctx = cv.getContext("2d");
 
-        // 底:深紫漸層 + 幾顆星星
-        var g = ctx.createLinearGradient(0, 0, W, H);
-        g.addColorStop(0, "#2a1250");
-        g.addColorStop(0.55, "#1d0d3c");
-        g.addColorStop(1, "#2d1550");
-        ctx.fillStyle = g;
+        // 底:白色。上緣留一條淡紫,認得出是解憂商店但不壓眼睛。
+        ctx.fillStyle = "#fffdfa";
         ctx.fillRect(0, 0, W, H);
-        for (var s = 0; s < 90; s++) {
-          var sx = Math.random() * W, sy = Math.random() * H;
-          ctx.globalAlpha = 0.12 + Math.random() * 0.3;
-          ctx.fillStyle = "#fff";
-          ctx.beginPath();
-          ctx.arc(sx, sy, Math.random() * 1.8 + 0.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
+        var band = ctx.createLinearGradient(0, 0, W, 0);
+        band.addColorStop(0, "#8f6fc9");
+        band.addColorStop(1, "#c9a3e8");
+        ctx.fillStyle = band;
+        ctx.fillRect(0, 0, W, 10);
+        var wash = ctx.createLinearGradient(0, 10, 0, 220);
+        wash.addColorStop(0, "rgba(167,139,219,.13)");
+        wash.addColorStop(1, "rgba(167,139,219,0)");
+        ctx.fillStyle = wash;
+        ctx.fillRect(0, 10, W, 210);
 
         var y = PAD + 62;
         ctx.textBaseline = "alphabetic";
@@ -159,7 +160,7 @@
         ctx.fillText("解憂商店 · " + today() + (opts.spreadName ? " · " + opts.spreadName : ""), PAD, y);
 
         y += 34;
-        ctx.strokeStyle = "rgba(214,178,104,.45)";
+        ctx.strokeStyle = LINE;
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
 
@@ -197,12 +198,12 @@
               ctx.drawImage(imgs[i], x + (cw - dw) / 2, cy + (chH - dh) / 2, dw, dh);
             }
           } else {
-            ctx.fillStyle = "#3b2568";
+            ctx.fillStyle = "#efe8f8";
             ctx.fillRect(x, cy, cw, chH);
           }
           ctx.restore();
           roundRect(ctx, x, cy, cw, chH, 12);
-          ctx.strokeStyle = "rgba(214,178,104,.5)";
+          ctx.strokeStyle = "rgba(143,111,201,.45)";
           ctx.lineWidth = 2;
           ctx.stroke();
 
@@ -222,16 +223,30 @@
         y += 44;
         y = drawLines(ctx, rLines, PAD, y, 34, 52);
 
-        y += 30;
-        ctx.strokeStyle = "rgba(214,178,104,.3)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
-        y += 36;
-        ctx.font = font(20);
+        // 頁尾:收到圖的人要知道去哪裡也算一次,所以連結要大要清楚
+        y += 26;
+        roundRect(ctx, PAD, y, W - PAD * 2, 108, 16);
+        ctx.fillStyle = "#f4eefc";
+        ctx.fill();
+        ctx.strokeStyle = "#ded0f0";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.textAlign = "center";
+        ctx.font = font(22);
+        ctx.fillStyle = DIM;
+        ctx.fillText("也想讓本喵幫你看一次嗎?", W / 2, y + 40);
+        ctx.font = font(26, 500);
+        ctx.fillStyle = "#6c4fa8";
+        ctx.fillText(SITE, W / 2, y + 78);
+        ctx.textAlign = "left";
+
+        y += 108 + 40;
+        ctx.font = font(19);
         ctx.fillStyle = DIM;
         ctx.fillText("Jessica 解憂商店 · 喵喵占卜", PAD, y);
         ctx.textAlign = "right";
-        ctx.fillText("vitokok-lab.github.io/Healing", W - PAD, y);
+        ctx.fillText("僅供參考,重要決定請自己做主", W - PAD, y);
         ctx.textAlign = "left";
 
         return cv;
@@ -248,7 +263,13 @@
         var file = new File([blob], name, { type: "image/png" });
 
         if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-          navigator.share({ files: [file], title: "喵喵占卜報告書" })
+          // 圖片裡的網址是不能點的,所以連結一定要放在文字裡一起送出去——
+          // LINE 會把訊息中的網址自動變成可點的連結,收到的人才回得來。
+          navigator.share({
+            files: [file],
+            title: "喵喵占卜報告書",
+            text: "本喵幫我算了一次,分享給你看~\n也想算算看嗎? https://" + SITE + "/tarot.html"
+          })
             .then(function () { onState && onState("shared"); resolve(true); })
             .catch(function () { onState && onState("cancel"); resolve(false); });
           return;
