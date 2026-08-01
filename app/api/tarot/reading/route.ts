@@ -213,12 +213,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { topic, spread, scenario, question, cards } = (body ?? {}) as {
+  const { topic, spread, scenario, question, cards, optionA, optionB } = (body ??
+    {}) as {
     topic?: unknown;
     spread?: unknown;
     scenario?: unknown;
     question?: unknown;
     cards?: unknown;
+    optionA?: unknown;
+    optionB?: unknown;
   };
 
   const layout =
@@ -242,6 +245,14 @@ export async function POST(req: NextRequest) {
   const trimmedScenario =
     typeof scenario === "string" ? scenario.trim().slice(0, 40) : "";
 
+  // 二擇一時把「選 A / 選 B」換成客人自己講的兩條路,解讀才不會通篇 A 來 B 去。
+  const optA = typeof optionA === "string" ? optionA.trim().slice(0, 20) : "";
+  const optB = typeof optionB === "string" ? optionB.trim().slice(0, 20) : "";
+  const named = Boolean(optA && optB);
+  // 連同「選 A」後面那個空格一起吃掉,不然會變成「選「⋯」 的過程」
+  const label = (raw: string) =>
+    named ? raw.replace("選 A ", `選「${optA}」`).replace("選 B ", `選「${optB}」`) : raw;
+
   const drawn = cards as DrawnCard[];
   const cardLines = drawn
     .map((c, i) => {
@@ -249,7 +260,7 @@ export async function POST(req: NextRequest) {
       const num = MAJOR_NUMBERS[c.name];
       const numText = num === undefined ? "" : `${num} 號,`;
       const pos = layout.positions[i];
-      return `${pos.label}(${pos.hint}):「${c.name}」${ori}(${numText}關鍵字:${c.keyword})`;
+      return `${label(pos.label)}(${label(pos.hint)}):「${c.name}」${ori}(${numText}關鍵字:${c.keyword})`;
     })
     .join("\n");
 
@@ -279,7 +290,7 @@ ${cardLines}
 ${signals}
 
 【解牌方法——最重要】
-${layout.how}
+${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${optA}」,B 是「${optB}」。全文都要直接講這兩個名字,絕對不要寫成「選項 A」「A 這條路」這種代號。` : ""}
 不論幾張牌,都要當成「一件事的不同面向」,不是各自獨立的牌義,請務必:
 1. 先問自己:這些牌合起來在說什麼?它們是互相呼應(彼此強化)、互相矛盾(內在拉扯),
    還是一因一果、一個問題配一個解方?
