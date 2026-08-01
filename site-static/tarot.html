@@ -154,6 +154,39 @@ document.addEventListener("DOMContentLoaded", function () {
     other: "嗯,說來聽聽吧。"
   };
 
+  // ── 重點標記:本喵用【】框住的字會放大變色 ─────────────────
+  function toSegs(line) {
+    var segs = [], cur = "", hi = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === "【" || ch === "】") {
+        if (cur) segs.push({ t: cur, hi: hi });
+        cur = "";
+        hi = ch === "【";
+        continue;
+      }
+      cur += ch;
+    }
+    if (cur) segs.push({ t: cur, hi: hi });
+    return segs;
+  }
+
+  function segsLength(segs) {
+    return segs.reduce(function (n, s) { return n + s.t.length; }, 0);
+  }
+
+  // 只顯示前 n 個字(打字用);框起來的部分包成 <em class="hi">
+  function renderSegs(segs, n) {
+    var out = "", left = n;
+    for (var i = 0; i < segs.length && left > 0; i++) {
+      var part = segs[i].t.slice(0, left);
+      left -= part.length;
+      var esc = part.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      out += segs[i].hi ? '<em class="hi">' + esc + "</em>" : esc;
+    }
+    return out;
+  }
+
   // ── 對話引擎:一句一句打字,點一下可跳過該句 ─────────────
   var typeTimer = null;
 
@@ -165,17 +198,18 @@ document.addEventListener("DOMContentLoaded", function () {
     function typeLine() {
       typing = true;
       dialogueCaret.style.display = "none";
-      dialogueText.textContent = "";
+      dialogueText.innerHTML = "";
       ci = 0;
-      var line = lines[li];
+      var segs = toSegs(lines[li]);
+      var total = segsLength(segs);
       (function step() {
-        if (ci >= line.length) {
+        if (ci >= total) {
           typing = false;
           dialogueCaret.style.display = "";
           typeTimer = setTimeout(next, 900);
           return;
         }
-        dialogueText.textContent = line.slice(0, ++ci);
+        dialogueText.innerHTML = renderSegs(segs, ++ci);
         if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
         typeTimer = setTimeout(step, 42);
       })();
@@ -197,7 +231,8 @@ document.addEventListener("DOMContentLoaded", function () {
       if (typing) {
         clearTimeout(typeTimer);
         typing = false;
-        dialogueText.textContent = lines[li];
+        var segs = toSegs(lines[li]);
+        dialogueText.innerHTML = renderSegs(segs, segsLength(segs));
         dialogueCaret.style.display = "";
         typeTimer = setTimeout(next, 900);
       } else {
@@ -214,12 +249,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ── 額度 ──────────────────────────────────────────
-  function refreshCredits() {
-    var n = Tarot.getCredits();
-    creditsText.textContent = "剩餘 " + n + " 次";
-    lockedPanel.style.display = n <= 0 ? "block" : "none";
-    tarotFlow.style.display = n <= 0 ? "none" : "block";
-    return n;
+  // 只更新數字。扣款後絕不能連帶把畫面收掉——否則用掉最後一次的人
+  // 會在動畫播完後看不到自己的牌,只看到「次數已用完」。
+  function updateCredits() {
+    creditsText.textContent = "剩餘 " + Tarot.getCredits() + " 次";
+  }
+
+  // 擋在「要開始新的一輪」之前:沒次數就直接顯示購買頁,
+  // 不讓客人白花力氣選主題、打字、看完動畫才被擋下來。
+  function canStartRound() {
+    var ok = Tarot.getCredits() > 0;
+    updateCredits();
+    lockedPanel.style.display = ok ? "none" : "block";
+    tarotFlow.style.display = ok ? "block" : "none";
+    return ok;
   }
 
   // ── 音效開關 ───────────────────────────────────────
@@ -289,12 +332,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   drawBtn.addEventListener("click", function () {
     if (!questionIsReady()) return;
-    if (refreshCredits() <= 0) return;
+    if (!canStartRound()) return;
     questionPanel.style.display = "none";
     topicPanel.style.display = "none";
     speak(["要在心中默念你的心意喔,本喵要開始了。"], function () {
       Tarot.useCredit();
-      refreshCredits();
+      updateCredits();
       playShuffle(revealCards);
     });
   });
@@ -416,7 +459,8 @@ document.addEventListener("DOMContentLoaded", function () {
       summaryList.innerHTML = "";
       lines.forEach(function (s) {
         var el = document.createElement("li");
-        el.textContent = s;
+        var segs = toSegs(s);
+        el.innerHTML = renderSegs(segs, segsLength(segs));
         summaryList.appendChild(el);
       });
       catDialogue.style.display = "none";
@@ -437,7 +481,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!refunded) {
       refunded = true;
       Tarot.addCredits(1);
-      refreshCredits();
+      updateCredits();
     }
   }
 
@@ -488,7 +532,7 @@ document.addEventListener("DOMContentLoaded", function () {
     questionInput.value = "";
     topic = null;
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
-    refreshCredits();
+    if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
     startIntro();
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   });
@@ -496,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function () {
   dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
   document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
   paintSound();
-  if (refreshCredits() > 0) startIntro();
+  if (canStartRound()) startIntro();
 });
 </script>
 <nav class="bottom-nav">
