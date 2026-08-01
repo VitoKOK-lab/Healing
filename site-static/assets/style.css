@@ -479,6 +479,7 @@ body.tarot-page .cat-dialogue {
   border-color: rgba(214,178,104,.45);
 }
 body.tarot-page .cat-dialogue-text { color: #fdf6ff; }
+body.tarot-page .hi { color: #ffcf87; text-shadow: 0 0 14px rgba(255,190,110,.4); }
 body.tarot-page .cat-dialogue-name { color: #ffd08a; }
 body.tarot-page .reading-summary { border-top-color: rgba(214,178,104,.35); }
 body.tarot-page .reading-summary li { color: rgba(246,238,255,.8); }
@@ -575,6 +576,11 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .cat-dialogue-name { font-family: var(--display); font-size: 13px; color: var(--plum); }
 .cat-dialogue-text {
   margin-top: 12px; font-size: 15px; line-height: 1.95; color: var(--ink); min-height: 60px;
+}
+/* 本喵用【】框住的重點:放大變色,長段文字才有落點 */
+.hi {
+  font-style: normal; font-weight: 500; font-size: 1.18em; color: #c98a1e;
+  letter-spacing: .01em;
 }
 .cat-dialogue-caret {
   position: absolute; right: 16px; bottom: 12px; font-size: 11px; color: var(--gold);
