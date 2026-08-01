@@ -155,10 +155,53 @@
     }
 
     // 「喵」:鋸齒波做聲源,音高先揚後降,兩組帶通濾波模擬貓的共振峰。
+    // ── 真實貓叫 ──────────────────────────────────────────
+    // 三段 CC0 的真貓錄音(見 assets/sfx/CREDITS.txt),輪流播並微調音高,
+    // 連續翻牌才不會每次都一模一樣。檔案載不到時退回下面的合成音。
+    var MEOW_FILES = ["./assets/sfx/meow-1.mp3", "./assets/sfx/meow-2.mp3", "./assets/sfx/meow-3.mp3"];
+    var meowBuffers = [];
+    var meowLoaded = false;
+    var meowTurn = 0;
+
+    function loadMeows() {
+      var c = ac();
+      if (!c || meowBuffers.length) return;
+      MEOW_FILES.forEach(function (url, i) {
+        fetch(url)
+          .then(function (r) { return r.ok ? r.arrayBuffer() : Promise.reject(); })
+          .then(function (buf) {
+            return new Promise(function (res, rej) {
+              // 舊版 Safari 只支援 callback 形式的 decodeAudioData
+              var p = c.decodeAudioData(buf, res, rej);
+              if (p && p.then) p.then(res, rej);
+            });
+          })
+          .then(function (decoded) { meowBuffers[i] = decoded; meowLoaded = true; })
+          .catch(function () {});
+      });
+    }
+
+    function playRealMeow(delay, base) {
+      var ready = meowBuffers.filter(Boolean);
+      if (!ready.length) return false;
+      var c = ac();
+      var src = c.createBufferSource();
+      src.buffer = ready[meowTurn++ % ready.length];
+      // base 是原本合成音的頻率,換算成播放速率當作音高變化(±15% 之內才自然)
+      src.playbackRate.value = Math.max(0.85, Math.min(1.15, (base || 620) / 620));
+      var g = c.createGain();
+      g.gain.value = 0.55;
+      src.connect(g); g.connect(c.destination);
+      src.start(c.currentTime + (delay || 0));
+      return true;
+    }
+
     function meow(delay, base) {
       if (!enabled) return;
       var c = ac();
       if (!c) return;
+      if (!meowLoaded) loadMeows();
+      if (playRealMeow(delay, base)) return;
       var t = c.currentTime + (delay || 0);
       base = base || 620;
 
@@ -268,6 +311,8 @@
       meow: meow,
       purr: purr,
       blip: blip,
+      // 頁面一載入就把貓叫抓下來解碼,第一次翻牌才不會退回合成音
+      preload: loadMeows,
       isOn: function () { return enabled; },
       toggle: function () {
         enabled = !enabled;
@@ -366,31 +411,52 @@
       { id: "love-now", label: "這段關係接下來會怎麼走", spread: "flow" },
       { id: "love-two", label: "想知道對方怎麼想", spread: "relation" },
       { id: "love-trouble", label: "我們之間出了問題", spread: "relation" },
-      { id: "love-stay", label: "要不要繼續走下去", spread: "choice" }
+      { id: "love-stay", label: "要不要繼續走下去", spread: "choice" },
+      { id: "love-free", label: "以上都不是,我自己說", spread: "auto" }
     ],
     career: [
       { id: "career-switch", label: "現在這份工作該不該換", spread: "choice" },
       { id: "career-new", label: "新的計畫值不值得投入", spread: "flow" },
       { id: "career-stuck", label: "職場上卡住了", spread: "flow" },
-      { id: "career-rise", label: "想升遷或突破,要全面看一次", spread: "celtic" }
+      { id: "career-rise", label: "想升遷或突破,要全面看一次", spread: "celtic" },
+      { id: "career-free", label: "以上都不是,我自己說", spread: "auto" }
     ],
     money: [
       { id: "money-trend", label: "最近的財務走向", spread: "flow" },
       { id: "money-invest", label: "這筆錢要不要投下去", spread: "choice" },
-      { id: "money-today", label: "今天的金錢指引", spread: "single" }
+      { id: "money-today", label: "今天的金錢指引", spread: "single" },
+      { id: "money-free", label: "以上都不是,我自己說", spread: "auto" }
     ],
     decision: [
       { id: "decision-two", label: "有兩個選項在猶豫", spread: "choice" },
       { id: "decision-flow", label: "想知道事情會怎麼發展", spread: "flow" },
-      { id: "decision-deep", label: "這件事很重要,要看得徹底一點", spread: "celtic" }
+      { id: "decision-deep", label: "這件事很重要,要看得徹底一點", spread: "celtic" },
+      { id: "decision-free", label: "以上都不是,我自己說", spread: "auto" }
     ],
     other: [
       { id: "other-today", label: "給我今天的一句話", spread: "single" },
       { id: "other-flow", label: "看看最近的整體走向", spread: "flow" },
       { id: "other-people", label: "跟某個人之間的關係", spread: "relation" },
-      { id: "other-self", label: "想好好認識自己一次", spread: "tree" }
+      { id: "other-self", label: "想好好認識自己一次", spread: "tree" },
+      { id: "other-free", label: "以上都不是,我自己說", spread: "auto" }
     ]
   };
+
+  // 固定清單不可能涵蓋所有事。選「我自己說」的人直接打字,由這裡從問題本身
+  // 判斷該用哪個牌陣——判斷不出來就用時間之流,那是最通用的。
+  function guessSpread(text) {
+    var q = String(text || "");
+    if (/還是|或是|二選一|兩個(選擇|選項)|要不要換|該不該(換|走|離|分|留)|A 還是 B/.test(q)) {
+      return "choice";
+    }
+    if (/我是誰|認識(我)?自己|我這個人|人生方向|自我探索|整個人生|我到底/.test(q)) return "tree";
+    if (/全面|徹底|通盤|從頭到尾|裡裡外外|完整地?看|所有面向|深入了解/.test(q)) return "celtic";
+    if (/對方|他|她|男友|女友|老公|老婆|前任|曖昧|同事|主管|上司|婆婆|家人|朋友|我們之間|兩個人/.test(q)) {
+      return "relation";
+    }
+    if (/今天|今日|這一天|一句話|給我一個(方向|指引)/.test(q)) return "single";
+    return "flow";
+  }
 
   function scenarioById(id) {
     for (var t in SCENARIOS) {
@@ -520,6 +586,7 @@
     SPREADS: SPREADS,
     SCENARIOS: SCENARIOS,
     scenarioById: scenarioById,
+    guessSpread: guessSpread,
     drawSpread: drawSpread,
     localReading: localReading,
     artUrl: artUrl,

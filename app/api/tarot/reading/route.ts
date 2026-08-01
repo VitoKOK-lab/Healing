@@ -253,11 +253,13 @@ const PER_CARD_PHRASES = /第[一二三123]張|最後一張|中間那張|第[一
 
 // 重點該框「對客人有意義的話」,框到牌名或正逆位就只是報牌。
 // 這種偶爾還是會漏出來,直接把框拆掉保留文字即可,不必為此重新生成。
+// 牌名該用〔〕(出處標籤),【】留給「對客人有意義的話」。
+// 模型偶爾會框錯,直接換成正確的括號即可,不必為此重新生成。
 function unwrapCardNameHighlights(text: string, cardNames: string[]): string {
   return text.replace(/【([^】]*)】/g, (whole, inner: string) => {
     const isCardish =
       cardNames.some((n) => inner.includes(n)) || /正位|逆位/.test(inner);
-    return isCardish ? inner : whole;
+    return isCardish ? `〔${inner}〕` : whole;
   });
 }
 
@@ -285,8 +287,10 @@ function isConcrete(text: string): boolean {
 // 正常解讀幾乎全是中文;推理外洩的內容充滿數字、括號與英文檢查字樣。
 function looksLikeReading(text: string): boolean {
   if (text.length < 60) return false;
-  const cjk = (text.match(/[一-鿿]/g) || []).length;
-  if (cjk / text.length < 0.72) return false;
+  // 標記符號不算進中文比例,否則出處標籤一多就會被誤判成雜訊
+  const body = text.replace(/[【】〔〕]/g, "");
+  const cjk = (body.match(/[一-鿿]/g) || []).length;
+  if (cjk / body.length < 0.72) return false;
   if (/\(\d+\)|\d+\.\s/.test(text)) return false;
   if (PER_CARD_PHRASES.test(text)) return false;
   return true;
@@ -408,6 +412,18 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 可以自然提到牌名(例如「逆位的教皇提醒著」),也可以提到位置的語意(例如「往前看的那一段」),
 但不可以用「第幾張」來組織段落。
 
+【講到徵兆就要說出處】
+每當你指出一個徵兆、跡象或轉折(「有股力量在擋著你」「機會快來了」「你在硬撐」),
+必須在同一句話裡交代兩件事:
+  (a) 這是哪一張牌顯示出來的——牌名與正逆位要用〔〕框起來,例如〔寶劍八逆位〕;
+  (b) 所以該往哪個方向走——一個明確的方向,不是感受。
+寫法像這樣:
+✓「你一直覺得是自己不夠努力,但〔寶劍八逆位〕說綁住你的是那個念頭不是處境,
+　 方向很清楚:先去確認你以為的限制是不是真的存在,而不是繼續加班。」
+✓「〔錢幣七正位〕顯示東西還在長,只是還沒到收成的時候——現在該做的是守住節奏,不是換跑道。」
+這跟「不要逐張報牌」不衝突:重點是把牌名嵌進你正在講的那句話裡當證據,
+而不是照位置順序一張一張交代過去。全篇至少要有三處這樣的「徵兆＋出處＋方向」。
+
 【解讀必須落地——這是客人付錢的理由】
 客人看完如果還是不知道該怎麼辦,這次占卜就是失敗的。所以:
 1. 不要只描述心情與能量。每講一件事,都要能回答「所以呢?」
@@ -436,7 +452,8 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 - 不要出現「第一張/第二張/第三張」這種逐張報牌的說法,要讀成一個整體
 - 挑出 3～5 個最關鍵的詞或短句,各用【】框起來(例如:心裡其實已經有了【自己的答案】),
   讓讀者一眼看到重點;每個【】內以 2～8 個字為宜,不要整句都框起來
-- 框起來的必須是「對客人有意義的話」,不可以框牌名或正逆位(例如【戀人正位】是錯的)
+- 【】框起來的必須是「對客人有意義的話」,不可以框牌名(【戀人正位】是錯的,要寫〔戀人正位〕)
+- 牌名一律用〔〕框,不要用【】、引號或粗體
 - 不要條列、不要編號、不要標題、不要星號或任何 Markdown 符號
 - 不要計算或標註字數
 - 直接輸出解讀本文,不要任何前言、說明或自我檢查`;

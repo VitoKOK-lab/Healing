@@ -50,7 +50,8 @@
         <span class="cat-dialogue-name">喵喵占卜師</span>
       </div>
       <p class="cat-dialogue-text" id="dialogueText"></p>
-      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">▼</span>
+      <!-- 現在完全由客人控制節奏,所以講明白要點一下 -->
+      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點一下繼續 ▼</span>
     </div>
 
     <!-- 說完開場白才出現 -->
@@ -231,6 +232,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // 客人自己滑出來的種子:洗牌軌跡長度 + 切牌位置,決定抽到哪幾張牌
   var swipeDistance = 0;
   var cutPoint = 0.5;
+  // 自由發問時本喵挑好牌陣要說的那句話,抽牌前才講
+  var autoPickedLine = null;
 
   var TOPIC_REPLY = {
     love: "感情的事啊⋯⋯本喵最懂了。",
@@ -247,23 +250,33 @@ document.addEventListener("DOMContentLoaded", function () {
     choice: "兩條路都得看過才公平。本喵會把兩邊的過程跟結果一起攤開給你。",
     relation: "兩個人的事,得【兩邊都看】。本喵會把你的心跟對方的心一起排出來。",
     celtic: "這件事得攤開來看。本喵用【十張牌】把它從裡到外排一遍,會花點時間。",
-    tree: "要認識自己,本喵得把【整棵生命之樹】排出來,十一張,一層一層往下走。"
+    tree: "要認識自己,本喵得把【整棵生命之樹】排出來,十一張,一層一層往下走。",
+    auto: "那你直接說吧,想問什麼都可以。本喵聽完再決定要怎麼排牌。"
   };
 
-  // ── 重點標記:本喵用【】框住的字會放大變色 ─────────────────
+  // 自由發問判斷完牌陣後,本喵再說一次要怎麼看——客人才知道發生了什麼事
+  var AUTO_PICKED = {
+    single: "這件事本喵抽【一張】就夠了,直接給你重點。",
+    flow: "聽起來要看的是【來龍去脈】,本喵用三張排一條時間線。",
+    choice: "你這是在【兩條路之間】猶豫吧?那把兩條路都寫給本喵看看。",
+    relation: "這牽扯到【另一個人】,本喵把你的心跟對方的心一起排出來。",
+    celtic: "這件事不簡單,本喵用【十張牌】從裡到外幫你排一遍。",
+    tree: "想看清自己啊⋯⋯那本喵排【整棵生命之樹】,十一張。"
+  };
+
+  // ── 兩種標記 ────────────────────────────────────────
+  // 【】= 對客人有意義的重點,放大變色
+  // 〔〕= 牌名出處(例如〔寶劍八逆位〕),做成小標籤,讓人一眼看出這句話的根據
   function toSegs(line) {
-    var segs = [], cur = "", hi = false;
+    var segs = [], cur = "", kind = "";
+    function flush() { if (cur) segs.push({ t: cur, k: kind }); cur = ""; }
     for (var i = 0; i < line.length; i++) {
       var ch = line[i];
-      if (ch === "【" || ch === "】") {
-        if (cur) segs.push({ t: cur, hi: hi });
-        cur = "";
-        hi = ch === "【";
-        continue;
-      }
+      if (ch === "【" || ch === "〔") { flush(); kind = ch === "【" ? "hi" : "ref"; continue; }
+      if (ch === "】" || ch === "〕") { flush(); kind = ""; continue; }
       cur += ch;
     }
-    if (cur) segs.push({ t: cur, hi: hi });
+    flush();
     return segs;
   }
 
@@ -278,7 +291,9 @@ document.addEventListener("DOMContentLoaded", function () {
       var part = segs[i].t.slice(0, left);
       left -= part.length;
       var esc = part.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-      out += segs[i].hi ? '<em class="hi">' + esc + "</em>" : esc;
+      if (segs[i].k === "hi") out += '<em class="hi">' + esc + "</em>";
+      else if (segs[i].k === "ref") out += '<em class="card-ref">' + esc + "</em>";
+      else out += esc;
     }
     return out;
   }
@@ -301,8 +316,9 @@ document.addEventListener("DOMContentLoaded", function () {
       (function step() {
         if (ci >= total) {
           typing = false;
+          // 打完就停在這裡等客人點一下。絕不自動跳下一句——
+          // 沒看完就被換掉是最惱人的事。
           dialogueCaret.style.display = "";
-          typeTimer = setTimeout(next, 900);
           return;
         }
         dialogueText.innerHTML = renderSegs(segs, ++ci);
@@ -323,6 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    // 點一下:打字中就把這句補完,打完了才換下一句
     catDialogue.onclick = function () {
       if (typing) {
         clearTimeout(typeTimer);
@@ -330,7 +347,6 @@ document.addEventListener("DOMContentLoaded", function () {
         var segs = toSegs(lines[li]);
         dialogueText.innerHTML = renderSegs(segs, segsLength(segs));
         dialogueCaret.style.display = "";
-        typeTimer = setTimeout(next, 900);
       } else {
         next();
       }
@@ -425,13 +441,16 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.type = "button";
       btn.className = "scenario-item";
       btn.dataset.id = s.id;
+      var tag = s.spread === "auto"
+        ? "本喵幫你決定"
+        : Tarot.SPREADS[s.spread].positions.length + " 張・" + Tarot.SPREADS[s.spread].name;
       btn.innerHTML = '<span class="scenario-label">' + s.label + "</span>" +
-        '<span class="scenario-spread">' + Tarot.SPREADS[s.spread].positions.length + " 張・" +
-        Tarot.SPREADS[s.spread].name + "</span>";
+        '<span class="scenario-spread">' + tag + "</span>";
       btn.addEventListener("click", function () {
         scenarioList.querySelectorAll(".scenario-item").forEach(function (x) { x.classList.remove("active"); });
         btn.classList.add("active");
-        scenario = s;
+        // 每次重選處境都從乾淨狀態開始(auto 會在抽牌前改寫 spread)
+        scenario = { id: s.id, label: s.label, spread: s.spread };
         questionPanel.style.display = "none";
         // 二擇一只留兩個選項欄,問題欄收起來——三個格子會讓人不知道該填哪個
         var isChoice = s.spread === "choice";
@@ -441,7 +460,9 @@ document.addEventListener("DOMContentLoaded", function () {
           SPREAD_REPLY[s.spread],
           isChoice
             ? "把你在猶豫的兩條路各寫一句給本喵看。"
-            : "那麼,把你想問的事寫下來給本喵看吧。"
+            : s.spread === "auto"
+              ? "想問什麼都可以,寫下來給本喵看。"
+              : "那麼,把你想問的事寫下來給本喵看吧。"
         ], function () {
           showStage(questionPanel);
           (isChoice ? optionA : questionInput).focus();
@@ -544,13 +565,40 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // 自由發問:先看懂客人問什麼,才決定用哪個牌陣。判斷成二擇一時要回頭
+  // 跟客人要那兩條路,不能自己編。
+  function resolveAutoSpread() {
+    if (!scenario || scenario.spread !== "auto") return true;
+    var picked = Tarot.guessSpread(questionInput.value);
+    scenario.spread = picked;
+    autoPickedLine = AUTO_PICKED[picked] || null;
+    if (picked === "choice") {
+      autoPickedLine = null;   // 這句下面就會講,不要等到抽牌前再講一次
+      optionPanel.style.display = "grid";
+      questionField.style.display = "none";
+      speak([AUTO_PICKED.choice], function () {
+        showStage(questionPanel);
+        optionA.focus();
+      });
+      return false;   // 這一輪先不抽,等客人補完兩條路
+    }
+    return true;
+  }
+
   drawBtn.addEventListener("click", function () {
     if (!questionIsReady()) return;
+    if (!resolveAutoSpread()) return;
     if (!optionsAreReady()) return;
     if (!canStartRound()) return;
     unlockVideo();
     hideStages();
-    speak(["要在心中默念你的心意喔,本喵要開始了。"], function () {
+    var opening = ["要在心中默念你的心意喔,本喵要開始了。"];
+    // 自由發問的人不知道本喵挑了哪個牌陣,先講一句再開始
+    if (autoPickedLine) {
+      opening.unshift(autoPickedLine);
+      autoPickedLine = null;
+    }
+    speak(opening, function () {
       Tarot.useCredit();
       updateCredits();
       startSwipeShuffle();
@@ -964,6 +1012,7 @@ document.addEventListener("DOMContentLoaded", function () {
     topic = null;
     scenario = null;
     lastOptions = null;
+    autoPickedLine = null;
     resultPanel.classList.remove("is-fallback");
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
     if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
@@ -972,6 +1021,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   pickVideo();
+  Tarot.Sound.preload();
   dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
   document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
   paintSound();

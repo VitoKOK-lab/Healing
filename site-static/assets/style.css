@@ -749,7 +749,7 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 
 /* 喵喵占卜師對話框:像遊戲一樣一句一句說 */
 .cat-dialogue {
-  position: relative; margin-top: 20px; padding: 18px 20px 26px; border-radius: 18px; cursor: pointer;
+  position: relative; margin-top: 20px; padding: 18px 20px 40px; border-radius: 18px; cursor: pointer;
   background: linear-gradient(165deg, rgba(255,255,255,.96), rgba(250,245,255,.96));
   border: 1px solid rgba(196,160,86,.4);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 14px 32px -12px rgba(58,45,82,.4);
@@ -767,10 +767,22 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   font-style: normal; font-weight: 500; font-size: 1.18em; color: #c98a1e;
   letter-spacing: .01em;
 }
+/* 〔〕框住的牌名出處:做成小標籤,一眼看出這句話是哪張牌講的 */
+.card-ref {
+  font-style: normal; font-size: .82em; letter-spacing: .03em;
+  color: #6b4bb0; background: rgba(146,110,214,.13);
+  border: 1px solid rgba(146,110,214,.32); border-radius: 6px;
+  padding: 1px 6px; margin: 0 2px; white-space: nowrap;
+}
+body.tarot-page .reading-summary .card-ref { color: #cbb4ff; border-color: rgba(203,180,255,.4); background: rgba(203,180,255,.14); }
+/* 對話不會自動前進,所以這個提示要看得見——它是唯一往下走的方法 */
 .cat-dialogue-caret {
-  position: absolute; right: 16px; bottom: 12px; font-size: 11px; color: var(--gold);
+  position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: var(--gold);
+  letter-spacing: .04em; padding: 3px 9px; border-radius: 99px;
+  background: rgba(245,205,130,.13); border: 1px solid rgba(245,205,130,.3);
   animation: caretBob .9s ease-in-out infinite;
 }
+.cat-dialogue { cursor: pointer; }
 @keyframes caretBob { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(3px); opacity: 1; } }
 
 /* 說完後的完整解讀總表 */
