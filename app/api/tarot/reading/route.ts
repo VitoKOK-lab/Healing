@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
-// AI 塔羅占卜:接收前端(靜態站)抽好的 3 張牌,請 Gemini 綜合寫一段解讀。
+// 喵喵占卜:接收前端(靜態站)抽好的 3 張牌,請 Gemini 綜合寫一段解讀。
 // 純無狀態代理——不落地任何個資,允許跨網域呼叫(靜態站與本站不同網域)。
 
 const CORS_HEADERS = {
@@ -86,7 +86,7 @@ function looksLikeReading(text: string): boolean {
 export async function POST(req: NextRequest) {
   if (!env.GEMINI_API_KEY) {
     return NextResponse.json(
-      { ok: false, error: "AI 占卜尚未設定金鑰" },
+      { ok: false, error: "本喵占卜師還沒準備好" },
       { status: 503, headers: CORS_HEADERS }
     );
   }
@@ -155,7 +155,7 @@ ${cardLines}
 
     if (!looksLikeReading(reading)) {
       return NextResponse.json(
-        { ok: false, error: "AI 解讀暫時無法使用,請稍後再試" },
+        { ok: false, error: "本喵現在有點累,請稍後再試" },
         { status: 502, headers: CORS_HEADERS }
       );
     }
@@ -171,7 +171,7 @@ ${cardLines}
       );
     }
     return NextResponse.json(
-      { ok: false, error: "AI 解讀暫時無法使用,請稍後再試" },
+      { ok: false, error: "本喵現在有點累,請稍後再試" },
       { status: 502, headers: CORS_HEADERS }
     );
   }
