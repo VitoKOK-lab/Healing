@@ -363,6 +363,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px;
   max-width: min(460px, 100%); margin-inline: auto; perspective: 1200px;
 }
+/* 牌陣張數不同,版面跟著換:1 張放大、5 張縮小並收窄間距 */
+.tarot-deck.count-1 { grid-template-columns: minmax(0, 200px); max-width: 200px; }
+.tarot-deck.count-5 { grid-template-columns: repeat(5, 1fr); gap: 7px; max-width: min(560px, 100%); }
+.tarot-deck.count-5 .tarot-caption .name { font-size: 11px; }
+.tarot-deck.count-5 .tarot-caption .orientation,
+.tarot-deck.count-5 .slot-position { font-size: 9px; }
+/* 位置名稱(過去 / 選 A 的結果⋯)放在牌上方,讓客人看得懂牌陣在講什麼 */
+.slot-position {
+  text-align: center; font-size: 10px; letter-spacing: .08em; margin-bottom: 6px;
+  color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 /* 7:12 是塔羅牌的標準比例,牌面與牌背都已裁成這個尺寸 */
 .tarot-card { aspect-ratio: 7/12; cursor: pointer; animation: catCardIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
 .tarot-card-inner {
@@ -550,9 +561,98 @@ body.tarot-page .bottom-nav-item:active { background: rgba(255,255,255,.1); }
 @media (min-aspect-ratio: 1/1) { .draw-overlay-video { object-fit: contain; } }
 body.no-scroll { overflow: hidden; touch-action: none; }
 
-/* 一步一步出現的操作區(選主題 / 打字) */
+/* 一步一步出現的操作區(選主題 / 選處境 / 打字 / 洗牌 / 切牌) */
 .step-panel { margin-top: 18px; animation: stepIn .45s ease-out both; }
 @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* 第二層:具體處境。選了它才決定要用幾張牌,客人不必知道「牌陣」這個詞。 */
+.scenario-list { display: grid; gap: 10px; }
+.scenario-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left; padding: 14px 16px; border-radius: 14px; cursor: pointer;
+  /* 底圖很花,必須夠不透明才讀得到字 */
+  border: 1px solid rgba(255,255,255,.16); background: rgba(26,12,52,.78);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #f3ecff; font: inherit; transition: border-color .2s, background .2s, transform .2s;
+}
+.scenario-item:hover { transform: translateY(-1px); background: rgba(42,22,78,.85); }
+.scenario-item.active { border-color: var(--gold); background: rgba(60,34,96,.88); }
+.scenario-label { font-size: 14px; }
+.scenario-spread { font-size: 11px; color: var(--gold); flex-shrink: 0; letter-spacing: .04em; }
+
+/* 提示文字浮在滿版底圖上,沒有底色會讀不到,所以給一層深色藥丸底 */
+.stage-hint {
+  margin: 12px auto 0; width: fit-content; max-width: 100%;
+  text-align: center; font-size: 12px; color: rgba(246,238,255,.9);
+  padding: 5px 14px; border-radius: 99px; background: rgba(18,8,38,.66);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+
+/* 洗牌:手指在牌上來回滑,軌跡畫在 canvas 上,滑動距離換算成進度 */
+.swipe-stage {
+  position: relative; height: 168px; border-radius: 16px; overflow: hidden;
+  touch-action: none; user-select: none; cursor: grab;
+  border: 1px solid rgba(255,255,255,.14);
+  background: radial-gradient(120% 90% at 50% 20%, rgba(120,80,190,.4), rgba(20,10,40,.75));
+}
+.swipe-stage.is-live { cursor: grabbing; }
+.swipe-card {
+  position: absolute; top: 50%; left: 50%; width: 62px; height: 106px; margin: -53px 0 0 -31px;
+  border-radius: 7px; border: 1px solid rgba(245,205,130,.5);
+  background: repeating-linear-gradient(135deg, #3b2568 0 5px, #6a49b4 5px 7px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.45);
+  /* --churn 由 JS 隨滑動進度提高,牌就越散越開 */
+  transform: rotate(calc((var(--i) - 2) * 7deg * (0.4 + var(--churn, 0))))
+             translateX(calc((var(--i) - 2) * 15px * (0.5 + var(--churn, 0))));
+  transition: transform .18s ease-out;
+}
+.swipe-stage.is-settled .swipe-card {
+  transform: rotate(calc((var(--i) - 2) * 1.5deg)) translateX(calc((var(--i) - 2) * 3px));
+  transition: transform .55s cubic-bezier(.2,.9,.3,1.1);
+}
+.swipe-trail { position: absolute; inset: 0; pointer-events: none; }
+.swipe-meter {
+  margin-top: 12px; height: 7px; border-radius: 99px; overflow: hidden;
+  background: rgba(255,255,255,.12);
+}
+.swipe-meter i {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--lavender), var(--gold));
+  transition: width .12s linear;
+}
+
+/* 切牌:手指左右滑決定切點,兩疊即時分開並顯示張數 */
+.cut-stage {
+  position: relative; height: 130px; border-radius: 16px; overflow: hidden;
+  touch-action: none; user-select: none; cursor: ew-resize;
+  border: 1px solid rgba(255,255,255,.14); background: rgba(12,6,28,.6);
+}
+.cut-half {
+  position: absolute; top: 12px; bottom: 12px; display: block;
+  /* 一條條細線 = 牌堆側面看到的每一張牌的邊 */
+  background: repeating-linear-gradient(90deg, #241243 0 2px, #7a55c8 2px 3px, #341d5c 3px 5px);
+  box-shadow: inset 0 0 26px rgba(0,0,0,.55);
+  transition: transform .14s ease-out, width .14s ease-out;
+}
+.cut-left { left: 0; border-radius: 10px 3px 3px 10px; }
+.cut-right { right: 0; border-radius: 3px 10px 10px 3px; }
+.cut-seam {
+  position: absolute; top: 0; bottom: 0; width: 5px; margin-left: -2.5px; border-radius: 3px;
+  background: linear-gradient(180deg, transparent, #ffe6ae 22%, #fff 50%, #ffe6ae 78%, transparent);
+  opacity: 0; transition: opacity .2s, left .14s ease-out;
+}
+.cut-stage.is-cut .cut-seam {
+  opacity: 1; box-shadow: 0 0 22px 7px rgba(245,205,130,.75);
+  animation: seamPulse 1.6s ease-in-out infinite;
+}
+@keyframes seamPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+.cut-counts {
+  display: flex; justify-content: center; gap: 18px; margin-top: 12px;
+  font-size: 12px; color: rgba(246,238,255,.85);
+  text-shadow: 0 1px 6px rgba(10,4,26,.9);
+}
+.cut-counts b { font-family: var(--display); font-size: 15px; color: var(--gold); font-weight: 400; }
+#cutDoneBtn { margin-top: 14px; }
 .tarot-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 22px; }
 .tarot-bar .tarot-credits { margin-top: 0; }
 .tarot-bar .sound-toggle { margin-left: 0; }
@@ -560,8 +660,15 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .tarot-result { margin-top: 32px; padding: 30px 28px; display: none; }
 .tarot-result.show { display: block; }
 .tarot-result .reading-list { list-style: none; display: grid; gap: 10px; margin-top: 16px; }
-.tarot-result .reading-list li { font-size: 13px; color: var(--inkdim); display: flex; gap: 8px; }
+.tarot-result .reading-list li { font-size: 13px; color: var(--inkdim); display: flex; gap: 8px; flex-wrap: wrap; }
 .tarot-result .reading-list b { font-family: var(--display); font-weight: 400; color: var(--ink); flex-shrink: 0; }
+.tarot-result .reading-list .pos {
+  font-style: normal; font-size: 10px; letter-spacing: .06em; color: var(--gold);
+  align-self: center; flex-shrink: 0; border: 1px solid rgba(245,205,130,.4);
+  border-radius: 99px; padding: 2px 8px;
+}
+/* AI 沒回應時的簡版解讀:標一下,不要讓客人以為這就是完整占卜 */
+.tarot-result.is-fallback .reading-summary { border-color: rgba(245,205,130,.35); }
 .tarot-reading-text { margin-top: 20px; font-size: 14px; line-height: 2; color: var(--ink); }
 .tarot-loading {
   margin-top: 20px; font-size: 13px; color: var(--inkdim);

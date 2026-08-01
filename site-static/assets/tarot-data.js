@@ -278,28 +278,141 @@
     };
   })();
 
-  function shuffle(arr) {
+  // ── 牌陣 ─────────────────────────────────────────────
+  // 客人不需要知道「牌陣」這個詞,他只選自己的處境,由 SCENARIOS 決定用哪個陣。
+  var SPREADS = {
+    single: {
+      id: "single",
+      name: "核心指引",
+      positions: [
+        { label: "核心指引", hint: "此刻最需要知道的一件事" }
+      ]
+    },
+    flow: {
+      id: "flow",
+      name: "時間之流",
+      positions: [
+        { label: "過去", hint: "事情的根源,已經造成的影響" },
+        { label: "現在", hint: "當前的狀況與正在發展的能量" },
+        { label: "未來", hint: "接下來一到三個月的走向" }
+      ]
+    },
+    choice: {
+      id: "choice",
+      name: "二擇一",
+      positions: [
+        { label: "現況", hint: "你此刻整體的處境" },
+        { label: "選 A 的過程", hint: "走 A 這條路會遇到什麼" },
+        { label: "選 B 的過程", hint: "走 B 這條路會遇到什麼" },
+        { label: "選 A 的結果", hint: "A 最後會走到哪裡" },
+        { label: "選 B 的結果", hint: "B 最後會走到哪裡" }
+      ]
+    }
+  };
+
+  // 主題 → 具體處境 → 牌陣。每個處境都誠實對應到上面真的做出來的三個陣。
+  var SCENARIOS = {
+    love: [
+      { id: "love-single", label: "想看看有沒有新的緣分", spread: "flow" },
+      { id: "love-now", label: "這段關係接下來會怎麼走", spread: "flow" },
+      { id: "love-stay", label: "要不要繼續走下去", spread: "choice" }
+    ],
+    career: [
+      { id: "career-switch", label: "現在這份工作該不該換", spread: "choice" },
+      { id: "career-new", label: "新的計畫值不值得投入", spread: "flow" },
+      { id: "career-stuck", label: "職場上卡住了", spread: "flow" }
+    ],
+    money: [
+      { id: "money-trend", label: "最近的財務走向", spread: "flow" },
+      { id: "money-invest", label: "這筆錢要不要投下去", spread: "choice" },
+      { id: "money-today", label: "今天的金錢指引", spread: "single" }
+    ],
+    decision: [
+      { id: "decision-two", label: "有兩個選項在猶豫", spread: "choice" },
+      { id: "decision-flow", label: "想知道事情會怎麼發展", spread: "flow" }
+    ],
+    other: [
+      { id: "other-today", label: "給我今天的一句話", spread: "single" },
+      { id: "other-flow", label: "看看最近的整體走向", spread: "flow" }
+    ]
+  };
+
+  function scenarioById(id) {
+    for (var t in SCENARIOS) {
+      if (!Object.prototype.hasOwnProperty.call(SCENARIOS, t)) continue;
+      for (var i = 0; i < SCENARIOS[t].length; i++) {
+        if (SCENARIOS[t][i].id === id) return SCENARIOS[t][i];
+      }
+    }
+    return null;
+  }
+
+  // ── 可回溯的亂數 ───────────────────────────────────────
+  // 洗牌與正逆位都由這顆種子決定,而種子來自客人自己的切牌位置與滑動軌跡。
+  // 同一組種子必定抽出同一副牌——這就是「這副牌是我切的」能成立的原因。
+  function makeRng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffleWith(arr, rnd) {
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
+      var j = Math.floor(rnd() * (i + 1));
       var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
     }
     return a;
   }
 
-  function drawThree() {
-    return shuffle(CARDS).slice(0, 3).map(function (c) {
-      var upright = Math.random() > 0.35;
+  // cutPoint(0~1)決定從牌堆哪裡開始發牌,對應實體占卜的「切牌後從切口取牌」。
+  function drawSpread(spreadId, seed, cutPoint) {
+    var spread = SPREADS[spreadId] || SPREADS.flow;
+    var rnd = makeRng(seed);
+    var deck = shuffleWith(CARDS, rnd);
+    var start = Math.floor(Math.max(0, Math.min(1, cutPoint || 0)) * deck.length);
+
+    return spread.positions.map(function (pos, i) {
+      var c = deck[(start + i) % deck.length];
+      var upright = rnd() > 0.35;
       return {
         n: c.n,
         name: c.name,
         keyword: c.keyword,
         mood: moodFor(c.n),
+        position: pos.label,
+        positionHint: pos.hint,
         orientation: upright ? "upright" : "reversed",
         meaning: upright ? c.upright : c.reversed
       };
     });
   }
+
+  // ── 降級方案 ───────────────────────────────────────────
+  // AI 連不上或額度用盡時,用本地牌義組一段基本解讀,至少讓客人拿到東西。
+  // 刻意寫得比 AI 版簡短,呼叫端會標明這是簡版。
+  function localReading(spreadId, cards) {
+    var spread = SPREADS[spreadId] || SPREADS.flow;
+    var reversed = cards.filter(function (c) { return c.orientation === "reversed"; }).length;
+    var tone = reversed === 0
+      ? "整體能量是【順的】,想做的事可以往前推"
+      : reversed >= cards.length - reversed
+        ? "牌面偏向【先向內看】,急著推進反而卡手"
+        : "大方向還算順,只是有一處【需要調整】";
+
+    var body = cards.map(function (c) {
+      return c.position + "落在「" + c.name + "」" +
+        (c.orientation === "upright" ? "" : "逆位") + ",說的是【" + c.keyword + "】——" + c.meaning;
+    }).join(";");
+
+    return "本喵先用" + spread.name + "替你看過一遍。" + tone + "。" +
+      body + "。這一輪本喵的靈感有點淡,先給你這些,晚點再來讓本喵好好說一次。";
+  }
+
 
   var CREDIT_KEY = "tarotCredits";
 
@@ -338,7 +451,11 @@
 
   global.Tarot = {
     CARDS: CARDS,
-    drawThree: drawThree,
+    SPREADS: SPREADS,
+    SCENARIOS: SCENARIOS,
+    scenarioById: scenarioById,
+    drawSpread: drawSpread,
+    localReading: localReading,
     artUrl: artUrl,
     catFace: catFace,
     Sound: Sound,
