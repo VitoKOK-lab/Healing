@@ -84,10 +84,10 @@
       <!-- autocomplete/autofill 全關:這是公用裝置也會用的頁面,
            瀏覽器不能把前一位客人打過的心事當建議跳出來。 -->
       <label class="pay-field tarot-question" id="questionField">
-        <input class="pay-input" id="questionInput" placeholder="把想問的事寫在這裡⋯" maxlength="120"
+        <input class="pay-input" id="questionInput" placeholder="想問最近三個月的什麼事呢⋯" maxlength="120"
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                name="tarot-q" inputmode="text" />
-        <p class="field-hint" id="questionHint">至少寫五個字,本喵才聽得清楚</p>
+        <p class="field-hint" id="questionHint">至少寫五個字。本喵只看得到最近三個月喔</p>
       </label>
       <!-- 只有二擇一牌陣會用到。這時上面的問題欄會收起來,畫面只留兩格,
            客人不會愣在那裡想「我到底要填哪一個」。 -->
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (scenario && scenario.spread === "choice") return true;
     var q = questionInput.value.trim();
     if (q.length >= 5) {
-      questionHint.textContent = "至少寫五個字,本喵才聽得清楚";
+      questionHint.textContent = "至少寫五個字。本喵只看得到最近三個月喔";
       questionHint.classList.remove("is-error");
       questionInput.classList.remove("is-error");
       return true;
@@ -633,11 +633,7 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    speak(hit.lines, function () {
-      // 講到想不開的時候唱歌是失禮的,那一類只說話就好
-      if (hit.sing === false) { restart(); return; }
-      playSong(restart);
-    });
+    speak(hit.lines, playSong.bind(null, restart));
     return true;
   }
 
