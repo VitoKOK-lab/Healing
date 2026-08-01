@@ -325,9 +325,21 @@
     return v;
   }
 
+  // 牌面圖:檔名就是牌的編號。WebP 為主,不支援的瀏覽器退回 JPEG。
+  var supportsWebp = (function () {
+    var c = document.createElement("canvas");
+    return !!(c.getContext && c.toDataURL("image/webp").indexOf("data:image/webp") === 0);
+  })();
+
+  function artUrl(n) {
+    var base = "./assets/cards/" + (n < 10 ? "0" + n : n);
+    return 'url("' + base + (supportsWebp ? ".webp" : ".jpg") + '")';
+  }
+
   global.Tarot = {
     CARDS: CARDS,
     drawThree: drawThree,
+    artUrl: artUrl,
     catFace: catFace,
     Sound: Sound,
     getCredits: getCredits,

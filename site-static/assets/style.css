@@ -359,9 +359,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
 .field-hint.is-error { color: #e0607a; font-weight: 500; }
 .pay-input.is-error { border-color: #e0607a; }
 
-.tarot-deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 36px; max-width: 460px; margin-inline: auto; perspective: 1200px; }
-/* 比例配合牌背圖(429×579),四邊金框才不會被裁掉 */
-.tarot-card { aspect-ratio: 429/579; cursor: pointer; animation: catCardIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.tarot-deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; max-width: 460px; margin-inline: auto; perspective: 1200px; }
+/* 7:12 是塔羅牌的標準比例,牌面與牌背都已裁成這個尺寸 */
+.tarot-card { aspect-ratio: 7/12; cursor: pointer; animation: catCardIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
 .tarot-card-inner {
   position: relative; width: 100%; height: 100%; transition: transform .65s cubic-bezier(.4,.2,.2,1);
   transform-style: preserve-3d;
@@ -391,17 +391,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
   background-image: image-set(url("card-star.webp") type("image/webp"), url("card-star.jpg") type("image/jpeg"));
 }
 .tarot-card-front {
-  background: #fdfaf3; border: 1px solid rgba(196,160,86,.45); transform: rotateY(180deg);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 12px 28px -10px rgba(124,95,184,.3);
-  color: #b79ae4;
+  background: #2a1240; transform: rotateY(180deg); padding: 0;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 12px 28px -10px rgba(124,95,184,.4);
 }
-/* 呼應牌背的金框 */
-.tarot-card-front::before {
-  content: ""; position: absolute; inset: 5px; border-radius: 10px;
-  border: 1px solid rgba(196,160,86,.4); pointer-events: none;
+/* 牌面畫作。逆位時整張轉 180 度,和實體牌一樣。 */
+.card-art {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  transition: transform .4s ease;
 }
-.tarot-card-front .name { font-family: var(--display); font-size: 15px; margin-top: 2px; color: var(--ink); }
-.tarot-card-front .orientation { font-size: 10px; color: var(--gold); font-weight: 500; margin-top: 2px; }
+.tarot-card.is-reversed .card-art { transform: rotate(180deg); }
+
+/* 牌名放在卡片下方,不擋住畫作 */
+.tarot-slot { display: flex; flex-direction: column; }
+.tarot-caption { margin-top: 8px; text-align: center; }
+.tarot-caption .name { font-family: var(--display); font-size: 13px; color: var(--ink); }
+.tarot-caption .orientation { font-size: 10px; color: var(--gold); font-weight: 500; margin-top: 1px; }
+.tarot-caption.hidden { visibility: hidden; }
 .tarot-card.pending { pointer-events: none; }
 
 /* 手繪貓咪:頭與耳吃 currentColor,五官固定深色,兩種底色都讀得清楚 */
@@ -474,6 +479,7 @@ body.tarot-page .card {
 }
 body.tarot-page .card p, body.tarot-page .reading-list li { color: rgba(246,238,255,.8); }
 body.tarot-page .reading-list b, body.tarot-page .tarot-reading-text { color: #fff; }
+body.tarot-page .tarot-caption .name { color: #f6eeff; }
 body.tarot-page .cat-dialogue {
   background: linear-gradient(165deg, rgba(52,26,74,.9), rgba(36,16,56,.92));
   border-color: rgba(214,178,104,.45);
