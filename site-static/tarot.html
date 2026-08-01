@@ -302,11 +302,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── 第四步:滿版洗牌動畫,鎖住捲動、看完才淡出 ───────────────
   function playShuffle(next) {
     var done = false;
+    var guard = null;
+
     function finish() {
       if (done) return;
       done = true;
+      clearTimeout(guard);
       drawVideo.removeEventListener("ended", finish);
       drawVideo.removeEventListener("error", finish);
+      drawVideo.removeEventListener("playing", armGuard);
       drawOverlay.classList.add("fading");
       setTimeout(function () {
         drawOverlay.style.display = "none";
@@ -316,8 +320,18 @@ document.addEventListener("DOMContentLoaded", function () {
         next();
       }, 900);
     }
+
+    // 正常情況靠 ended 收尾。保險計時依影片實際長度算(換影片不用改這裡),
+    // 並從真正開始播放才起算,網路慢時才不會把影片攔腰切斷。
+    function armGuard() {
+      clearTimeout(guard);
+      var dur = isFinite(drawVideo.duration) && drawVideo.duration > 0 ? drawVideo.duration : 9;
+      guard = setTimeout(finish, (dur - drawVideo.currentTime + 1) * 1000);
+    }
+
     drawVideo.addEventListener("ended", finish);
     drawVideo.addEventListener("error", finish);
+    drawVideo.addEventListener("playing", armGuard);
 
     document.body.classList.add("no-scroll");
     drawOverlay.style.display = "block";
@@ -325,8 +339,8 @@ document.addEventListener("DOMContentLoaded", function () {
     drawVideo.muted = !Tarot.Sound.isOn();
     var p = drawVideo.play();
     if (p && p.catch) p.catch(finish);
-    // 保險:影片始終沒有 ended(被瀏覽器擋下等)時不讓客人卡在黑畫面
-    setTimeout(finish, 15000);
+    // 完全播不起來(被瀏覽器擋下、檔案壞掉)時的最後防線
+    guard = setTimeout(finish, 6000);
   }
 
   // ── 第五步:翻牌 ───────────────────────────────────
