@@ -1,0 +1,20 @@
+翻牌時的貓叫聲 — 三段真實貓叫,全部為 CC0(公眾領域貢獻),
+可自由商用、不需標示出處。此檔僅為內部備查。
+
+meow-1.mp3
+  來源 Wikimedia Commons — "Meow of a Siamese cat - freemaster2.wav"
+  https://commons.wikimedia.org/wiki/File:Meow_of_a_Siamese_cat_-_freemaster2.wav
+  授權 CC0 1.0 Universal (Public Domain Dedication)
+
+meow-2.mp3
+  來源 Wikimedia Commons — "2015-11-24.νιαούρισμα.Νιάου.noise reduced.flac"
+  https://commons.wikimedia.org/wiki/File:2015-11-24.%CE%BD%CE%B9%CE%B1%CE%BF%CF%8D%CF%81%CE%B9%CF%83%CE%BC%CE%B1.%CE%9D%CE%B9%CE%AC%CE%BF%CF%85.noise_reduced.flac
+  授權 CC0 1.0 Universal
+
+meow-3.mp3
+  來源 Wikimedia Commons — "Maullido de gata hembra joven.ogg"
+  https://commons.wikimedia.org/wiki/File:Maullido_de_gata_hembra_joven.ogg
+  授權 CC0 1.0 Universal
+
+處理:去頭尾靜音 → 單聲道 44.1kHz → loudnorm(I=-16, TP=-1.5)→ 尾端淡出
+      → MP3 96kbps,各約 10-13KB。
