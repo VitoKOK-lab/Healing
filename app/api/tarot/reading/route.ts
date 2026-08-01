@@ -253,14 +253,19 @@ const PER_CARD_PHRASES = /第[一二三123]張|最後一張|中間那張|第[一
 
 // 重點該框「對客人有意義的話」,框到牌名或正逆位就只是報牌。
 // 這種偶爾還是會漏出來,直接把框拆掉保留文字即可,不必為此重新生成。
-// 牌名該用〔〕(出處標籤),【】留給「對客人有意義的話」。
-// 模型偶爾會框錯,直接換成正確的括號即可,不必為此重新生成。
-function unwrapCardNameHighlights(text: string, cardNames: string[]): string {
-  return text.replace(/【([^】]*)】/g, (whole, inner: string) => {
-    const isCardish =
-      cardNames.some((n) => inner.includes(n)) || /正位|逆位/.test(inner);
-    return isCardish ? `〔${inner}〕` : whole;
-  });
+// 兩種標記各有用途:〔〕是牌名出處,【】是給客人看的重點(前端會放大變色)。
+// 模型兩邊都會框錯——把牌名框成【】,也會把一般詞句框成〔〕,後者更麻煩,
+// 會讓重點標記整個消失。這裡直接依內容判斷並換成正確的括號,不必重新生成。
+function normalizeMarkers(text: string, cardNames: string[]): string {
+  const isCardish = (s: string) =>
+    cardNames.some((n) => s.includes(n)) || /正位|逆位/.test(s);
+  return text
+    .replace(/【([^】]*)】/g, (whole, inner: string) =>
+      isCardish(inner) ? `〔${inner}〕` : whole
+    )
+    .replace(/〔([^〕]*)〕/g, (whole, inner: string) =>
+      isCardish(inner) ? whole : `【${inner}】`
+    );
 }
 
 // 對誰都成立、等於沒說的句子,以及一直重複的罐頭開場/收尾。
@@ -485,7 +490,7 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
       );
     }
 
-    reading = unwrapCardNameHighlights(reading, drawn.map((c) => c.name));
+    reading = normalizeMarkers(reading, drawn.map((c) => c.name));
     return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("Gemini request failed", err);
