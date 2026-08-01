@@ -369,8 +369,18 @@
     return a;
   }
 
+  // 二擇一的位置名稱要換成客人自己講的兩個選項,不然牌面只會寫「選 A」,
+  // 客人根本不知道 A 指的是什麼。太長會撐破版面,顯示時截短。
+  function labelWithOptions(label, options) {
+    if (!options || !options.a || !options.b) return label;
+    var a = options.a.length > 6 ? options.a.slice(0, 6) + "…" : options.a;
+    var b = options.b.length > 6 ? options.b.slice(0, 6) + "…" : options.b;
+    // 連同「選 A」後面那個空格一起吃掉,不然會變成「選「⋯」 的過程」
+    return label.replace("選 A ", "選「" + a + "」").replace("選 B ", "選「" + b + "」");
+  }
+
   // cutPoint(0~1)決定從牌堆哪裡開始發牌,對應實體占卜的「切牌後從切口取牌」。
-  function drawSpread(spreadId, seed, cutPoint) {
+  function drawSpread(spreadId, seed, cutPoint, options) {
     var spread = SPREADS[spreadId] || SPREADS.flow;
     var rnd = makeRng(seed);
     var deck = shuffleWith(CARDS, rnd);
@@ -384,7 +394,7 @@
         name: c.name,
         keyword: c.keyword,
         mood: moodFor(c.n),
-        position: pos.label,
+        position: labelWithOptions(pos.label, options),
         positionHint: pos.hint,
         orientation: upright ? "upright" : "reversed",
         meaning: upright ? c.upright : c.reversed

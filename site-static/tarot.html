@@ -75,6 +75,18 @@
         <input class="pay-input" id="questionInput" placeholder="把想問的事寫在這裡⋯" maxlength="60" />
         <p class="field-hint" id="questionHint">至少寫五個字,本喵才聽得清楚</p>
       </label>
+      <!-- 只有二擇一牌陣會用到:不問清楚兩個選項是什麼,牌面只能寫「選 A」 -->
+      <div class="option-pair" id="optionPanel" style="display:none">
+        <label class="pay-field">
+          <span class="option-tag">選項一</span>
+          <input class="pay-input" id="optionA" placeholder="例如:留在原公司" maxlength="14" />
+        </label>
+        <label class="pay-field">
+          <span class="option-tag">選項二</span>
+          <input class="pay-input" id="optionB" placeholder="例如:接新的工作" maxlength="14" />
+        </label>
+        <p class="field-hint" id="optionHint">兩邊都寫一下,本喵才知道要比什麼</p>
+      </div>
       <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
     </div>
 
@@ -177,6 +189,10 @@ document.addEventListener("DOMContentLoaded", function () {
   var cutHint = document.getElementById("cutHint");
   var cutDoneBtn = document.getElementById("cutDoneBtn");
   var questionPanel = document.getElementById("questionPanel");
+  var optionPanel = document.getElementById("optionPanel");
+  var optionA = document.getElementById("optionA");
+  var optionB = document.getElementById("optionB");
+  var optionHint = document.getElementById("optionHint");
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
   var drawBtn = document.getElementById("drawBtn");
@@ -198,6 +214,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var scenario = null;
   var lastCards = null;
   var lastSpread = null;
+  // 記下這一輪的兩個選項,「請本喵再看一次」重送時才不會漏掉
+  var lastOptions = null;
   var refunded = false;
   var usedFallback = false;
   // 客人自己滑出來的種子:洗牌軌跡長度 + 切牌位置,決定抽到哪幾張牌
@@ -402,7 +420,12 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.classList.add("active");
         scenario = s;
         questionPanel.style.display = "none";
-        speak([SPREAD_REPLY[s.spread], "那麼,把你想問的事寫下來給本喵看吧。"], function () {
+        optionPanel.style.display = s.spread === "choice" ? "grid" : "none";
+        var lines = [SPREAD_REPLY[s.spread]];
+        lines.push(s.spread === "choice"
+          ? "先告訴本喵,你在猶豫的是哪兩條路?再把想問的事寫下來。"
+          : "那麼,把你想問的事寫下來給本喵看吧。");
+        speak(lines, function () {
           showStage(questionPanel);
           questionInput.focus();
         });
@@ -431,6 +454,36 @@ document.addEventListener("DOMContentLoaded", function () {
     if (questionHint.classList.contains("is-error") && questionInput.value.trim().length >= 5) {
       questionIsReady();
     }
+  });
+
+  // 二擇一沒填兩個選項就沒得比,擋在抽牌前
+  function chosenOptions() {
+    if (!scenario || scenario.spread !== "choice") return null;
+    var a = optionA.value.trim(), b = optionB.value.trim();
+    return a && b ? { a: a, b: b } : null;
+  }
+
+  function optionsAreReady() {
+    if (!scenario || scenario.spread !== "choice") return true;
+    if (chosenOptions()) {
+      optionHint.textContent = "兩邊都寫一下,本喵才知道要比什麼";
+      optionHint.classList.remove("is-error");
+      optionA.classList.remove("is-error");
+      optionB.classList.remove("is-error");
+      return true;
+    }
+    optionHint.textContent = "兩條路都寫上來,本喵才有得比較喔";
+    optionHint.classList.add("is-error");
+    if (!optionA.value.trim()) optionA.classList.add("is-error");
+    if (!optionB.value.trim()) optionB.classList.add("is-error");
+    (optionA.value.trim() ? optionB : optionA).focus();
+    return false;
+  }
+
+  [optionA, optionB].forEach(function (el) {
+    el.addEventListener("input", function () {
+      if (optionHint.classList.contains("is-error") && chosenOptions()) optionsAreReady();
+    });
   });
 
   // 寬螢幕播橫式版本,直式螢幕播直式版本——這樣兩邊都看得到完整畫面。
@@ -464,6 +517,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   drawBtn.addEventListener("click", function () {
     if (!questionIsReady()) return;
+    if (!optionsAreReady()) return;
     if (!canStartRound()) return;
     unlockVideo();
     hideStages();
@@ -742,7 +796,8 @@ document.addEventListener("DOMContentLoaded", function () {
     lastSpread = (scenario && scenario.spread) || "flow";
     // 種子完全來自客人:洗牌軌跡長度 + 切點。同一組操作必定抽到同一副牌。
     var seed = Math.floor(swipeDistance * 1000 + cutPoint * 7919 + Date.now() % 100000);
-    var cards = Tarot.drawSpread(lastSpread, seed, cutPoint);
+    lastOptions = chosenOptions();
+    var cards = Tarot.drawSpread(lastSpread, seed, cutPoint, lastOptions);
     lastCards = cards;
     refunded = false;
     usedFallback = false;
@@ -839,6 +894,8 @@ document.addEventListener("DOMContentLoaded", function () {
         spread: lastSpread || "flow",
         scenario: scenario ? scenario.label : "",
         question: questionInput.value,
+        optionA: lastOptions ? lastOptions.a : "",
+        optionB: lastOptions ? lastOptions.b : "",
         cards: cards.map(function (c) { return { name: c.name, orientation: c.orientation, keyword: c.keyword }; })
       }),
       signal: controller ? controller.signal : undefined
@@ -867,8 +924,11 @@ document.addEventListener("DOMContentLoaded", function () {
     retryBtn.style.display = "none";
     errorNote.style.display = "none";
     questionInput.value = "";
+    optionA.value = "";
+    optionB.value = "";
     topic = null;
     scenario = null;
+    lastOptions = null;
     resultPanel.classList.remove("is-fallback");
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
     if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
