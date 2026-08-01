@@ -8,6 +8,9 @@
   --sans: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* 手機上畫面不該左右移動。clip 不像 hidden 會另外開一個捲動容器,
+   position:sticky 仍然正常;overscroll-behavior-x 擋掉 iOS 的橫向橡皮筋。 */
+html, body { max-width: 100%; overflow-x: clip; overscroll-behavior-x: none; }
 body {
   font-family: var(--sans); color: var(--ink); background: var(--porcelain);
   background-image:
@@ -211,7 +214,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
 .pay-field span { display: block; font-size: 12px; font-weight: 500; color: var(--inkdim); margin-bottom: 6px; }
 .pay-input {
   width: 100%; border: 2px solid var(--hairline); border-radius: 14px; padding: 13px 16px;
-  font-size: 15px; font-family: var(--sans); color: var(--ink); background: #fff;
+  /* 16px 是硬性下限:iOS Safari 遇到小於 16px 的輸入框,一聚焦就會自動
+     放大整頁,放大之後畫面就能左右拖動。不要為了版面把它調小。 */
+  font-size: 16px; font-family: var(--sans); color: var(--ink); background: #fff;
   font-variant-numeric: tabular-nums; letter-spacing: .02em; transition: border-color .15s;
 }
 .pay-input:focus { outline: none; border-color: var(--lavender); }
