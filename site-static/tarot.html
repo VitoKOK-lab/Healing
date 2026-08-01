@@ -22,6 +22,15 @@
   </video>
 </div>
 
+<!-- 遇到不能算的問題時,本喵唱歌賠罪的影片 -->
+<div class="draw-overlay" id="songOverlay" style="display:none">
+  <video id="songVideo" class="draw-overlay-video" playsinline preload="none"
+         poster="./assets/videos/tarot-song-poster.jpg">
+    <source src="./assets/videos/tarot-song.webm" type="video/webm" />
+    <source src="./assets/videos/tarot-song.mp4" type="video/mp4" />
+  </video>
+</div>
+
 <main class="wrap-sm rise">
   <div class="tarot-bar">
     <span class="tarot-credits" id="creditsBadge">
@@ -209,6 +218,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawBtn = document.getElementById("drawBtn");
   var drawOverlay = document.getElementById("drawOverlay");
   var drawVideo = document.getElementById("drawVideo");
+  var songOverlay = document.getElementById("songOverlay");
+  var songVideo = document.getElementById("songVideo");
   var tarotDeck = document.getElementById("tarotDeck");
   var resultPanel = document.getElementById("resultPanel");
   var cardSummary = document.getElementById("cardSummary");
@@ -567,12 +578,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // iOS 只允許「使用者手勢當下」開始播放。洗牌影片是等本喵說完話才播,
   // 中間隔了 setTimeout,手勢就失效了。所以在按下的當下先播一下再暫停,
   // 把影片「解鎖」,稍後才能程式化播放並保有聲音。
+  // 兩支影片都要在手勢當下先解鎖:洗牌影片與唱歌影片都是等本喵說完話
+  // 才播,那時已經脫離手勢,iOS 會擋下來。
   function unlockVideo() {
-    var p = drawVideo.play();
-    if (p && p.then) {
-      p.then(function () { drawVideo.pause(); drawVideo.currentTime = 0; })
-       .catch(function () {});
-    }
+    [drawVideo, songVideo].forEach(function (v) {
+      var p = v.play();
+      if (p && p.then) {
+        p.then(function () { v.pause(); v.currentTime = 0; }).catch(function () {});
+      }
+    });
   }
 
   // 自由發問:先看懂客人問什麼,才決定用哪個牌陣。判斷成二擇一時要回頭
@@ -595,8 +609,79 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
+  // ── 不適合用塔羅問的題目 ─────────────────────────────
+  // 一定要擋在扣點數之前:這種問題塔羅給不出負責任的答案,
+  // 收了錢再給一段模稜兩可的話,對客人沒有好處。
+  function handleUnsuitable() {
+    var q = questionInput.value + " " + optionA.value + " " + optionB.value;
+    var hit = Tarot.unsuitable(q);
+    if (!hit) return false;
+
+    hideStages();
+
+    // 全部重來:清空欄位、回到第一步重新發問。全程沒扣點數。
+    function restart() {
+      questionInput.value = "";
+      optionA.value = "";
+      optionB.value = "";
+      topic = null;
+      scenario = null;
+      lastOptions = null;
+      autoPickedLine = null;
+      document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
+      startIntro();
+      catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    speak(hit.lines, function () {
+      // 講到想不開的時候唱歌是失禮的,那一類只說話就好
+      if (hit.sing === false) { restart(); return; }
+      playSong(restart);
+    });
+    return true;
+  }
+
+  // 唱歌賠罪的影片:跟洗牌動畫一樣滿版、鎖捲動,播完淡出
+  function playSong(next) {
+    var done = false;
+    var guard = null;
+
+    function finish() {
+      if (done) return;
+      done = true;
+      clearTimeout(guard);
+      songVideo.removeEventListener("ended", finish);
+      songVideo.removeEventListener("error", finish);
+      songOverlay.classList.add("fading");
+      setTimeout(function () {
+        songOverlay.style.display = "none";
+        songOverlay.classList.remove("fading");
+        songVideo.pause();
+        document.body.classList.remove("no-scroll");
+        next();
+      }, 900);
+    }
+
+    songVideo.addEventListener("ended", finish);
+    songVideo.addEventListener("error", finish);
+    document.body.classList.add("no-scroll");
+    songOverlay.style.display = "block";
+    songVideo.currentTime = 0;
+    songVideo.muted = !Tarot.Sound.isOn();
+    var p = songVideo.play();
+    if (p && p.catch) p.catch(finish);
+    // 影片長度未知時的保險(實際 10 秒),播不起來也不會卡住
+    songVideo.addEventListener("playing", function () {
+      clearTimeout(guard);
+      var dur = isFinite(songVideo.duration) && songVideo.duration > 0 ? songVideo.duration : 10;
+      guard = setTimeout(finish, (dur - songVideo.currentTime + 1) * 1000);
+    });
+    guard = setTimeout(finish, 6000);
+  }
+
   drawBtn.addEventListener("click", function () {
     if (!questionIsReady()) return;
+    if (handleUnsuitable()) return;
     if (!resolveAutoSpread()) return;
     if (!optionsAreReady()) return;
     if (!canStartRound()) return;
