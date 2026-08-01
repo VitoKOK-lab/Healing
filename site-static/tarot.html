@@ -426,7 +426,14 @@ document.addEventListener("DOMContentLoaded", function () {
   soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
   // ── 第一步:本喵先開口,說完才給選主題 ────────────────────
+  // 收掉這一步的畫面時,本喵那句話也要一起收掉——那句話是講給這一步聽的。
+  // 留著它會變成:客人已經切完牌、影片都播完了,上面還寫著「換你切牌」。
+  // 下一步要說話的地方都會呼叫 speak(),那裡會自己把對話框開回來。
   function hideStages() {
+    clearTimeout(typeTimer);
+    catDialogue.onclick = null;
+    dialogueCaret.style.display = "none";
+    catDialogue.style.display = "none";
     topicPanel.style.display = "none";
     scenarioPanel.style.display = "none";
     questionPanel.style.display = "none";
