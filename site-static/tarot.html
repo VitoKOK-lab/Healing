@@ -109,6 +109,22 @@
       <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
     </div>
 
+    <!-- 本喵沒聽懂時的追問:先問清楚再開牌,不會扣點數 -->
+    <div class="step-panel" id="clarifyPanel" style="display:none">
+      <label class="pay-field">
+        <input class="pay-input" id="clarifyInput" placeholder="跟本喵說說⋯" maxlength="120"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               name="tarot-c" />
+        <p class="field-hint" id="clarifyHint">說清楚一點,本喵才不會看錯方向</p>
+      </label>
+      <button type="button" class="btn-primary" id="clarifyBtn" style="width:100%">回答本喵</button>
+    </div>
+
+    <!-- 呼叫追問 API 時的等待狀態 -->
+    <div class="step-panel" id="thinkingPanel" style="display:none">
+      <p class="stage-hint">喵喵占卜師正在聽你說⋯</p>
+    </div>
+
     <!-- 洗牌:手指在牌面上來回滑,滑滿才算洗透 -->
     <div class="step-panel" id="shufflePanel" style="display:none">
       <div class="swipe-stage" id="swipeStage">
@@ -213,6 +229,11 @@ document.addEventListener("DOMContentLoaded", function () {
   var optionA = document.getElementById("optionA");
   var optionB = document.getElementById("optionB");
   var optionHint = document.getElementById("optionHint");
+  var clarifyPanel = document.getElementById("clarifyPanel");
+  var clarifyInput = document.getElementById("clarifyInput");
+  var clarifyHint = document.getElementById("clarifyHint");
+  var clarifyBtn = document.getElementById("clarifyBtn");
+  var thinkingPanel = document.getElementById("thinkingPanel");
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
   var drawBtn = document.getElementById("drawBtn");
@@ -414,6 +435,8 @@ document.addEventListener("DOMContentLoaded", function () {
     topicPanel.style.display = "none";
     scenarioPanel.style.display = "none";
     questionPanel.style.display = "none";
+    clarifyPanel.style.display = "none";
+    thinkingPanel.style.display = "none";
     shufflePanel.style.display = "none";
     cutPanel.style.display = "none";
   }
@@ -675,11 +698,71 @@ document.addEventListener("DOMContentLoaded", function () {
     guard = setTimeout(finish, 6000);
   }
 
-  drawBtn.addEventListener("click", function () {
-    if (!questionIsReady()) return;
-    if (handleUnsuitable()) return;
-    if (!resolveAutoSpread()) return;
-    if (!optionsAreReady()) return;
+  // ── 開牌前先確認本喵真的聽懂了 ───────────────────────────
+  // 客人常用只有自己懂的說法(公司名、圈內用語、代稱「他」)。硬著頭皮解
+  // 就會解錯方向,或掰出根本不存在的東西。真正的占卜師會先問清楚再翻牌。
+  // 全程不扣點數;API 掛掉就直接開牌,不能因為追問失敗擋住付費流程。
+  var clarifyRounds = [];
+
+  function askClarify(done) {
+    thinkingPanel.style.display = "block";
+    var controller = "AbortController" in window ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 12000) : null;
+
+    fetch(Tarot.CLARIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: topic || "other",
+        scenario: scenario ? scenario.label : "",
+        question: questionText(),
+        rounds: clarifyRounds
+      }),
+      signal: controller ? controller.signal : undefined
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (timer) clearTimeout(timer);
+        thinkingPanel.style.display = "none";
+        if (d && d.ok && d.question) askBack(d.question, done);
+        else done();
+      })
+      .catch(function () {
+        if (timer) clearTimeout(timer);
+        thinkingPanel.style.display = "none";
+        done();   // 追問失敗就直接開牌
+      });
+  }
+
+  function askBack(q, done) {
+    hideStages();
+    clarifyInput.value = "";
+    clarifyHint.textContent = "說清楚一點,本喵才不會看錯方向";
+    clarifyHint.classList.remove("is-error");
+    clarifyInput.classList.remove("is-error");
+
+    speak([q], function () {
+      showStage(clarifyPanel);
+      clarifyInput.focus();
+    });
+
+    clarifyBtn.onclick = function () {
+      var a = clarifyInput.value.trim();
+      if (a.length < 2) {
+        clarifyHint.textContent = "再多說一點點,本喵聽不懂";
+        clarifyHint.classList.add("is-error");
+        clarifyInput.classList.add("is-error");
+        clarifyInput.focus();
+        return;
+      }
+      clarifyBtn.onclick = null;
+      clarifyRounds.push({ q: q, a: a });
+      clarifyPanel.style.display = "none";
+      askClarify(done);   // 再確認一次,伺服器端最多問兩輪
+    };
+  }
+
+  function beginRound() {
     if (!canStartRound()) return;
     unlockVideo();
     hideStages();
@@ -694,6 +777,18 @@ document.addEventListener("DOMContentLoaded", function () {
       updateCredits();
       startSwipeShuffle();
     });
+  }
+
+  drawBtn.addEventListener("click", function () {
+    if (!questionIsReady()) return;
+    if (handleUnsuitable()) return;
+    if (!resolveAutoSpread()) return;
+    if (!optionsAreReady()) return;
+    if (!canStartRound()) return;
+    unlockVideo();          // 追問會插在中間,先趁這個手勢把影片解鎖
+    hideStages();
+    clarifyRounds = [];
+    askClarify(beginRound);
   });
 
   // ── 第四步:手指洗牌 ────────────────────────────────────
@@ -1086,6 +1181,7 @@ document.addEventListener("DOMContentLoaded", function () {
         spread: lastSpread || "flow",
         scenario: scenario ? scenario.label : "",
         question: questionText(),
+        clarify: clarifyRounds,
         optionA: lastOptions ? lastOptions.a : "",
         optionB: lastOptions ? lastOptions.b : "",
         cards: cards.map(function (c) { return { name: c.name, orientation: c.orientation, keyword: c.keyword }; })
@@ -1122,6 +1218,7 @@ document.addEventListener("DOMContentLoaded", function () {
     scenario = null;
     lastOptions = null;
     autoPickedLine = null;
+    clarifyRounds = [];
     resultPanel.classList.remove("is-fallback");
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
     if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程

@@ -319,16 +319,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { topic, spread, scenario, question, cards, optionA, optionB } = (body ??
-    {}) as {
-    topic?: unknown;
-    spread?: unknown;
-    scenario?: unknown;
-    question?: unknown;
-    cards?: unknown;
-    optionA?: unknown;
-    optionB?: unknown;
-  };
+  const { topic, spread, scenario, question, cards, optionA, optionB, clarify } =
+    (body ?? {}) as {
+      topic?: unknown;
+      spread?: unknown;
+      scenario?: unknown;
+      question?: unknown;
+      cards?: unknown;
+      optionA?: unknown;
+      optionB?: unknown;
+      clarify?: unknown;
+    };
 
   const layout =
     typeof spread === "string" && SPREADS[spread] ? SPREADS[spread] : SPREADS.flow;
@@ -368,6 +369,18 @@ export async function POST(req: NextRequest) {
       const pos = layout.positions[i];
       return `${label(pos.label)}(${label(pos.hint)}):「${c.name}」${ori}(${numText}關鍵字:${c.keyword})`;
     })
+    .join("\n");
+
+  // 開牌前追問到的補充。這是客人親口說的,比任何猜測都準,一定要用進去。
+  const clarifyLines = (Array.isArray(clarify) ? clarify : [])
+    .filter(
+      (r): r is { q: string; a: string } =>
+        !!r && typeof r === "object" &&
+        typeof (r as { q?: unknown }).q === "string" &&
+        typeof (r as { a?: unknown }).a === "string"
+    )
+    .slice(0, 2)
+    .map((r) => `你問:「${r.q.slice(0, 60)}」 客人答:「${r.a.slice(0, 120)}」`)
     .join("\n");
 
   const angleIndex = Math.floor(Math.random() * ANGLES.length);
@@ -412,7 +425,7 @@ export async function POST(req: NextRequest) {
 ${ANGLES[angleIndex]}
 
 【客人想問的】
-主題:${topicLabel}${trimmedScenario ? `\n處境:${trimmedScenario}` : ""}${trimmedQuestion ? `\n問題:${trimmedQuestion}` : ""}
+主題:${topicLabel}${trimmedScenario ? `\n處境:${trimmedScenario}` : ""}${trimmedQuestion ? `\n問題:${trimmedQuestion}` : ""}${clarifyLines ? `\n\n【開牌前你已經問過、客人親口補充的】\n${clarifyLines}\n(這些是客人自己說的,比任何猜測都準,務必用進解讀裡)` : ""}
 
 【牌陣】${layout.name}(${total} 張)
 ${cardLines}
@@ -437,6 +450,17 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 　 先把眼光收回自己身上,答案會比你以為的更清楚。」
 可以自然提到牌名(例如「逆位的教皇提醒著」),也可以提到位置的語意(例如「往前看的那一段」),
 但不可以用「第幾張」來組織段落。
+
+【不要裝懂——你不是百科全書】
+客人會提到你不熟的公司、職稱、證照、方法論、遊戲、圈內用語、人名。
+那些是「客人的世界」,不是你要解釋的東西,你也沒有能力查證。
+- 絕對不要定義、解釋、評論那個名詞是什麼、有什麼特點、要求什麼、源自哪裡。
+  ✗「澤庫法則要求你把時間切成固定區塊、不斷檢視效率」——你根本不知道那是什麼
+  ✗「XX 認證在業界的含金量很高」——你不知道
+- 需要提到時,只照客人的說法帶過,不加任何你「補充」的知識。
+  ✓「你說那套方法一直讓你失敗——牌顯示問題不在方法本身」
+  ✓「你想考的那張證照,牌看到的是你考它的動機」
+- 你的專業是讀牌與讀人,不是讀資料。不確定的事就不要碰,把篇幅留給牌。
 
 【講到徵兆就要說出處】
 每當你指出一個徵兆、跡象或轉折(「有股力量在擋著你」「機會快來了」「你在硬撐」),
