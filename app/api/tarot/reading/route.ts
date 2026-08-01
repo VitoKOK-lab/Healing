@@ -17,6 +17,42 @@ const MAJOR_NUMBERS: Record<string, number> = {
   節制: 14, 惡魔: 15, 高塔: 16, 星星: 17, 月亮: 18, 太陽: 19, 審判: 20, 世界: 21,
 };
 
+// 小牌的牌組與元素。牌名開頭即牌組,不需前端多送欄位。
+const SUITS: Array<{ prefix: string; element: string; domain: string }> = [
+  { prefix: "權杖", element: "火", domain: "行動與熱情" },
+  { prefix: "聖杯", element: "水", domain: "情感與關係" },
+  { prefix: "寶劍", element: "風", domain: "思緒與溝通" },
+  { prefix: "錢幣", element: "土", domain: "現實與資源" },
+];
+
+function suitOf(name: string) {
+  return SUITS.find((s) => name.startsWith(s.prefix));
+}
+
+// 大牌多寡:大牌講的是人生層級的主題,小牌講的是日常裡的事。
+function majorSignal(majors: number): string {
+  if (majors === 0) return "三張都是小牌——這件事屬於日常層面,可以從具體的行動下手,不必想得太重";
+  if (majors === 3) return "三張都是大牌——這是人生層級的主題,背後有更大的功課在推動";
+  if (majors === 2) return "兩張大牌——這件事比表面看起來更重要,值得認真對待";
+  return "一張大牌——日常中的一個轉折點,關鍵落在那張大牌上";
+}
+
+// 同一牌組出現兩張以上,代表整件事的重心落在那個面向。
+function suitSignal(names: string[]): string {
+  const counts = new Map<string, number>();
+  for (const n of names) {
+    const s = suitOf(n);
+    if (s) counts.set(s.prefix, (counts.get(s.prefix) ?? 0) + 1);
+  }
+  for (const [prefix, count] of counts) {
+    if (count >= 2) {
+      const s = SUITS.find((x) => x.prefix === prefix)!;
+      return `${count} 張${prefix}(${s.element}元素)——重心明顯落在${s.domain}上`;
+    }
+  }
+  return "";
+}
+
 const POSITIONS = [
   { label: "現況", hint: "事情此刻真正的樣子" },
   { label: "挑戰", hint: "卡住的地方,或需要留意的事" },
@@ -107,6 +143,16 @@ async function askGemini(prompt: string): Promise<string> {
 // 逐張報牌的說法。三張牌要讀成一個故事,出現這些就是在輪流背牌義。
 const PER_CARD_PHRASES = /第[一二三123]張|最後一張|中間那張|第[一二三123]個位置/;
 
+// 重點該框「對客人有意義的話」,框到牌名或正逆位就只是報牌。
+// 這種偶爾還是會漏出來,直接把框拆掉保留文字即可,不必為此重新生成。
+function unwrapCardNameHighlights(text: string, cardNames: string[]): string {
+  return text.replace(/【([^】]*)】/g, (whole, inner: string) => {
+    const isCardish =
+      cardNames.some((n) => inner.includes(n)) || /正位|逆位/.test(inner);
+    return isCardish ? inner : whole;
+  });
+}
+
 // 正常解讀幾乎全是中文;推理外洩的內容充滿數字、括號與英文檢查字樣。
 function looksLikeReading(text: string): boolean {
   if (text.length < 60) return false;
@@ -168,7 +214,13 @@ export async function POST(req: NextRequest) {
     .join("\n");
 
   const reversed = drawn.filter((c) => c.orientation === "reversed").length;
-  const trend = numberTrend(drawn.map((c) => MAJOR_NUMBERS[c.name] ?? -1));
+  const majors = drawn.filter((c) => MAJOR_NUMBERS[c.name] !== undefined).length;
+  // 牌號走勢只在三張都是大牌時才有意義
+  const trend = majors === 3 ? numberTrend(drawn.map((c) => MAJOR_NUMBERS[c.name])) : "";
+  const suits = suitSignal(drawn.map((c) => c.name));
+  const signals = [reversalSignal(reversed), majorSignal(majors), suits, trend]
+    .filter(Boolean)
+    .join("\n");
 
   const prompt = `你是「解憂商店」的塔羅占卜師,語氣溫暖、細膩、給人安定感,像在跟熟識的朋友聊天,絕不使用恐嚇或宿命式的斷言。
 
@@ -179,7 +231,7 @@ export async function POST(req: NextRequest) {
 ${cardLines}
 
 【整體訊號】
-${reversalSignal(reversed)}${trend ? `\n${trend}` : ""}
+${signals}
 
 【解牌方法——最重要】
 三張牌是「一個故事的三個章節」,不是三段各自獨立的牌義,請務必:
@@ -225,6 +277,7 @@ ${reversalSignal(reversed)}${trend ? `\n${trend}` : ""}
       );
     }
 
+    reading = unwrapCardNameHighlights(reading, drawn.map((c) => c.name));
     return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("Gemini request failed", err);
