@@ -171,9 +171,35 @@
       src.stop(t + dur); trem.stop(t + dur);
     }
 
+    // 「答答答」:打字時每隔幾個字的短促木質音,音量刻意壓低以免連續播放刺耳。
+    function blip(pitch) {
+      if (!enabled) return;
+      var c = ac();
+      if (!c) return;
+      var t = c.currentTime;
+      var base = pitch || 980;
+
+      var osc = c.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(base, t);
+      osc.frequency.exponentialRampToValueAtTime(base * 0.78, t + 0.03);
+
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 2600;
+
+      var g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.045, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+
+      osc.connect(lp); lp.connect(g); g.connect(c.destination);
+      osc.start(t); osc.stop(t + 0.06);
+    }
+
     return {
       meow: meow,
       purr: purr,
+      blip: blip,
       isOn: function () { return enabled; },
       toggle: function () {
         enabled = !enabled;

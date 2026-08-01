@@ -74,12 +74,32 @@
       <p class="eyebrow">Reading</p>
       <h2 class="display" style="font-size:18px;margin-top:6px">牌面解讀</h2>
       <ul class="reading-list" id="cardSummary"></ul>
-      <div class="tarot-loading" id="loadingNote" style="display:none">AI 正在為你解讀⋯</div>
+      <div class="tarot-loading" id="loadingNote" style="display:none">
+        <span class="thinking-cat" id="thinkingCat"></span>
+        <span>喵喵占卜師思考中<span class="dots"><i>.</i><i>.</i><i>.</i></span></span>
+      </div>
       <div class="tarot-error" id="errorNote" style="display:none"></div>
-      <p class="tarot-reading-text" id="readingText"></p>
+
+      <!-- 喵喵占卜師一句一句說話(點一下可跳過該句) -->
+      <div class="cat-dialogue" id="catDialogue" style="display:none">
+        <div class="cat-dialogue-top">
+          <span class="cat-dialogue-avatar" id="dialogueAvatar"></span>
+          <span class="cat-dialogue-name">喵喵占卜師</span>
+        </div>
+        <p class="cat-dialogue-text" id="dialogueText"></p>
+        <span class="cat-dialogue-caret" id="dialogueCaret">▼</span>
+      </div>
+
+      <!-- 全部說完後列出整段解讀 -->
+      <div class="reading-summary" id="readingSummary" style="display:none">
+        <p class="eyebrow">Summary</p>
+        <h3 class="display">喵喵占卜師的完整解讀</h3>
+        <ol id="summaryList"></ol>
+      </div>
+
       <div class="tarot-actions">
         <button type="button" class="btn-secondary" id="retryBtn" style="display:none">重新請 AI 解讀</button>
-        <button type="button" class="btn-primary" id="againBtn">再抽一次</button>
+        <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
     </div>
   </div>
@@ -112,7 +132,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var cardSummary = document.getElementById("cardSummary");
   var loadingNote = document.getElementById("loadingNote");
   var errorNote = document.getElementById("errorNote");
-  var readingText = document.getElementById("readingText");
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
   var drawBtn = document.getElementById("drawBtn");
@@ -121,6 +140,12 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawStage = document.getElementById("drawStage");
   var drawVideo = document.getElementById("drawVideo");
   var drawSkip = document.getElementById("drawSkip");
+  var catDialogue = document.getElementById("catDialogue");
+  var dialogueAvatar = document.getElementById("dialogueAvatar");
+  var dialogueText = document.getElementById("dialogueText");
+  var dialogueCaret = document.getElementById("dialogueCaret");
+  var readingSummary = document.getElementById("readingSummary");
+  var summaryList = document.getElementById("summaryList");
   var topic = "love";
   var lastCards = null;
 
@@ -152,6 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
     paintSound();
   });
   paintSound();
+  document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
 
   document.querySelectorAll(".topic-chip").forEach(function (chip) {
     chip.addEventListener("click", function () {
@@ -165,6 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tarotDeck.style.display = "none";
     tarotDeck.innerHTML = "";
     resultPanel.classList.remove("show");
+    stopSpeaking();
   }
 
   // 依抽到的牌建立三張卡片:背面是打瞌睡的貓,正面依牌義換一種表情。
@@ -202,6 +229,90 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // ── 喵喵占卜師說話:一句一句打字,打完全部再列成總表 ──────────
+  var typeTimer = null;
+
+  function splitSentences(text) {
+    var parts = text.trim().match(/[^。！？!?\n]+[。！？!?]?/g) || [text];
+    return parts.map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  function speakReading(text) {
+    var lines = splitSentences(text);
+    dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
+    catDialogue.style.display = "block";
+    catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    var li = 0;          // 目前第幾句
+    var ci = 0;          // 目前打到第幾個字
+    var typing = false;
+
+    function showSummary() {
+      summaryList.innerHTML = "";
+      lines.forEach(function (s) {
+        var el = document.createElement("li");
+        el.textContent = s;
+        summaryList.appendChild(el);
+      });
+      catDialogue.style.display = "none";
+      readingSummary.style.display = "block";
+      againBtn.style.display = "inline-flex";
+      Tarot.Sound.purr(1.6);
+      readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function typeLine() {
+      typing = true;
+      dialogueCaret.style.display = "none";
+      dialogueText.textContent = "";
+      ci = 0;
+      var line = lines[li];
+      (function step() {
+        if (ci >= line.length) {
+          typing = false;
+          dialogueCaret.style.display = "";
+          // 說完停一下再接下一句;客人也可以點一下提早往下
+          typeTimer = setTimeout(nextLine, 900);
+          return;
+        }
+        dialogueText.textContent = line.slice(0, ++ci);
+        if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
+        typeTimer = setTimeout(step, 42);
+      })();
+    }
+
+    function nextLine() {
+      clearTimeout(typeTimer);
+      li += 1;
+      if (li >= lines.length) showSummary();
+      else typeLine();
+    }
+
+    // 點對話框:打字中就直接顯示整句,已打完就跳下一句
+    catDialogue.onclick = function () {
+      if (typing) {
+        clearTimeout(typeTimer);
+        typing = false;
+        dialogueText.textContent = lines[li];
+        dialogueCaret.style.display = "";
+        typeTimer = setTimeout(nextLine, 900);
+      } else {
+        nextLine();
+      }
+    };
+
+    typeLine();
+  }
+
+  function stopSpeaking() {
+    clearTimeout(typeTimer);
+    catDialogue.style.display = "none";
+    catDialogue.onclick = null;
+    readingSummary.style.display = "none";
+    dialogueText.textContent = "";
+    summaryList.innerHTML = "";
+  }
+
   // 解讀失敗就把這次的額度還給客人(只退一次,之後重試不再重複扣或退)
   var refunded = false;
   function failReading(msg) {
@@ -209,6 +320,7 @@ document.addEventListener("DOMContentLoaded", function () {
     errorNote.textContent = msg;
     errorNote.style.display = "block";
     retryBtn.style.display = "inline-flex";
+    againBtn.style.display = "inline-flex";
     if (!refunded) {
       refunded = true;
       Tarot.addCredits(1);
@@ -220,7 +332,8 @@ document.addEventListener("DOMContentLoaded", function () {
     loadingNote.style.display = "block";
     errorNote.style.display = "none";
     retryBtn.style.display = "none";
-    readingText.textContent = "";
+    againBtn.style.display = "none";
+    stopSpeaking();
 
     var controller = "AbortController" in window ? new AbortController() : null;
     var timer = controller ? setTimeout(function () { controller.abort(); }, 20000) : null;
@@ -240,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (timer) clearTimeout(timer);
         loadingNote.style.display = "none";
         if (data && data.ok) {
-          readingText.textContent = data.reading;
+          speakReading(data.reading);
         } else {
           failReading((data && data.error) || "AI 解讀暫時無法使用,請稍後再試");
         }
