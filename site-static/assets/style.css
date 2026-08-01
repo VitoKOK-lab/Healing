@@ -467,6 +467,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
 .card-art {
   position: absolute; inset: 0; background-size: cover; background-position: center;
   transition: transform .4s ease;
+  /* 牌面本身偏暗,又疊在深紫底上,不提亮看不清楚畫的是什麼 */
+  filter: brightness(1.28) contrast(1.06) saturate(1.08);
 }
 .tarot-card.is-reversed .card-art { transform: rotate(180deg); }
 
@@ -726,6 +728,8 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .tarot-result.show { display: block; }
 .tarot-result .reading-list { list-style: none; display: grid; gap: 10px; margin-top: 16px; }
 .tarot-result .reading-list li { font-size: 13px; color: var(--inkdim); display: flex; gap: 8px; flex-wrap: wrap; }
+/* 還沒翻到的牌:項目先佔好位置但不顯示,列表順序才不會被翻牌順序打亂 */
+.tarot-result .reading-list li.pending-item { display: none; }
 .tarot-result .reading-list b { font-family: var(--display); font-weight: 400; color: var(--ink); flex-shrink: 0; }
 .tarot-result .reading-list .pos {
   font-style: normal; font-size: 10px; letter-spacing: .06em; color: var(--gold);
@@ -767,16 +771,13 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   font-style: normal; font-weight: 500; font-size: 1.18em; color: #c98a1e;
   letter-spacing: .01em;
 }
-/* 〔〕框住的牌名出處:做成小標籤,一眼看出這句話是哪張牌講的 */
+/* 〔〕框住的牌名出處:做成小標籤,一眼看出這句話是哪張牌講的。
+   整頁底色都是紫的,標籤就不要再用紫——白字白框最乾淨也最好認。 */
 .card-ref {
   font-style: normal; font-size: .82em; letter-spacing: .03em;
-  color: #6b4bb0; background: rgba(146,110,214,.13);
-  border: 1px solid rgba(146,110,214,.32); border-radius: 6px;
+  color: #fff; background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.4); border-radius: 6px;
   padding: 1px 6px; margin: 0 2px; white-space: nowrap;
-}
-/* 塔羅頁整頁都是深紫底(對話框也是),標籤必須用亮色才看得見 */
-body.tarot-page .card-ref {
-  color: #e2d2ff; border-color: rgba(214,190,255,.55); background: rgba(150,115,230,.3);
 }
 /* 對話不會自動前進,所以這個提示要看得見——它是唯一往下走的方法 */
 .cat-dialogue-caret {

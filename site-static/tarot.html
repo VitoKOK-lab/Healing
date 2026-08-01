@@ -30,7 +30,7 @@
     </span>
     <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
-      <span id="soundLabel">貓叫聲</span>
+      <span id="soundLabel">呼嚕聲</span>
     </button>
   </div>
 
@@ -392,7 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var on = Tarot.Sound.isOn();
     soundToggle.classList.toggle("off", !on);
     soundToggle.setAttribute("aria-pressed", String(on));
-    soundLabel.textContent = on ? "貓叫聲" : "已靜音";
+    soundLabel.textContent = on ? "呼嚕聲" : "已靜音";
     soundToggle.querySelector(".wave").style.display = on ? "" : "none";
     soundToggle.querySelector(".cross").style.display = on ? "none" : "";
   }
@@ -901,9 +901,29 @@ document.addEventListener("DOMContentLoaded", function () {
     // 牌越多翻越快,不然十一張牌要看客人枯等六秒
     var step = cards.length <= 3 ? 520 : cards.length <= 5 ? 400 : 230;
 
-    cards.forEach(function (c, i) {
+    // 有圖形的牌陣是用 grid-area 排的,DOM 順序不等於畫面順序,照 DOM 翻
+    // 看起來就會亂跳。改成由上往下、由左往右翻。
+    // (top 取整到 20px 一格,同一列的細微差異不影響排序)
+    var flipOrder = cards.map(function (c, i) { return i; }).sort(function (a, b) {
+      var ra = cardEls[a].getBoundingClientRect(), rb = cardEls[b].getBoundingClientRect();
+      var rowA = Math.round(ra.top / 20), rowB = Math.round(rb.top / 20);
+      return rowA !== rowB ? rowA - rowB : ra.left - rb.left;
+    });
+
+    // 摘要列表照牌陣的邏輯順序先建好放著,翻到哪張才顯示哪張,
+    // 這樣列表的順序不會被翻牌順序打亂。
+    var summaryItems = cards.map(function (c) {
+      var li = document.createElement("li");
+      li.className = "pending-item";
+      li.innerHTML = '<i class="pos">' + c.position + "</i><b>" + c.name +
+        (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
+      cardSummary.appendChild(li);
+      return li;
+    });
+
+    flipOrder.forEach(function (idx, seq) {
       setTimeout(function () {
-        var el = cardEls[i];
+        var el = cardEls[idx];
         el.classList.remove("pending");
         el.classList.add("flipped", "just-flipped");
         // 牌名等翻開一半再出現,才不會提前爆雷
@@ -911,16 +931,12 @@ document.addEventListener("DOMContentLoaded", function () {
           return function () { slot.querySelector(".tarot-caption").classList.remove("hidden"); };
         }(el.parentNode), 330);
         sparkle(el);
-        // 只在第一張與最後一張輕輕叫一聲。每張都叫的話,十一張牌陣會變成
-        // 連續十一聲貓叫,很嚇人。
-        if (i === 0 || i === cards.length - 1) Tarot.Sound.meow(0, i === 0 ? 600 : 660);
+        // 翻牌只用呼嚕聲,不用貓叫——貓叫太尖銳,連續翻牌會嚇到人。
+        // 而且只在第一張與最後一張各一次,中間安靜。
+        if (seq === 0 || seq === cards.length - 1) Tarot.Sound.purr(0.9);
         setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
-
-        var li = document.createElement("li");
-        li.innerHTML = '<i class="pos">' + c.position + "</i><b>" + c.name +
-          (c.orientation === "upright" ? "" : "(逆位)") + "</b><span>" + c.meaning + "</span>";
-        cardSummary.appendChild(li);
-      }, 300 + i * step);
+        summaryItems[idx].classList.remove("pending-item");
+      }, 300 + seq * step);
     });
 
     setTimeout(function () {
@@ -1033,7 +1049,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   pickVideo();
-  Tarot.Sound.preload();
   dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
   document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
   paintSound();
