@@ -330,9 +330,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // iOS 只允許「使用者手勢當下」開始播放。洗牌影片是等本喵說完話才播,
+  // 中間隔了 setTimeout,手勢就失效了。所以在按下的當下先播一下再暫停,
+  // 把影片「解鎖」,稍後才能程式化播放並保有聲音。
+  function unlockVideo() {
+    var p = drawVideo.play();
+    if (p && p.then) {
+      p.then(function () { drawVideo.pause(); drawVideo.currentTime = 0; })
+       .catch(function () {});
+    }
+  }
+
   drawBtn.addEventListener("click", function () {
     if (!questionIsReady()) return;
     if (!canStartRound()) return;
+    unlockVideo();
     questionPanel.style.display = "none";
     topicPanel.style.display = "none";
     speak(["要在心中默念你的心意喔,本喵要開始了。"], function () {
