@@ -390,19 +390,25 @@ document.addEventListener("DOMContentLoaded", function () {
   function buildDeck(cards) {
     tarotDeck.innerHTML = "";
     cards.forEach(function (c, i) {
-      var el = document.createElement("div");
-      el.className = "tarot-card pending";
-      el.dataset.i = i;
-      el.style.animationDelay = i * 0.09 + "s";
-      el.innerHTML =
-        '<div class="tarot-card-inner">' +
-          '<div class="tarot-card-face tarot-card-back"></div>' +
-          '<div class="tarot-card-face tarot-card-front">' + Tarot.catFace(c.mood, false) +
-            '<div class="name">' + c.name + "</div>" +
-            '<div class="orientation">' + (c.orientation === "upright" ? "正位" : "逆位") + "</div>" +
+      var slot = document.createElement("div");
+      slot.className = "tarot-slot";
+      slot.innerHTML =
+        '<div class="tarot-card pending' + (c.orientation === "reversed" ? " is-reversed" : "") +
+             '" data-i="' + i + '" style="animation-delay:' + i * 0.09 + 's">' +
+          '<div class="tarot-card-inner">' +
+            '<div class="tarot-card-face tarot-card-back"></div>' +
+            '<div class="tarot-card-face tarot-card-front">' +
+              '<span class="card-art"></span>' +
+            "</div>" +
           "</div>" +
+        "</div>" +
+        '<div class="tarot-caption hidden">' +
+          '<div class="name">' + c.name + "</div>" +
+          '<div class="orientation">' + (c.orientation === "upright" ? "正位" : "逆位") + "</div>" +
         "</div>";
-      tarotDeck.appendChild(el);
+      // 用 DOM 設定,避免 url("…") 的引號把 style 屬性截斷
+      slot.querySelector(".card-art").style.backgroundImage = Tarot.artUrl(c.n);
+      tarotDeck.appendChild(slot);
     });
     return tarotDeck.querySelectorAll(".tarot-card");
   }
@@ -436,6 +442,10 @@ document.addEventListener("DOMContentLoaded", function () {
         var el = cardEls[i];
         el.classList.remove("pending");
         el.classList.add("flipped", "just-flipped");
+        // 牌名等翻開一半再出現,才不會提前爆雷
+        setTimeout(function (slot) {
+          return function () { slot.querySelector(".tarot-caption").classList.remove("hidden"); };
+        }(el.parentNode), 330);
         sparkle(el);
         Tarot.Sound.meow(0, 560 + i * 90);
         setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
