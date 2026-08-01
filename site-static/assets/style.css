@@ -369,6 +369,61 @@ a:focus-visible, button:focus-visible, input:focus-visible, .btn-primary:focus-v
 .tarot-deck.count-5 .tarot-caption .name { font-size: 11px; }
 .tarot-deck.count-5 .tarot-caption .orientation,
 .tarot-deck.count-5 .slot-position { font-size: 9px; }
+
+/* 有圖形的牌陣:牌擺在哪裡本身就是意義的一部分,所以用 grid-template-areas
+   把每張牌固定在它該在的位置,而不是排成一列。 */
+.tarot-deck.layout-cross,
+.tarot-deck.layout-celtic,
+.tarot-deck.layout-tree { gap: 8px 8px; }
+.tarot-deck.layout-cross .tarot-caption .name,
+.tarot-deck.layout-celtic .tarot-caption .name,
+.tarot-deck.layout-tree .tarot-caption .name { font-size: 11px; }
+.tarot-deck.layout-cross .tarot-caption .orientation,
+.tarot-deck.layout-celtic .tarot-caption .orientation,
+.tarot-deck.layout-tree .tarot-caption .orientation,
+.tarot-deck.layout-cross .slot-position,
+.tarot-deck.layout-celtic .slot-position,
+.tarot-deck.layout-tree .slot-position { font-size: 9px; }
+/* 位置名稱較長(例如「往下走的樣子」),讓它換行而不是被截掉 */
+.tarot-deck.layout-cross .slot-position,
+.tarot-deck.layout-celtic .slot-position,
+.tarot-deck.layout-tree .slot-position { white-space: normal; line-height: 1.35; }
+
+/* 關係十字:你我對望,障礙壓在上面,根基在下面,展望在正中間 */
+.tarot-deck.layout-cross {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    ".  block ."
+    "me hope  you"
+    ".  base  .";
+  max-width: min(400px, 100%);
+}
+
+/* 賽爾特十字:左邊是十字本體,右邊那一直行是「權杖」 */
+.tarot-deck.layout-celtic {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-areas:
+    ".  p5 .  p10"
+    "p4 p1 p6 p9"
+    ".  p2 .  p8"
+    ".  p3 .  p7";
+  max-width: min(520px, 100%);
+}
+
+/* 生命之樹:左柱嚴厲、右柱慈悲、中柱平衡,最下面是總結 */
+.tarot-deck.layout-tree {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    ".  t1  ."
+    "t3 .   t2"
+    "t5 .   t4"
+    ".  t6  ."
+    "t8 .   t7"
+    ".  t9  ."
+    ".  t10 ."
+    ".  t11 .";
+  max-width: min(400px, 100%);
+}
 /* 位置名稱(過去 / 選 A 的結果⋯)放在牌上方,讓客人看得懂牌陣在講什麼 */
 .slot-position {
   text-align: center; font-size: 10px; letter-spacing: .08em; margin-bottom: 6px;
