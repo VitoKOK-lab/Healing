@@ -1,0 +1,270 @@
+// 占卜報告書:把這次的問題、牌面與解讀畫成一張圖,方便存下來或用 LINE 傳給朋友。
+//
+// 全部用 Canvas 畫,不需要後端、不需要外部套件。牌面圖與本站同網域,
+// 所以 canvas 不會被污染,toBlob 拿得到圖。
+(function (global) {
+  var W = 1080;                    // LINE 上看起來剛好的寬度
+  var PAD = 64;
+  var INK = "#f6eeff";
+  var DIM = "rgba(246,238,255,.62)";
+  var GOLD = "#ffcf87";
+  var CARD_REF = "#cbb4ff";
+
+  function font(size, weight, display) {
+    var family = display
+      ? '"Huninn","Noto Sans TC",system-ui,sans-serif'
+      : '"Noto Sans TC",system-ui,sans-serif';
+    return (weight || 400) + " " + size + "px " + family;
+  }
+
+  // ── 文字排版 ────────────────────────────────────────
+  // 中文沒有空白可以斷,所以逐字量寬度。回傳每一行的「片段陣列」,
+  // 片段帶著顏色資訊(重點金色、牌名淡紫),畫的時候才不用重算。
+  function wrapSegs(ctx, segs, maxW, size) {
+    var lines = [], cur = [], curW = 0;
+    ctx.font = font(size);
+    segs.forEach(function (seg) {
+      var chars = seg.t.split("");
+      var buf = "";
+      for (var i = 0; i < chars.length; i++) {
+        var ch = chars[i];
+        if (ch === "\n") {
+          if (buf) cur.push({ t: buf, k: seg.k });
+          lines.push(cur); cur = []; curW = 0; buf = "";
+          continue;
+        }
+        ctx.font = font(seg.k === "hi" ? size * 1.06 : size, seg.k === "hi" ? 500 : 400);
+        var w = ctx.measureText(ch).width;
+        if (curW + w > maxW && (buf || cur.length)) {
+          if (buf) cur.push({ t: buf, k: seg.k });
+          lines.push(cur); cur = []; curW = 0; buf = "";
+        }
+        buf += ch;
+        curW += w;
+      }
+      if (buf) cur.push({ t: buf, k: seg.k });
+    });
+    if (cur.length) lines.push(cur);
+    return lines;
+  }
+
+  function drawLines(ctx, lines, x, y, size, lh) {
+    lines.forEach(function (line) {
+      var cx = x;
+      line.forEach(function (seg) {
+        if (seg.k === "hi") {
+          ctx.font = font(size * 1.06, 500);
+          ctx.fillStyle = GOLD;
+        } else if (seg.k === "ref") {
+          ctx.font = font(size * 0.92, 400);
+          ctx.fillStyle = CARD_REF;
+        } else {
+          ctx.font = font(size);
+          ctx.fillStyle = INK;
+        }
+        ctx.fillText(seg.t, cx, y);
+        cx += ctx.measureText(seg.t).width;
+      });
+      y += lh;
+    });
+    return y;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function loadImage(src) {
+    return new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };   // 載不到就留空位,不要整張報告失敗
+      im.src = src;
+    });
+  }
+
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + "." +
+      String(d.getMonth() + 1).padStart(2, "0") + "." +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  // ── 主流程 ──────────────────────────────────────────
+  // opts: { question, spreadName, cards:[{n,name,position,orientation}], readingSegs }
+  // readingSegs 由呼叫端用 toSegs() 轉好(重點與牌名的標記已經拆開)
+  function render(opts) {
+    var cards = opts.cards || [];
+    return Promise.all(cards.map(function (c) { return loadImage(opts.artOf(c.n)); }))
+      .then(function (imgs) {
+        // 先用暫時的 canvas 量高度,再開真正的畫布,才不會留一大片空白
+        var m = document.createElement("canvas").getContext("2d");
+        var innerW = W - PAD * 2;
+
+        var qLines = wrapSegs(m, [{ t: opts.question || "", k: "" }], innerW, 34);
+        var rLines = wrapSegs(m, opts.readingSegs || [], innerW, 34);
+
+        // 牌面:一排最多 5 張
+        var perRow = Math.min(cards.length, 5);
+        var gap = 18;
+        var cw = perRow ? Math.floor((innerW - gap * (perRow - 1)) / perRow) : 0;
+        var chH = Math.round(cw * 12 / 7);
+        var rows = perRow ? Math.ceil(cards.length / perRow) : 0;
+        // 一張牌要留的高度:牌面 + 牌名(30)+ 正逆位(54)+ 下一排位置標籤的空間。
+        // 少留就會像十張牌陣那樣,下一排的位置名壓到上一排的「正位」。
+        var rowH = chH + 118;
+
+        var H = PAD + 96 + 54                      // 標題區
+          + 46 + qLines.length * 48 + 40           // 你問的
+          + rows * rowH + 30                       // 牌面
+          + 46 + rLines.length * 52 + 44           // 解讀
+          + 84;                                    // 頁尾
+
+        var cv = document.createElement("canvas");
+        cv.width = W; cv.height = H;
+        var ctx = cv.getContext("2d");
+
+        // 底:深紫漸層 + 幾顆星星
+        var g = ctx.createLinearGradient(0, 0, W, H);
+        g.addColorStop(0, "#2a1250");
+        g.addColorStop(0.55, "#1d0d3c");
+        g.addColorStop(1, "#2d1550");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        for (var s = 0; s < 90; s++) {
+          var sx = Math.random() * W, sy = Math.random() * H;
+          ctx.globalAlpha = 0.12 + Math.random() * 0.3;
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.arc(sx, sy, Math.random() * 1.8 + 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        var y = PAD + 62;
+        ctx.textBaseline = "alphabetic";
+        ctx.font = font(46, 400, true);
+        ctx.fillStyle = INK;
+        ctx.fillText("喵喵占卜報告書", PAD, y);
+
+        y += 42;
+        ctx.font = font(24);
+        ctx.fillStyle = DIM;
+        ctx.fillText("解憂商店 · " + today() + (opts.spreadName ? " · " + opts.spreadName : ""), PAD, y);
+
+        y += 34;
+        ctx.strokeStyle = "rgba(214,178,104,.45)";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+
+        y += 52;
+        ctx.font = font(24, 500);
+        ctx.fillStyle = GOLD;
+        ctx.fillText("你問的", PAD, y);
+        y += 40;
+        y = drawLines(ctx, qLines, PAD, y, 34, 48);
+
+        // 牌面
+        y += 34;
+        cards.forEach(function (c, i) {
+          var col = i % perRow, row = Math.floor(i / perRow);
+          var x = PAD + col * (cw + gap);
+          var cy = y + row * rowH;
+
+          ctx.font = font(19);
+          ctx.fillStyle = GOLD;
+          ctx.textAlign = "center";
+          ctx.fillText(c.position || "", x + cw / 2, cy - 8, cw);
+
+          roundRect(ctx, x, cy, cw, chH, 12);
+          ctx.save();
+          ctx.clip();
+          if (imgs[i]) {
+            // cover:填滿卡片框,不變形
+            var r = Math.max(cw / imgs[i].width, chH / imgs[i].height);
+            var dw = imgs[i].width * r, dh = imgs[i].height * r;
+            if (c.orientation === "reversed") {
+              ctx.translate(x + cw / 2, cy + chH / 2);
+              ctx.rotate(Math.PI);
+              ctx.drawImage(imgs[i], -dw / 2, -dh / 2, dw, dh);
+            } else {
+              ctx.drawImage(imgs[i], x + (cw - dw) / 2, cy + (chH - dh) / 2, dw, dh);
+            }
+          } else {
+            ctx.fillStyle = "#3b2568";
+            ctx.fillRect(x, cy, cw, chH);
+          }
+          ctx.restore();
+          roundRect(ctx, x, cy, cw, chH, 12);
+          ctx.strokeStyle = "rgba(214,178,104,.5)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = font(21, 400, true);
+          ctx.fillStyle = INK;
+          ctx.fillText(c.name, x + cw / 2, cy + chH + 30, cw);
+          ctx.font = font(17);
+          ctx.fillStyle = c.orientation === "upright" ? DIM : GOLD;
+          ctx.fillText(c.orientation === "upright" ? "正位" : "逆位", x + cw / 2, cy + chH + 54, cw);
+          ctx.textAlign = "left";
+        });
+        y += rows * rowH + 30;
+
+        ctx.font = font(24, 500);
+        ctx.fillStyle = GOLD;
+        ctx.fillText("本喵的解讀", PAD, y);
+        y += 44;
+        y = drawLines(ctx, rLines, PAD, y, 34, 52);
+
+        y += 30;
+        ctx.strokeStyle = "rgba(214,178,104,.3)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+        y += 36;
+        ctx.font = font(20);
+        ctx.fillStyle = DIM;
+        ctx.fillText("Jessica 解憂商店 · 喵喵占卜", PAD, y);
+        ctx.textAlign = "right";
+        ctx.fillText("vitokok-lab.github.io/Healing", W - PAD, y);
+        ctx.textAlign = "left";
+
+        return cv;
+      });
+  }
+
+  // 存圖或分享。手機支援 Web Share 就直接叫出分享面板(可以選 LINE),
+  // 不支援就退回下載,客人自己貼到 LINE 也行。
+  function shareOrSave(canvas, onState) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) {
+        if (!blob) { onState && onState("error"); resolve(false); return; }
+        var name = "喵喵占卜報告_" + today().replace(/\./g, "") + ".png";
+        var file = new File([blob], name, { type: "image/png" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          navigator.share({ files: [file], title: "喵喵占卜報告書" })
+            .then(function () { onState && onState("shared"); resolve(true); })
+            .catch(function () { onState && onState("cancel"); resolve(false); });
+          return;
+        }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        onState && onState("saved");
+        resolve(true);
+      }, "image/png");
+    });
+  }
+
+  global.TarotReport = { render: render, shareOrSave: shareOrSave, canShare: function () {
+    return !!(navigator.canShare && navigator.share);
+  } };
+})(window);

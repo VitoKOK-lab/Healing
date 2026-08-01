@@ -174,6 +174,7 @@
       </div>
 
       <div class="tarot-actions">
+        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片 · 傳給朋友</button>
         <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
         <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
@@ -188,6 +189,7 @@
 </footer>
 
 <script src="./assets/tarot-data.js"></script>
+<script src="./assets/tarot-report.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var creditsText = document.getElementById("creditsText");
@@ -241,6 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var summaryList = document.getElementById("summaryList");
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
+  var reportBtn = document.getElementById("reportBtn");
   var soundToggle = document.getElementById("soundToggle");
   var soundLabel = document.getElementById("soundLabel");
 
@@ -250,6 +253,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var lastSpread = null;
   // 記下這一輪的兩個選項,「請本喵再看一次」重送時才不會漏掉
   var lastOptions = null;
+  var lastReading = "";
   var refunded = false;
   var usedFallback = false;
   // 客人自己滑出來的種子:洗牌軌跡長度 + 切牌位置,決定抽到哪幾張牌
@@ -1114,6 +1118,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第六步:本喵一句一句說解讀,說完列成總表 ────────────────
   function speakReading(text) {
+    lastReading = text;
     var lines = splitSentences(text);
     speak(lines, function () {
       summaryList.innerHTML = "";
@@ -1126,6 +1131,7 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.style.display = "none";
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
+      reportBtn.style.display = "inline-flex";
       Tarot.Sound.purr(1.6);
       readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
     }, true);   // 解牌字多,一句一句自己點著讀
@@ -1192,6 +1198,35 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // ── 報告書:把這一輪畫成一張圖,手機可以直接分享到 LINE ──────
+  reportBtn.addEventListener("click", function () {
+    if (!lastCards || !lastReading) return;
+    var label = reportBtn.textContent;
+    reportBtn.disabled = true;
+    reportBtn.textContent = "本喵畫圖中⋯";
+
+    var spread = Tarot.SPREADS[lastSpread || "flow"];
+    TarotReport.render({
+      question: questionText(),
+      spreadName: spread ? spread.name : "",
+      cards: lastCards,
+      readingSegs: toSegs(lastReading),
+      artOf: function (n) { return "./assets/cards/" + (n < 10 ? "0" + n : n) + ".jpg"; }
+    }).then(function (cv) {
+      return TarotReport.shareOrSave(cv, function (state) {
+        reportBtn.textContent =
+          state === "shared" ? "已送出喵~" :
+          state === "saved" ? "已存到相簿/下載" :
+          state === "error" ? "產圖失敗,再試一次" : label;
+      });
+    }).catch(function () {
+      reportBtn.textContent = "產圖失敗,再試一次";
+    }).then(function () {
+      reportBtn.disabled = false;
+      setTimeout(function () { reportBtn.textContent = label; }, 2600);
+    });
+  });
+
   retryBtn.addEventListener("click", function () {
     if (lastCards) requestReading(lastCards);
   });
@@ -1200,6 +1235,7 @@ document.addEventListener("DOMContentLoaded", function () {
     clearTimeout(typeTimer);
     readingSummary.style.display = "none";
     againBtn.style.display = "none";
+    reportBtn.style.display = "none";
     retryBtn.style.display = "none";
     errorNote.style.display = "none";
     questionInput.value = "";
