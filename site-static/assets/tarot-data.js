@@ -155,91 +155,6 @@
     }
 
     // 「喵」:鋸齒波做聲源,音高先揚後降,兩組帶通濾波模擬貓的共振峰。
-    // ── 真實貓叫 ──────────────────────────────────────────
-    // 三段 CC0 的真貓錄音(見 assets/sfx/CREDITS.txt),輪流播並微調音高,
-    // 連續翻牌才不會每次都一模一樣。檔案載不到時退回下面的合成音。
-    var MEOW_FILES = ["./assets/sfx/meow-1.mp3", "./assets/sfx/meow-2.mp3", "./assets/sfx/meow-3.mp3"];
-    var meowBuffers = [];
-    var meowLoaded = false;
-    var meowTurn = 0;
-
-    function loadMeows() {
-      var c = ac();
-      if (!c || meowBuffers.length) return;
-      MEOW_FILES.forEach(function (url, i) {
-        fetch(url)
-          .then(function (r) { return r.ok ? r.arrayBuffer() : Promise.reject(); })
-          .then(function (buf) {
-            return new Promise(function (res, rej) {
-              // 舊版 Safari 只支援 callback 形式的 decodeAudioData
-              var p = c.decodeAudioData(buf, res, rej);
-              if (p && p.then) p.then(res, rej);
-            });
-          })
-          .then(function (decoded) { meowBuffers[i] = decoded; meowLoaded = true; })
-          .catch(function () {});
-      });
-    }
-
-    function playRealMeow(delay, base) {
-      var ready = meowBuffers.filter(Boolean);
-      if (!ready.length) return false;
-      var c = ac();
-      var src = c.createBufferSource();
-      src.buffer = ready[meowTurn++ % ready.length];
-      // base 是原本合成音的頻率,換算成播放速率當作音高變化(±15% 之內才自然)
-      src.playbackRate.value = Math.max(0.85, Math.min(1.15, (base || 620) / 620));
-      var g = c.createGain();
-      // 輕輕一聲就好。真實錄音本來就比合成音響亮很多,開大會嚇到人。
-      g.gain.value = 0.16;
-      src.connect(g); g.connect(c.destination);
-      src.start(c.currentTime + (delay || 0));
-      return true;
-    }
-
-    function meow(delay, base) {
-      if (!enabled) return;
-      var c = ac();
-      if (!c) return;
-      if (!meowLoaded) loadMeows();
-      if (playRealMeow(delay, base)) return;
-      var t = c.currentTime + (delay || 0);
-      base = base || 620;
-
-      var osc = c.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(base * 0.7, t);
-      osc.frequency.linearRampToValueAtTime(base * 1.18, t + 0.1);
-      osc.frequency.linearRampToValueAtTime(base * 0.6, t + 0.44);
-
-      var vib = c.createOscillator();
-      var vibGain = c.createGain();
-      vib.frequency.value = 15;
-      vibGain.gain.value = base * 0.035;
-      vib.connect(vibGain);
-      vibGain.connect(osc.frequency);
-
-      var f1 = c.createBiquadFilter();
-      f1.type = "bandpass"; f1.frequency.value = 860; f1.Q.value = 5.5;
-      var f2 = c.createBiquadFilter();
-      f2.type = "bandpass"; f2.frequency.value = 1950; f2.Q.value = 7;
-      var lp = c.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 3600;
-
-      var g = c.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.15, t + 0.07);
-      g.gain.setValueAtTime(0.15, t + 0.24);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.52);
-
-      osc.connect(f1); f1.connect(lp);
-      osc.connect(f2); f2.connect(lp);
-      lp.connect(g); g.connect(c.destination);
-
-      osc.start(t); vib.start(t);
-      osc.stop(t + 0.56); vib.stop(t + 0.56);
-    }
-
     // 「呼嚕」:褐噪音過低通,再用低頻震盪做出規律的顫動。
     function purr(duration) {
       if (!enabled) return;
@@ -309,16 +224,13 @@
     }
 
     return {
-      meow: meow,
       purr: purr,
       blip: blip,
-      // 頁面一載入就把貓叫抓下來解碼,第一次翻牌才不會退回合成音
-      preload: loadMeows,
       isOn: function () { return enabled; },
       toggle: function () {
         enabled = !enabled;
         localStorage.setItem("tarotSound", enabled ? "on" : "off");
-        if (enabled) meow(0, 700);
+        if (enabled) purr(0.8);
         return enabled;
       }
     };
