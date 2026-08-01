@@ -104,12 +104,16 @@ async function askGemini(prompt: string): Promise<string> {
     .trim();
 }
 
+// 逐張報牌的說法。三張牌要讀成一個故事,出現這些就是在輪流背牌義。
+const PER_CARD_PHRASES = /第[一二三123]張|最後一張|中間那張|第[一二三123]個位置/;
+
 // 正常解讀幾乎全是中文;推理外洩的內容充滿數字、括號與英文檢查字樣。
 function looksLikeReading(text: string): boolean {
   if (text.length < 60) return false;
   const cjk = (text.match(/[一-鿿]/g) || []).length;
   if (cjk / text.length < 0.72) return false;
   if (/\(\d+\)|\d+\.\s/.test(text)) return false;
+  if (PER_CARD_PHRASES.test(text)) return false;
   return true;
 }
 
@@ -184,6 +188,14 @@ ${reversalSignal(reversed)}${trend ? `\n${trend}` : ""}
 2. 找出主導這次占卜的那張牌,另外兩張是在補充它、還是在反駁它
 3. 把三個位置串成因果:因為現況是這樣,所以才卡在那裡,於是可以從這裡著手
 4. 全程扣著客人的問題回答,不要只是輪流背三張牌的牌義
+
+【絕對禁止】把三張牌拆開來輪流交代。以下寫法一律不合格:
+✗「從你抽到的第一張牌來看⋯不過第二張牌提醒我們⋯至於最後一張牌⋯」
+✗「現況這張是⋯挑戰這張是⋯指引這張是⋯」
+合格的寫法是把牌義化進一段完整的話裡,像這樣:
+✓「你在這件事上其實一直有往前衝的力氣,真正卡住的不是能力,而是你把它想成非黑即白的選擇;
+　 先把眼光收回自己身上,答案會比你以為的更清楚。」
+可以自然提到牌名(例如「逆位的教皇提醒著」),但不可以用「第幾張」來組織段落。
 
 最後給一句具體、溫柔可執行的小建議作結。
 
