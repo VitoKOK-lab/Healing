@@ -190,7 +190,8 @@
       // base 是原本合成音的頻率,換算成播放速率當作音高變化(±15% 之內才自然)
       src.playbackRate.value = Math.max(0.85, Math.min(1.15, (base || 620) / 620));
       var g = c.createGain();
-      g.gain.value = 0.55;
+      // 輕輕一聲就好。真實錄音本來就比合成音響亮很多,開大會嚇到人。
+      g.gain.value = 0.16;
       src.connect(g); g.connect(c.destination);
       src.start(c.currentTime + (delay || 0));
       return true;

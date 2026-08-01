@@ -298,13 +298,35 @@ document.addEventListener("DOMContentLoaded", function () {
     return out;
   }
 
-  // ── 對話引擎:一句一句打字,點一下可跳過該句 ─────────────
+  // ── 對話引擎 ────────────────────────────────────────
+  // 流程中的短對話自動往下走(manual=false),不必一直點。
+  // 只有解牌那段字多、要慢慢讀,才改成點一下才換下一句(manual=true)。
+  // 兩種模式下,最後一句講完都直接收尾——那時已經沒有下一句,
+  // 再叫人「點一下繼續」只會讓人卡在那裡不知道要繼續去哪。
   var typeTimer = null;
 
-  function speak(lines, onDone) {
+  function speak(lines, onDone, manual) {
     clearTimeout(typeTimer);
     catDialogue.style.display = "block";
-    var li = 0, ci = 0, typing = false;
+    var li = 0, ci = 0, typing = false, done = false;
+
+    function isLast() { return li >= lines.length - 1; }
+
+    function finish() {
+      if (done) return;
+      done = true;
+      catDialogue.onclick = null;
+      dialogueCaret.style.display = "none";
+      if (onDone) onDone();
+    }
+
+    // 一句講完:最後一句直接收尾;中間的句子在解牌模式等客人點,其餘自動往下
+    function lineDone() {
+      typing = false;
+      if (isLast()) { finish(); return; }
+      if (manual) dialogueCaret.style.display = "";
+      else typeTimer = setTimeout(next, 900);
+    }
 
     function typeLine() {
       typing = true;
@@ -314,13 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var segs = toSegs(lines[li]);
       var total = segsLength(segs);
       (function step() {
-        if (ci >= total) {
-          typing = false;
-          // 打完就停在這裡等客人點一下。絕不自動跳下一句——
-          // 沒看完就被換掉是最惱人的事。
-          dialogueCaret.style.display = "";
-          return;
-        }
+        if (ci >= total) { lineDone(); return; }
         dialogueText.innerHTML = renderSegs(segs, ++ci);
         if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
         typeTimer = setTimeout(step, 42);
@@ -330,23 +346,17 @@ document.addEventListener("DOMContentLoaded", function () {
     function next() {
       clearTimeout(typeTimer);
       li += 1;
-      if (li >= lines.length) {
-        catDialogue.onclick = null;
-        dialogueCaret.style.display = "none";
-        if (onDone) onDone();
-      } else {
-        typeLine();
-      }
+      if (li >= lines.length) finish();
+      else typeLine();
     }
 
-    // 點一下:打字中就把這句補完,打完了才換下一句
+    // 點一下:打字中就把這句補完(最後一句補完即收尾),打完了才換下一句
     catDialogue.onclick = function () {
       if (typing) {
         clearTimeout(typeTimer);
-        typing = false;
         var segs = toSegs(lines[li]);
         dialogueText.innerHTML = renderSegs(segs, segsLength(segs));
-        dialogueCaret.style.display = "";
+        lineDone();
       } else {
         next();
       }
@@ -901,7 +911,9 @@ document.addEventListener("DOMContentLoaded", function () {
           return function () { slot.querySelector(".tarot-caption").classList.remove("hidden"); };
         }(el.parentNode), 330);
         sparkle(el);
-        Tarot.Sound.meow(0, 560 + i * 90);
+        // 只在第一張與最後一張輕輕叫一聲。每張都叫的話,十一張牌陣會變成
+        // 連續十一聲貓叫,很嚇人。
+        if (i === 0 || i === cards.length - 1) Tarot.Sound.meow(0, i === 0 ? 600 : 660);
         setTimeout(function () { el.classList.remove("just-flipped"); }, 700);
 
         var li = document.createElement("li");
@@ -933,7 +945,7 @@ document.addEventListener("DOMContentLoaded", function () {
       againBtn.style.display = "inline-flex";
       Tarot.Sound.purr(1.6);
       readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    }, true);   // 解牌字多,一句一句自己點著讀
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
