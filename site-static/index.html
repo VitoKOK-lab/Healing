@@ -12,6 +12,13 @@
 </head>
 <body>
 
+<section id="entryVideoOverlay" class="entry-video-overlay" role="button" tabindex="0" aria-label="播放網站進入動畫，點一下可跳過">
+  <video id="entryVideo" class="entry-video" autoplay muted playsinline preload="auto">
+    <source src="./assets/videos/entry-animation.mp4" type="video/mp4" />
+  </video>
+  <span class="entry-video-skip">點一下跳過</span>
+</section>
+
 
 <main class="wrap">
   <div class="hero rise">
@@ -202,5 +209,26 @@
     <span>喵喵占卜</span>
   </a>
 </nav>
+<script>
+  (() => {
+    const overlay = document.getElementById('entryVideoOverlay');
+    const video = document.getElementById('entryVideo');
+    let finished = false;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      overlay.classList.add('entry-video-overlay--leaving');
+      window.setTimeout(() => overlay.remove(), 350);
+    };
+
+    overlay.addEventListener('click', finish);
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') finish();
+    });
+    video.addEventListener('ended', finish);
+    video.addEventListener('error', finish);
+  })();
+</script>
 </body>
 </html>
