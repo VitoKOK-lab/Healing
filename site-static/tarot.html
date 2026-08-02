@@ -151,7 +151,6 @@
         <span>下疊 <b id="cutLowerCount">39</b> 張</span>
       </div>
       <p class="stage-hint" id="cutHint">手指左右滑動,決定從哪裡切開這副牌</p>
-      <button type="button" class="btn-primary" id="cutDoneBtn" style="width:100%;display:none">就從這裡切</button>
     </div>
 
     <!-- 三張卡片由 JS 建立 -->
@@ -215,7 +214,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var cutUpperCount = document.getElementById("cutUpperCount");
   var cutLowerCount = document.getElementById("cutLowerCount");
   var cutHint = document.getElementById("cutHint");
-  var cutDoneBtn = document.getElementById("cutDoneBtn");
   var questionPanel = document.getElementById("questionPanel");
   var questionField = document.getElementById("questionField");
   var optionPanel = document.getElementById("optionPanel");
@@ -948,27 +946,20 @@ document.addEventListener("DOMContentLoaded", function () {
     function onUp() {
       if (!dragging) return;
       dragging = false;
-      // 離手才給「確定」,切點在按下確定前都還能改
-      cutHint.textContent = "就切在這裡嗎?想換位置再滑一次就好";
-      cutDoneBtn.style.display = "inline-flex";
       Tarot.Sound.blip(620);
+      // 切完牌手放開就直接進入下一步
+      cutStage.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      hideStages();
+      playShuffle(revealCards);
     }
 
     cutStage.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
-
-    cutDoneBtn.onclick = function () {
-      if (!touched) return;
-      cutStage.removeEventListener("pointerdown", onDown);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-      cutDoneBtn.onclick = null;
-      hideStages();
-      playShuffle(revealCards);
-    };
   }
 
   // ── 第四步:滿版洗牌動畫,鎖住捲動、看完才淡出 ───────────────
