@@ -37,7 +37,7 @@
           lines.push(cur); cur = []; curW = 0; buf = "";
           continue;
         }
-        ctx.font = font(seg.k === "hi" ? size * 1.06 : size, seg.k === "hi" ? 500 : 400);
+        ctx.font = font(seg.k === "hi" ? size * 1.12 : size, seg.k === "hi" ? 600 : 400);
         var w = ctx.measureText(ch).width;
         if (curW + w > maxW && (buf || cur.length)) {
           if (buf) cur.push({ t: buf, k: seg.k });
@@ -57,10 +57,10 @@
       var cx = x;
       line.forEach(function (seg) {
         if (seg.k === "hi") {
-          ctx.font = font(size * 1.06, 500);
+          ctx.font = font(size * 1.12, 600);
           ctx.fillStyle = GOLD;
         } else if (seg.k === "ref") {
-          ctx.font = font(size * 0.92, 400);
+          ctx.font = font(size * 0.94, 400);
           ctx.fillStyle = CARD_REF;
         } else {
           ctx.font = font(size);
@@ -116,19 +116,19 @@
 
         // 牌面:一排最多 5 張
         var perRow = Math.min(cards.length, 5);
-        var gap = 18;
+        var gap = 20;
         var cw = perRow ? Math.floor((innerW - gap * (perRow - 1)) / perRow) : 0;
         var chH = Math.round(cw * 12 / 7);
         var rows = perRow ? Math.ceil(cards.length / perRow) : 0;
-        // 一張牌要留的高度:牌面 + 牌名(30)+ 正逆位(54)+ 下一排位置標籤的空間。
+        // 一張牌要留的高度:牌面 + 牌名(32)+ 正逆位(58)+ 下一排位置標籤的空間。
         // 少留就會像十張牌陣那樣,下一排的位置名壓到上一排的「正位」。
-        var rowH = chH + 118;
+        var rowH = chH + 130;
 
         var H = PAD + 96 + 54                      // 標題區
-          + 46 + qLines.length * 50 + 40           // 你問的
-          + rows * rowH + 30                       // 牌面
-          + 46 + rLines.length * 54 + 44           // 解讀
-          + 26 + 108 + 40 + 52;                    // 頁尾:邀請框 + 一行小字 + 底部留白
+          + 48 + qLines.length * 54 + 44           // 你問的(更大間距)
+          + rows * rowH + 36                       // 牌面
+          + 48 + rLines.length * 60 + 48           // 解讀(更大間距)
+          + 28 + 120 + 44 + 56;                    // 頁尾:邀請框 + 一行小字 + 底部留白
 
         var cv = document.createElement("canvas");
         cv.width = W; cv.height = H;
@@ -154,22 +154,22 @@
         ctx.fillStyle = INK;
         ctx.fillText("喵喵占卜報告書", PAD, y);
 
-        y += 42;
-        ctx.font = font(24);
+        y += 44;
+        ctx.font = font(26);
         ctx.fillStyle = DIM;
         ctx.fillText("解憂商店 · " + today() + (opts.spreadName ? " · " + opts.spreadName : ""), PAD, y);
 
-        y += 34;
+        y += 36;
         ctx.strokeStyle = LINE;
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
 
-        y += 52;
-        ctx.font = font(24, 500);
+        y += 56;
+        ctx.font = font(26, 500);
         ctx.fillStyle = GOLD;
         ctx.fillText("你問的", PAD, y);
-        y += 40;
-        y = drawLines(ctx, qLines, PAD, y, 36, 50);
+        y += 44;
+        y = drawLines(ctx, qLines, PAD, y, 36, 54);
 
         // 牌面
         y += 34;
@@ -178,10 +178,10 @@
           var x = PAD + col * (cw + gap);
           var cy = y + row * rowH;
 
-          ctx.font = font(19);
+          ctx.font = font(21);
           ctx.fillStyle = GOLD;
           ctx.textAlign = "center";
-          ctx.fillText(c.position || "", x + cw / 2, cy - 8, cw);
+          ctx.fillText(c.position || "", x + cw / 2, cy - 10, cw);
 
           roundRect(ctx, x, cy, cw, chH, 12);
           ctx.save();
@@ -207,25 +207,25 @@
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          ctx.font = font(21, 400, true);
+          ctx.font = font(23, 400, true);
           ctx.fillStyle = INK;
-          ctx.fillText(c.name, x + cw / 2, cy + chH + 30, cw);
-          ctx.font = font(17);
+          ctx.fillText(c.name, x + cw / 2, cy + chH + 32, cw);
+          ctx.font = font(19);
           ctx.fillStyle = c.orientation === "upright" ? DIM : GOLD;
-          ctx.fillText(c.orientation === "upright" ? "正位" : "逆位", x + cw / 2, cy + chH + 54, cw);
+          ctx.fillText(c.orientation === "upright" ? "正位" : "逆位", x + cw / 2, cy + chH + 58, cw);
           ctx.textAlign = "left";
         });
         y += rows * rowH + 30;
 
-        ctx.font = font(24, 500);
+        ctx.font = font(26, 500);
         ctx.fillStyle = GOLD;
         ctx.fillText("本喵的解讀", PAD, y);
-        y += 44;
-        y = drawLines(ctx, rLines, PAD, y, 36, 54);
+        y += 48;
+        y = drawLines(ctx, rLines, PAD, y, 36, 60);
 
         // 頁尾:收到圖的人要知道去哪裡也算一次,所以連結要大要清楚
-        y += 26;
-        roundRect(ctx, PAD, y, W - PAD * 2, 108, 16);
+        y += 28;
+        roundRect(ctx, PAD, y, W - PAD * 2, 120, 16);
         ctx.fillStyle = "#f4eefc";
         ctx.fill();
         ctx.strokeStyle = "#ded0f0";
@@ -233,16 +233,16 @@
         ctx.stroke();
 
         ctx.textAlign = "center";
-        ctx.font = font(22);
+        ctx.font = font(24);
         ctx.fillStyle = DIM;
-        ctx.fillText("也想讓本喵幫你看一次嗎?", W / 2, y + 40);
-        ctx.font = font(26, 500);
+        ctx.fillText("也想讓本喵幫你看一次嗎?", W / 2, y + 44);
+        ctx.font = font(28, 500);
         ctx.fillStyle = "#6c4fa8";
-        ctx.fillText(SITE, W / 2, y + 78);
+        ctx.fillText(SITE, W / 2, y + 86);
         ctx.textAlign = "left";
 
-        y += 108 + 40;
-        ctx.font = font(19);
+        y += 120 + 44;
+        ctx.font = font(21);
         ctx.fillStyle = DIM;
         ctx.fillText("Jessica 解憂商店 · 喵喵占卜", PAD, y);
         ctx.textAlign = "right";
