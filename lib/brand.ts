@@ -14,7 +14,7 @@ export const brand = {
   /** 店主的 LINE 官方帳號連結(上線前更新) */
   lineOfficialUrl: "#",
   /** App 封面主視覺(直式,行動版) */
-  coverImage: "/brand/app-cover.jpeg",
+  coverImage: "/brand/app-cover-cruise.jpeg",
   /** 首頁橫幅(橫式,桌面版) */
   bannerImage: "/brand/banner-desktop.jpeg",
   /** 社群連結(店主已確認的帳號才填,其餘留 "#" 待補) */
