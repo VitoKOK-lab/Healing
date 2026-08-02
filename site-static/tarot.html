@@ -945,8 +945,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function onUp() {
       if (!dragging) return;
       dragging = false;
+      // 切完牌手放開就直接進入下一步,但要確保用戶有實際觸摸操作
+      if (!touched) return;
       Tarot.Sound.blip(620);
-      // 切完牌手放開就直接進入下一步
       cutStage.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
