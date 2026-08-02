@@ -213,7 +213,29 @@
   (() => {
     const overlay = document.getElementById('entryVideoOverlay');
     const video = document.getElementById('entryVideo');
+    const actionLabel = overlay.querySelector('.entry-video-skip');
     let finished = false;
+    let needsTap = false;
+
+    const attemptPlay = () => {
+      if (finished || video.ended) return;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+
+      const playAttempt = video.play();
+      if (playAttempt) {
+        playAttempt.then(() => {
+          needsTap = false;
+          actionLabel.textContent = '點一下跳過';
+        }).catch(() => {
+          needsTap = true;
+          actionLabel.textContent = '點一下播放';
+        });
+      }
+    };
 
     const finish = () => {
       if (finished) return;
@@ -222,12 +244,24 @@
       window.setTimeout(() => overlay.remove(), 350);
     };
 
-    overlay.addEventListener('click', finish);
+    overlay.addEventListener('click', () => needsTap ? attemptPlay() : finish());
     overlay.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') finish();
+      if (event.key === 'Enter' || event.key === ' ') {
+        needsTap ? attemptPlay() : finish();
+      }
+    });
+    video.addEventListener('canplay', attemptPlay);
+    video.addEventListener('playing', () => {
+      needsTap = false;
+      actionLabel.textContent = '點一下跳過';
     });
     video.addEventListener('ended', finish);
     video.addEventListener('error', finish);
+    window.addEventListener('pageshow', attemptPlay);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') attemptPlay();
+    });
+    attemptPlay();
   })();
 </script>
 </body>
