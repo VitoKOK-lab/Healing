@@ -111,8 +111,8 @@
         var m = document.createElement("canvas").getContext("2d");
         var innerW = W - PAD * 2;
 
-        var qLines = wrapSegs(m, [{ t: opts.question || "", k: "" }], innerW, 34);
-        var rLines = wrapSegs(m, opts.readingSegs || [], innerW, 34);
+        var qLines = wrapSegs(m, [{ t: opts.question || "", k: "" }], innerW, 36);
+        var rLines = wrapSegs(m, opts.readingSegs || [], innerW, 36);
 
         // 牌面:一排最多 5 張
         var perRow = Math.min(cards.length, 5);
@@ -125,9 +125,9 @@
         var rowH = chH + 118;
 
         var H = PAD + 96 + 54                      // 標題區
-          + 46 + qLines.length * 48 + 40           // 你問的
+          + 46 + qLines.length * 50 + 40           // 你問的
           + rows * rowH + 30                       // 牌面
-          + 46 + rLines.length * 52 + 44           // 解讀
+          + 46 + rLines.length * 54 + 44           // 解讀
           + 26 + 108 + 40 + 52;                    // 頁尾:邀請框 + 一行小字 + 底部留白
 
         var cv = document.createElement("canvas");
@@ -169,7 +169,7 @@
         ctx.fillStyle = GOLD;
         ctx.fillText("你問的", PAD, y);
         y += 40;
-        y = drawLines(ctx, qLines, PAD, y, 34, 48);
+        y = drawLines(ctx, qLines, PAD, y, 36, 50);
 
         // 牌面
         y += 34;
@@ -221,7 +221,7 @@
         ctx.fillStyle = GOLD;
         ctx.fillText("本喵的解讀", PAD, y);
         y += 44;
-        y = drawLines(ctx, rLines, PAD, y, 34, 52);
+        y = drawLines(ctx, rLines, PAD, y, 36, 54);
 
         // 頁尾:收到圖的人要知道去哪裡也算一次,所以連結要大要清楚
         y += 26;
