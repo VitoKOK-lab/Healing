@@ -736,7 +736,7 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .tarot-result { margin-top: 32px; padding: 30px 28px; display: none; }
 .tarot-result.show { display: block; }
 .tarot-result .reading-list { list-style: none; display: grid; gap: 10px; margin-top: 16px; }
-.tarot-result .reading-list li { font-size: 13px; color: var(--inkdim); display: flex; gap: 8px; flex-wrap: wrap; }
+.tarot-result .reading-list li { font-size: 15px; color: var(--inkdim); display: flex; gap: 8px; flex-wrap: wrap; }
 /* 還沒翻到的牌:項目先佔好位置但不顯示,列表順序才不會被翻牌順序打亂 */
 .tarot-result .reading-list li.pending-item { display: none; }
 .tarot-result .reading-list b { font-family: var(--display); font-weight: 400; color: var(--ink); flex-shrink: 0; }
@@ -747,7 +747,7 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 }
 /* AI 沒回應時的簡版解讀:標一下,不要讓客人以為這就是完整占卜 */
 .tarot-result.is-fallback .reading-summary { border-color: rgba(245,205,130,.35); }
-.tarot-reading-text { margin-top: 20px; font-size: 14px; line-height: 2; color: var(--ink); }
+.tarot-reading-text { margin-top: 20px; font-size: 16px; line-height: 2; color: var(--ink); }
 .tarot-loading {
   margin-top: 20px; font-size: 13px; color: var(--inkdim);
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -773,7 +773,7 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .cat-dialogue-avatar .cat-art { width: 100%; color: #b79ae4; }
 .cat-dialogue-name { font-family: var(--display); font-size: 13px; color: var(--plum); }
 .cat-dialogue-text {
-  margin-top: 12px; font-size: 15px; line-height: 1.95; color: var(--ink); min-height: 60px;
+  margin-top: 12px; font-size: 17px; line-height: 1.95; color: var(--ink); min-height: 60px;
 }
 /* 本喵用【】框住的重點:放大變色,長段文字才有落點 */
 .hi {
@@ -802,7 +802,7 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .reading-summary { margin-top: 22px; padding-top: 20px; border-top: 1px dashed rgba(196,160,86,.4); }
 .reading-summary h3 { font-size: 16px; font-weight: 400; margin-top: 5px; }
 .reading-summary ol { margin: 14px 0 0; padding-left: 20px; display: grid; gap: 9px; }
-.reading-summary li { font-size: 13.5px; line-height: 1.9; color: var(--inkdim); }
+.reading-summary li { font-size: 15.5px; line-height: 1.9; color: var(--inkdim); }
 .reading-summary li::marker { color: var(--gold); font-family: var(--display); }
 .tarot-error { margin-top: 20px; font-size: 13px; color: #c2483a; text-align: center; }
 .tarot-actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
