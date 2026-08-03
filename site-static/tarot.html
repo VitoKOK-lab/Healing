@@ -664,6 +664,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function playSong(next) {
     var done = false;
     var guard = null;
+    var playStarted = false;
 
     function finish() {
       if (done) return;
@@ -671,6 +672,7 @@ document.addEventListener("DOMContentLoaded", function () {
       clearTimeout(guard);
       songVideo.removeEventListener("ended", finish);
       songVideo.removeEventListener("error", finish);
+      songVideo.removeEventListener("playing", armGuard);
       songOverlay.classList.add("fading");
       setTimeout(function () {
         songOverlay.style.display = "none";
@@ -681,21 +683,33 @@ document.addEventListener("DOMContentLoaded", function () {
       }, 900);
     }
 
+    function armGuard() {
+      if (playStarted) return;
+      playStarted = true;
+      clearTimeout(guard);
+      var dur = isFinite(songVideo.duration) && songVideo.duration > 0 ? songVideo.duration : 10;
+      guard = setTimeout(finish, (dur - songVideo.currentTime + 1) * 1000);
+    }
+
     songVideo.addEventListener("ended", finish);
     songVideo.addEventListener("error", finish);
+    songVideo.addEventListener("playing", armGuard);
     document.body.classList.add("no-scroll");
     songOverlay.style.display = "block";
     songVideo.currentTime = 0;
     songVideo.muted = !Tarot.Sound.isOn();
     var p = songVideo.play();
-    if (p && p.catch) p.catch(finish);
-    // 影片長度未知時的保險(實際 10 秒),播不起來也不會卡住
-    songVideo.addEventListener("playing", function () {
-      clearTimeout(guard);
-      var dur = isFinite(songVideo.duration) && songVideo.duration > 0 ? songVideo.duration : 10;
-      guard = setTimeout(finish, (dur - songVideo.currentTime + 1) * 1000);
+    if (p && p.catch) p.catch(function () {
+      // 播放失敗時等待影片載入後再試一次,別急著結束
+      songVideo.addEventListener("canplay", function onCanPlay() {
+        songVideo.removeEventListener("canplay", onCanPlay);
+        songVideo.play().catch(finish);
+      }, { once: true });
     });
-    guard = setTimeout(finish, 6000);
+    // 影片長度未知時的保險(實際 10 秒),播不起來也不會卡住
+    guard = setTimeout(function () {
+      if (!playStarted) finish();
+    }, 12000);
   }
 
   // ── 開牌前先確認本喵真的聽懂了 ───────────────────────────
@@ -945,8 +959,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function onUp() {
       if (!dragging) return;
       dragging = false;
+      // 切完牌手放開就直接進入下一步,但要確保用戶有實際觸摸操作
+      if (!touched) return;
       Tarot.Sound.blip(620);
-      // 切完牌手放開就直接進入下一步
       cutStage.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
