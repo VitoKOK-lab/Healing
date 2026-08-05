@@ -104,7 +104,9 @@
 .tarot-desktop-shell .topic-chips { margin-top: 0; justify-content: flex-start; }
 .tarot-desktop-shell .topic-chip { min-height: 46px; padding-inline: 20px; }
 .tarot-desktop-shell .scenario-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.tarot-desktop-shell .scenario-btn { min-height: 68px; }
+/* 按鈕實際的 class 是 .scenario-item(見 buildScenarios),先前寫成
+   .scenario-btn 所以這條一直沒生效 */
+.tarot-desktop-shell .scenario-item { min-height: 68px; }
 .tarot-desktop-shell .pay-input { min-height: 52px; font-size: 16px; }
 
 .tarot-desktop-shell .tarot-desktop-stage {
@@ -222,6 +224,16 @@ body.tarot-desktop-page::after {
 
 /* ── 進站等待畫面 ─────────────────────────────────────────────── */
 .tarot-gate { cursor: pointer; }
+
+/* 等待畫面在 shell 之外,牌堆是自訂控制項——都吃不到既有的 focus 樣式,
+   要另外補,不然用鍵盤的人不知道自己停在哪 */
+.tarot-gate:focus-visible,
+.tarot-desktop-shell .cut-stage:focus-visible,
+.tarot-desktop-shell .swipe-stage:focus-visible {
+  outline: 3px solid #f5cd82;
+  outline-offset: 4px;
+  border-radius: 20px;
+}
 .tarot-gate-hint {
   position: absolute;
   left: 50%;
@@ -286,7 +298,8 @@ body.tarot-desktop-page::after {
 .tarot-desktop-shell .cat-dialogue p { font-size: 16px; line-height: 1.85; }
 .tarot-desktop-shell .stage-hint { font-size: 13.5px; line-height: 1.7; }
 .tarot-desktop-shell .topic-chip { font-size: 15px; }
-.tarot-desktop-shell .scenario-btn b { font-size: 15px; }
+.tarot-desktop-shell .scenario-label { font-size: 15px; }
+.tarot-desktop-shell .scenario-spread { font-size: 12.5px; }
 .tarot-desktop-shell .cut-counts { font-size: 13px; }
 .tarot-desktop-shell .cut-counts b { font-size: 18px; }
 
