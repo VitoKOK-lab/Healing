@@ -24,6 +24,48 @@ body {
   background-attachment: fixed;
 }
 
+.entry-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+  opacity: 1;
+  transition: opacity 350ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.entry-video-overlay--leaving {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.entry-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.entry-video-skip {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.42);
+  padding: 8px 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+}
+
 @layer components {
   /* 拉丁字標 */
   .wordmark {

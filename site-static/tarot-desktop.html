@@ -3,123 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>喵喵占卜 · 桌面版|Jessica 解憂商店</title>
-<meta name="description" content="抽三張牌,由本喵占卜師為你解讀感情、工作、金錢或人生抉擇。桌面版優化。" />
+<title>喵喵占卜・桌面版|Jessica 解憂商店</title>
+<meta name="description" content="抽三張牌,由本喵占卜師為你解讀感情、工作、金錢或人生抉擇。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./assets/style.css" />
-<style>
-  body.tarot-page.desktop-tarot {
-    background: linear-gradient(135deg, #0f0b1a 0%, #1a0f2e 50%, #0f1a2e 100%);
-  }
-
-  .tarot-page.desktop-tarot main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 60px;
-  }
-
-  .tarot-page.desktop-tarot .tarot-bar {
-    padding: 30px 0 40px;
-    justify-content: space-between;
-    gap: 20px;
-  }
-
-  .tarot-page.desktop-tarot .tarot-credits {
-    font-size: 16px;
-  }
-
-  .tarot-page.desktop-tarot .cat-dialogue {
-    max-width: 900px;
-    margin: 0 auto 30px;
-  }
-
-  .tarot-page.desktop-tarot .cat-dialogue-text {
-    font-size: 18px;
-    line-height: 1.8;
-  }
-
-  .tarot-page.desktop-tarot .step-panel {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .tarot-page.desktop-tarot .topic-chips {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
-  .tarot-page.desktop-tarot .scenario-list {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .tarot-page.desktop-tarot .tarot-deck {
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  .tarot-page.desktop-tarot .tarot-result {
-    max-width: 900px;
-    margin: 40px auto;
-  }
-
-  .tarot-page.desktop-tarot .tarot-result.show {
-    display: block;
-  }
-
-  .tarot-page.desktop-tarot .reading-list {
-    column-count: 2;
-    gap: 20px;
-  }
-
-  .tarot-page.desktop-tarot .reading-summary {
-    margin-top: 40px;
-  }
-
-  .tarot-page.desktop-tarot .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(12,6,28,.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255,255,255,.1);
-  }
-
-  .tarot-page.desktop-tarot main {
-    padding-bottom: 80px;
-  }
-
-  /* 桌面版背景圖:橫式神秘貓咪占卜師 */
-  body.tarot-page.desktop-tarot::before {
-    background-image: url("tarot-mystic-cat-bg.jpg");
-    background-image: image-set(url("tarot-mystic-cat-bg.webp") type("image/webp"), url("tarot-mystic-cat-bg.jpg") type("image/jpeg"));
-    background-size: cover;
-    background-position: center;
-  }
-
-  body.tarot-page.desktop-tarot::after {
-    background: linear-gradient(180deg, rgba(20,7,32,.5) 0%, rgba(20,7,32,.3) 40%, rgba(18,6,28,.5) 80%, rgba(14,5,24,.7) 100%);
-  }
-</style>
+<link rel="stylesheet" href="./assets/tarot-desktop.css" />
 </head>
-<body class="tarot-page desktop-tarot">
-
-<!-- 進入網頁時的等待畫面:循環播放,點任何地方進入下一個 -->
-<div class="draw-overlay" id="waitOverlay">
-  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
-    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
-  </video>
-</div>
-
-<!-- 點擊後進入遊戲的影片:播完才進入遊戲 -->
-<div class="draw-overlay" id="enterOverlay" style="display:none">
-  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto" autoplay>
-    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
-  </video>
-</div>
+<body class="tarot-page tarot-desktop-page">
 
 <!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
 <div class="draw-overlay" id="drawOverlay" style="display:none">
@@ -140,7 +32,23 @@
   </video>
 </div>
 
-<main>
+<div class="desktop-only-notice">
+  <div class="desktop-notice-card">
+    <h1>這是電腦與 iPad 專用版</h1>
+    <p>手機請使用原本的喵喵占卜，操作會更順手。</p>
+    <a href="./tarot.html">前往手機版</a>
+  </div>
+</div>
+
+<header class="desktop-tarot-header">
+  <a class="desktop-brand" href="./index.html" aria-label="返回解憂商店首頁">
+    <span class="desktop-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
+    <span><b>Jessica 解憂商店</b><small>喵喵占卜・桌面版</small></span>
+  </a>
+  <p>給自己一段安靜的時間，讓牌替心裡的聲音排好位置。</p>
+</header>
+
+<main class="tarot-desktop-shell rise">
   <div class="tarot-bar">
     <span class="tarot-credits" id="creditsBadge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
@@ -262,10 +170,11 @@
       <p class="stage-hint" id="cutHint">手指左右滑動,決定從哪裡切開這副牌</p>
     </div>
 
-    <!-- 三張卡片由 JS 建立 -->
-    <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
+    <section class="tarot-desktop-stage" aria-label="牌桌與占卜結果">
+      <!-- 三張卡片由 JS 建立 -->
+      <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
 
-    <div class="card tarot-result" id="resultPanel">
+      <div class="card tarot-result" id="resultPanel">
       <p class="eyebrow">Reading</p>
       <h2 class="display" style="font-size:18px;margin-top:6px">牌面解讀</h2>
       <ul class="reading-list" id="cardSummary"></ul>
@@ -286,7 +195,8 @@
         <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
         <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
-    </div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -337,10 +247,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
   var drawBtn = document.getElementById("drawBtn");
-  var waitOverlay = document.getElementById("waitOverlay");
-  var waitVideo = document.getElementById("waitVideo");
-  var enterOverlay = document.getElementById("enterOverlay");
-  var enterVideo = document.getElementById("enterVideo");
   var drawOverlay = document.getElementById("drawOverlay");
   var drawVideo = document.getElementById("drawVideo");
   var songOverlay = document.getElementById("songOverlay");
@@ -521,7 +427,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var ok = Tarot.getCredits() > 0;
     updateCredits();
     lockedPanel.style.display = ok ? "none" : "block";
-    tarotFlow.style.display = ok ? "block" : "none";
+    tarotFlow.style.display = ok ? "grid" : "none";
     return ok;
   }
 
@@ -1376,21 +1282,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
     startIntro();
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-
-  // ── 等待畫面 → 進入遊戲視頻 → 遊戲開始 ────────────
-  var waitingForEnter = true;
-  waitOverlay.addEventListener("click", function (e) {
-    if (!waitingForEnter) return;
-    waitingForEnter = false;
-    waitOverlay.style.display = "none";
-    enterOverlay.style.display = "block";
-    enterVideo.play();
-  });
-
-  enterVideo.addEventListener("ended", function () {
-    enterOverlay.style.display = "none";
-    waitingForEnter = true;
   });
 
   pickVideo();
