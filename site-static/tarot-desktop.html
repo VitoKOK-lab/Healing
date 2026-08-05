@@ -32,6 +32,22 @@
   </video>
 </div>
 
+<!-- 進站等待:一進頁面就循環播放,等客人點一下才往下走。
+     這一下點擊同時也是 iOS 解鎖影片播放的手勢來源。 -->
+<div class="draw-overlay tarot-gate" id="waitOverlay">
+  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
+    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
+  </video>
+  <p class="tarot-gate-hint">點一下,本喵就開始</p>
+</div>
+
+<!-- 進場動畫:點擊後播一次,播完才進入占卜流程 -->
+<div class="draw-overlay" id="enterOverlay" style="display:none">
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto">
+    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
+  </video>
+</div>
+
 <div class="desktop-only-notice">
   <div class="desktop-notice-card">
     <h1>這是電腦與 iPad 專用版</h1>
@@ -156,7 +172,8 @@
       <p class="stage-hint" id="swipeHint">用手指在牌上來回滑動,滑得越久洗得越透</p>
     </div>
 
-    <!-- 切牌:手指左右滑,決定從牌堆哪裡切開 -->
+    <!-- 切牌:牌堆側躺著,上下滑決定從第幾張切開。
+         cutLeft 是上疊(會被抬起來)、cutRight 是下疊(留在原位當底座)。 -->
     <div class="step-panel" id="cutPanel" style="display:none">
       <div class="cut-stage" id="cutStage">
         <span class="cut-half cut-left" id="cutLeft"></span>
@@ -167,7 +184,7 @@
         <span>上疊 <b id="cutUpperCount">39</b> 張</span>
         <span>下疊 <b id="cutLowerCount">39</b> 張</span>
       </div>
-      <p class="stage-hint" id="cutHint">手指左右滑動,決定從哪裡切開這副牌</p>
+      <p class="stage-hint" id="cutHint">上下滑動,決定從第幾張切開這副牌</p>
     </div>
 
     <section class="tarot-desktop-stage" aria-label="牌桌與占卜結果">
@@ -252,6 +269,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var songOverlay = document.getElementById("songOverlay");
   var songVideo = document.getElementById("songVideo");
   var tarotDeck = document.getElementById("tarotDeck");
+  // 桌面版版面會隨階段改變:抽牌前單欄置中,抽牌後才展開成左右兩欄。
+  // 沒有這個切換的話,選主題到切牌的整段流程右半邊都是空的。
+  var tarotFlow = document.getElementById("tarotFlow");
   var resultPanel = document.getElementById("resultPanel");
   var cardSummary = document.getElementById("cardSummary");
   var loadingNote = document.getElementById("loadingNote");
@@ -470,6 +490,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tarotDeck.style.display = "none";
     tarotDeck.innerHTML = "";
     tarotDeck.className = "tarot-deck";
+    if (tarotFlow) tarotFlow.classList.remove("has-cards");
     resultPanel.classList.remove("show");
     speak([
       "歡迎光臨解憂商店,本喵是這裡的占卜師。",
@@ -604,15 +625,24 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawSrcWebm = document.getElementById("drawSrcWebm");
   var drawSrcMp4 = document.getElementById("drawSrcMp4");
 
+  // 新的橫式洗牌影片只有 mp4,沒有 webm;直式仍沿用舊的三件組。
+  var SHUFFLE = {
+    wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
+    portrait: { mp4: "tarot-draw.mp4", webm: "tarot-draw.webm", poster: "tarot-draw-poster.jpg" }
+  };
+
   function pickVideo() {
     var wide = window.matchMedia("(min-aspect-ratio: 1/1)").matches;
-    var base = wide ? "tarot-draw-wide" : "tarot-draw";
+    var base = wide ? "wide" : "portrait";
     if (drawVideo.dataset.base === base) return;
     if (drawOverlay.style.display !== "none") return;
     drawVideo.dataset.base = base;
-    drawSrcWebm.src = "./assets/videos/" + base + ".webm";
-    drawSrcMp4.src = "./assets/videos/" + base + ".mp4";
-    drawVideo.poster = "./assets/videos/" + base + "-poster.jpg";
+    var v = SHUFFLE[base];
+    // 沒有 webm 就把來源拿掉,瀏覽器才會直接跳到 mp4,而不是先撞一個 404
+    if (v.webm) drawSrcWebm.src = "./assets/videos/" + v.webm;
+    else drawSrcWebm.removeAttribute("src");
+    drawSrcMp4.src = "./assets/videos/" + v.mp4;
+    drawVideo.poster = "./assets/videos/" + v.poster;
     drawVideo.load();
   }
   window.addEventListener("resize", pickVideo);
@@ -930,14 +960,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第五步:切牌 ───────────────────────────────────────
   // 上下疊張數即時顯示,離手才鎖定——讓客人隨時可以改主意。
+  // 切牌是垂直動作:牌堆側躺著,由上往下疊 78 張,
+  // p = 從頂端算下來的切點。cutLeft 是上疊、cutRight 是下疊。
   function paintCut(p) {
     var pct = (p * 100).toFixed(2) + "%";
-    cutLeft.style.width = pct;
-    cutRight.style.width = (100 - p * 100).toFixed(2) + "%";
-    cutSeam.style.left = pct;
-    var gap = 6 + Math.abs(p - 0.5) * 16;
-    cutLeft.style.transform = "translateX(-" + gap + "px)";
-    cutRight.style.transform = "translateX(" + gap + "px)";
+    cutLeft.style.height = pct;
+    cutRight.style.height = (100 - p * 100).toFixed(2) + "%";
+    cutSeam.style.top = pct;
+    // 上疊被抬起來:離中點越遠抬得越開,再帶一點側移與傾斜,
+    // 模擬手抓著一疊牌斜斜提起來的樣子
+    var lift = 10 + Math.abs(p - 0.5) * 26;
+    cutLeft.style.transform =
+      "translateY(-" + lift.toFixed(1) + "px) translateX(" + (lift * 0.35).toFixed(1) + "px) rotate(-1.1deg)";
+    cutRight.style.transform = "translateY(" + (lift * 0.18).toFixed(1) + "px)";
     var upper = Math.max(1, Math.min(77, Math.round(p * 78)));
     cutUpperCount.textContent = upper;
     cutLowerCount.textContent = 78 - upper;
@@ -946,7 +981,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function startCut() {
     cutPoint = 0.5;
     paintCut(cutPoint);
-    cutHint.textContent = "手指左右滑動,決定從哪裡切開這副牌";
+    cutHint.textContent = "上下滑動,決定從第幾張切開這副牌";
     cutStage.classList.remove("is-cut");
     showStage(cutPanel);
 
@@ -955,7 +990,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function at(e) {
       var r = cutStage.getBoundingClientRect();
-      return Math.max(0.05, Math.min(0.95, (e.clientX - r.left) / r.width));
+      return Math.max(0.05, Math.min(0.95, (e.clientY - r.top) / r.height));
     }
 
     function onDown(e) {
@@ -1096,6 +1131,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var layout = (Tarot.SPREADS[lastSpread] || {}).layout;
     tarotDeck.className = "tarot-deck count-" + cards.length + (layout ? " layout-" + layout : "");
     tarotDeck.style.display = "grid";
+    if (tarotFlow) tarotFlow.classList.add("has-cards");
     cardSummary.innerHTML = "";
     resultPanel.classList.add("show");
     tarotDeck.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1288,7 +1324,41 @@ document.addEventListener("DOMContentLoaded", function () {
   dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
   document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
   paintSound();
-  if (canStartRound()) startIntro();
+
+  // ── 進站動線:等待影片(循環) → 點一下 → 進場影片(播一次) → 開始占卜 ──
+  // 這一下點擊是整頁唯一保證存在的使用者手勢,所以順手把後面那幾支
+  // 要程式化播放的影片一起解鎖(iOS 不給無手勢播放)。
+  var waitOverlay = document.getElementById("waitOverlay");
+  var enterOverlay = document.getElementById("enterOverlay");
+  var enterVideo = document.getElementById("enterVideo");
+  var gateDone = false;
+
+  // 不論進場影片是播完、播壞還是根本沒載到,都要把客人放進來,
+  // 不能讓人卡在一片黑畫面上。
+  function openGate() {
+    if (gateDone) return;
+    gateDone = true;
+    enterOverlay.style.display = "none";
+    document.body.classList.remove("no-scroll");
+    if (canStartRound()) startIntro();
+  }
+
+  if (waitOverlay && enterOverlay && enterVideo) {
+    document.body.classList.add("no-scroll");
+    waitOverlay.addEventListener("click", function () {
+      if (gateDone) return;
+      unlockVideo();                       // 借這個手勢解鎖洗牌／唱歌影片
+      waitOverlay.style.display = "none";
+      enterOverlay.style.display = "block";
+      enterVideo.addEventListener("ended", openGate);
+      enterVideo.addEventListener("error", openGate);
+      var p = enterVideo.play();
+      if (p && p.catch) p.catch(openGate);
+      setTimeout(openGate, 12000);         // 最後保險,影片再長也不會卡住
+    });
+  } else {
+    if (canStartRound()) startIntro();
+  }
 });
 </script>
 <nav class="bottom-nav">

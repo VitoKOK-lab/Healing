@@ -163,6 +163,8 @@
 @media (max-width: 767px) {
   .desktop-tarot-header,
   .tarot-desktop-shell,
+  .tarot-gate,
+  #enterOverlay,
   .tarot-desktop-page > footer { display: none; }
   .desktop-only-notice { position: relative; z-index: 2; display: grid; min-height: 100vh; place-items: center; padding: 24px; }
   .desktop-notice-card {
@@ -181,4 +183,243 @@
   .tarot-desktop-page *, .tarot-desktop-page *::before, .tarot-desktop-page *::after {
     scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   以下為桌面版專屬重製。
+   先前這一頁只是把手機樣式撐大：同樣的字級、同樣的扁平色塊，
+   放到 1440px 上就顯得空而鬆。桌面有兩個手機沒有的本錢——
+   橫向寬度與景深，所以這裡把它們用起來:
+     · 字級與間距獨立一套(手機 13-15px → 桌面 15-17px)
+     · 面板分層:對話最亮最前、步驟面板次之、牌桌最深
+     · 牌堆與切牌改成有厚度的立體物件,不再是貼在畫面上的長方形
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 背景:換成新的橫式神秘貓 ─────────────────────────────────────
+   style.css 的 body.tarot-page::before(0,1,2)優先級高過先前的
+   .tarot-desktop-page::before(0,1,1),所以舊的直式 tarot-bg.jpg
+   一直壓在上面。這裡用同級選擇器 + 後載入來蓋掉它。
+   星點原本掛在 ::before,現在讓給照片,改疊到 ::after 的漸層上。
+   ───────────────────────────────────────────────────────────── */
+body.tarot-desktop-page::before {
+  z-index: -2;
+  opacity: 1;
+  background-image: url("tarot-mystic-cat-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+body.tarot-desktop-page::after {
+  z-index: -1;
+  /* 壓暗到文字讀得出來即可,不要把這張圖蓋掉——它是這頁的主視覺 */
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.55) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(245,205,130,.45) 0 1px, transparent 1.5px),
+    linear-gradient(180deg, rgba(20,7,32,.62) 0%, rgba(20,7,32,.44) 30%, rgba(18,6,28,.54) 68%, rgba(14,5,24,.82) 100%);
+  background-position: 0 0, 44px 63px, 0 0;
+  background-size: 92px 92px, 137px 137px, auto;
+}
+
+/* ── 進站等待畫面 ─────────────────────────────────────────────── */
+.tarot-gate { cursor: pointer; }
+.tarot-gate-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8vh;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 14px 30px;
+  border: 1px solid rgba(245, 205, 130, .45);
+  border-radius: 999px;
+  background: rgba(20, 7, 32, .62);
+  backdrop-filter: blur(10px);
+  color: #f8f0ff;
+  font-size: 16px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  animation: gatePulse 2.4s ease-in-out infinite;
+}
+@keyframes gatePulse {
+  0%, 100% { opacity: .82; box-shadow: 0 0 0 0 rgba(245, 205, 130, .28); }
+  50%      { opacity: 1;   box-shadow: 0 0 30px 6px rgba(245, 205, 130, .22); }
+}
+
+/* ── 版面隨階段變形 ─────────────────────────────────────────────
+   先前不管哪一步都固定左欄 430px + 右欄牌桌,但牌桌要抽完牌才有東西,
+   所以從選主題一路到切牌,右邊 900px 全是空的——這就是「手機欄位」的來源。
+   改成兩段式:
+     抽牌前 → 單欄置中放大,貓咪背景讓出來當舞台
+     抽牌後 → 才展開左右兩欄(左動線、右牌桌)
+   ───────────────────────────────────────────────────────────── */
+.tarot-desktop-shell #tarotFlow {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 20px;
+}
+.tarot-desktop-shell #tarotFlow > .cat-dialogue,
+.tarot-desktop-shell #tarotFlow > .step-panel {
+  width: min(780px, 100%);
+}
+/* 置中階段給更厚的留白,才撐得起桌面的觀看距離 */
+.tarot-desktop-shell #tarotFlow:not(.has-cards) .cat-dialogue { padding: 30px 34px; }
+.tarot-desktop-shell #tarotFlow:not(.has-cards) .step-panel { padding: 30px 34px; }
+.tarot-desktop-shell #tarotFlow:not(.has-cards) .topic-chips { justify-content: center; }
+.tarot-desktop-shell #tarotFlow:not(.has-cards) .tarot-desktop-stage { display: none; }
+
+/* 抽牌後:展開成左右兩欄 */
+.tarot-desktop-shell #tarotFlow.has-cards {
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+  justify-items: stretch;
+  gap: 22px 40px;
+}
+.tarot-desktop-shell #tarotFlow.has-cards > .cat-dialogue,
+.tarot-desktop-shell #tarotFlow.has-cards > .step-panel {
+  width: 100%;
+}
+.tarot-desktop-shell #tarotFlow.has-cards .tarot-desktop-stage {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1 / span 8;
+}
+
+/* ── 字級:桌面看的距離比手機遠,基準要往上帶 ───────────────────── */
+.tarot-desktop-shell .cat-dialogue p { font-size: 16px; line-height: 1.85; }
+.tarot-desktop-shell .stage-hint { font-size: 13.5px; line-height: 1.7; }
+.tarot-desktop-shell .topic-chip { font-size: 15px; }
+.tarot-desktop-shell .scenario-btn b { font-size: 15px; }
+.tarot-desktop-shell .cut-counts { font-size: 13px; }
+.tarot-desktop-shell .cut-counts b { font-size: 18px; }
+
+/* ── 分層:三個層級各有自己的亮度與陰影,建立前後關係 ─────────────── */
+.tarot-desktop-shell .cat-dialogue {
+  box-shadow: 0 28px 72px rgba(3, 0, 9, .42), 0 0 0 1px rgba(255, 235, 190, .06) inset;
+}
+.tarot-desktop-shell .step-panel {
+  box-shadow: 0 16px 44px rgba(3, 0, 9, .3);
+}
+
+/* ── 牌桌:給它透視,讓卡片有「擺在桌上」而不是「貼在螢幕上」的感覺 ── */
+.tarot-desktop-shell .tarot-deck {
+  perspective: 1400px;
+  perspective-origin: 50% 32%;
+}
+
+/* ═══ 切牌:改成上下切 ═══════════════════════════════════════════
+   真實切牌是「抓住上半疊、抬起來、移到旁邊」，是垂直動作。
+   原本做成左右拉的兩條色塊,既不像切牌,滑鼠也要橫move。
+   這裡把牌堆轉成側面視角:每一條橫線 = 一張牌的側邊,
+   由上往下疊 78 條。往上／往下滑決定從第幾張切開,
+   上半疊會真的抬起、偏移、微微傾斜,露出中間發光的切口。
+   ═══════════════════════════════════════════════════════════════ */
+.tarot-desktop-shell .cut-stage {
+  height: 300px;
+  padding: 0;
+  margin-top: 28px;           /* 留給上疊抬起來的空間,否則會頂到面板邊緣 */
+  overflow: visible;          /* 上半疊要能抬出容器外 */
+  cursor: ns-resize;
+  perspective: 900px;
+  border-radius: 20px;
+  background: transparent;
+  border: 0;
+}
+
+/* 牌堆的桌面陰影——證明它是有厚度、浮在桌上的實體 */
+.tarot-desktop-shell .cut-stage::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -14px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.tarot-desktop-shell .cut-half {
+  /* 從左右並排改成上下堆疊 */
+  left: 8%;
+  right: 8%;
+  top: auto;
+  bottom: auto;
+  width: auto;
+  /* 橫向細線 = 從側面看到的每一張牌的邊 */
+  background: repeating-linear-gradient(
+    0deg,
+    #241243 0 2px,
+    #8a63d6 2px 3px,
+    #341d5c 3px 5px
+  );
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 10px 26px rgba(0, 0, 0, .4);
+  transition: transform .16s cubic-bezier(.22, 1, .36, 1),
+              height .16s cubic-bezier(.22, 1, .36, 1),
+              top .16s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* 上疊:貼齊頂端,被抬起的是這一疊 */
+.tarot-desktop-shell .cut-left {
+  top: 0;
+  border-radius: 12px 12px 4px 4px;
+}
+/* 下疊:留在原位當底座 */
+.tarot-desktop-shell .cut-right {
+  bottom: 0;
+  border-radius: 4px 4px 12px 12px;
+}
+
+/* 切口:從直線轉成橫線,橫躺在兩疊之間 */
+.tarot-desktop-shell .cut-seam {
+  left: 4%;
+  right: 4%;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: 5px;
+  margin-left: 0;
+  margin-top: -2.5px;
+  background: linear-gradient(90deg, transparent, #ffe6ae 20%, #fff 50%, #ffe6ae 80%, transparent);
+  transition: opacity .2s, top .16s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* 上下箭頭提示:讓人一眼知道要往上下滑,而不是左右 */
+.tarot-desktop-shell .cut-stage::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -34px;
+  width: 18px;
+  height: 46px;
+  margin-top: -23px;
+  pointer-events: none;
+  opacity: .5;
+  transition: opacity .2s;
+  background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 46' fill='none' stroke='%23f5cd82' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4v38M9 4L4 9M9 4l5 5M9 42l-5-5M9 42l5-5'/%3E%3C/svg%3E");
+}
+.tarot-desktop-shell .cut-stage.is-cut::before { opacity: 0; }
+
+.tarot-desktop-shell .cut-counts {
+  gap: 34px;
+  margin-top: 26px;
+}
+
+/* ── 解讀結果:桌面要控制行寬,否則一行破百字很難讀 ───────────────── */
+.tarot-desktop-shell .tarot-result .reading-list { gap: 12px; }
+.tarot-desktop-shell #summaryList li {
+  max-width: 68ch;          /* 桌面舒適行寬 60-75 字元 */
+  font-size: 15.5px;
+  line-height: 1.95;
+}
+.tarot-desktop-shell .reading-summary h3 { font-size: 20px; }
+
+/* ── 寬螢幕:1600px 以上把牌桌再放大,不要讓兩側空掉 ───────────────── */
+@media (min-width: 1600px) {
+  .tarot-desktop-shell { width: min(1600px, calc(100% - 64px)); }
+  .tarot-desktop-shell #tarotFlow { grid-template-columns: minmax(380px, 470px) minmax(0, 1fr); gap: 26px 44px; }
+  .tarot-desktop-shell .tarot-deck { min-height: 600px; }
+  .tarot-desktop-shell .cut-stage { height: 340px; }
 }
