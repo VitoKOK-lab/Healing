@@ -95,6 +95,20 @@
 </head>
 <body class="tarot-page desktop-tarot">
 
+<!-- 進入網頁時的等待畫面:循環播放,點任何地方進入下一個 -->
+<div class="draw-overlay" id="waitOverlay">
+  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
+    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 點擊後進入遊戲的影片:播完才進入遊戲 -->
+<div class="draw-overlay" id="enterOverlay" style="display:none">
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto" autoplay>
+    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
+  </video>
+</div>
+
 <!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
 <div class="draw-overlay" id="drawOverlay" style="display:none">
   <!-- 直式/橫式兩支影片,由 JS 依螢幕比例挑一支(來源在互動前就設好,
@@ -311,6 +325,10 @@ document.addEventListener("DOMContentLoaded", function () {
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
   var drawBtn = document.getElementById("drawBtn");
+  var waitOverlay = document.getElementById("waitOverlay");
+  var waitVideo = document.getElementById("waitVideo");
+  var enterOverlay = document.getElementById("enterOverlay");
+  var enterVideo = document.getElementById("enterVideo");
   var drawOverlay = document.getElementById("drawOverlay");
   var drawVideo = document.getElementById("drawVideo");
   var songOverlay = document.getElementById("songOverlay");
@@ -1346,6 +1364,21 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
     startIntro();
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  // ── 等待畫面 → 進入遊戲視頻 → 遊戲開始 ────────────
+  var waitingForEnter = true;
+  waitOverlay.addEventListener("click", function (e) {
+    if (!waitingForEnter) return;
+    waitingForEnter = false;
+    waitOverlay.style.display = "none";
+    enterOverlay.style.display = "block";
+    enterVideo.play();
+  });
+
+  enterVideo.addEventListener("ended", function () {
+    enterOverlay.style.display = "none";
+    waitingForEnter = true;
   });
 
   pickVideo();
