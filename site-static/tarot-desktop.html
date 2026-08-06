@@ -56,6 +56,30 @@
   </video>
 </div>
 
+<!-- 給客人掃的 QR。這是覆蓋在畫面上的一層,不是換頁——
+     店主的占卜畫面原封不動留在後面,收掉就能直接接下一位。
+     QR 指向圖片檔本身,客人掃到的只有一張圖,沒有回站的入口。 -->
+<div class="qr-share" id="qrShare" style="display:none" role="dialog" aria-modal="true" aria-labelledby="qrShareTitle">
+  <div class="qr-share-card">
+    <p class="eyebrow">Scan</p>
+    <h2 class="display" id="qrShareTitle">請客人用手機掃這個</h2>
+    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。</p>
+
+    <div class="qr-share-code" id="qrShareCode">
+      <div class="qr-share-loading" id="qrShareLoading">本喵畫圖中⋯</div>
+      <img id="qrShareImg" alt="占卜結果圖的 QR Code" style="display:none" />
+    </div>
+
+    <p class="qr-share-expiry" id="qrShareExpiry"></p>
+    <p class="qr-share-error" id="qrShareError" style="display:none"></p>
+
+    <div class="qr-share-actions">
+      <button type="button" class="btn-secondary" id="qrCloseBtn">關閉</button>
+      <button type="button" class="btn-primary" id="qrNextBtn">下一位客人</button>
+    </div>
+  </div>
+</div>
+
 <div class="desktop-only-notice">
   <div class="desktop-notice-card">
     <h1>這是電腦與 iPad 專用版</h1>
@@ -222,7 +246,8 @@
       </div>
 
       <div class="tarot-actions">
-        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片 · 傳給朋友</button>
+        <button type="button" class="btn-secondary" id="qrBtn" style="display:none">傳給客人 · QR</button>
+        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片</button>
         <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
         <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
@@ -299,6 +324,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
   var reportBtn = document.getElementById("reportBtn");
+  var qrBtn = document.getElementById("qrBtn");
+  var qrCloseBtn = document.getElementById("qrCloseBtn");
+  var qrNextBtn = document.getElementById("qrNextBtn");
   var soundToggle = document.getElementById("soundToggle");
   var soundLabel = document.getElementById("soundLabel");
 
@@ -1296,6 +1324,7 @@ document.addEventListener("DOMContentLoaded", function () {
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
       reportBtn.style.display = "inline-flex";
+      qrBtn.style.display = "inline-flex";
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
       // 所以直接把畫面帶到最下面那兩顆按鈕,不要讓人自己往下捲一大段。
@@ -1398,6 +1427,91 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // ── 傳給客人:螢幕出現 QR,客人用自己的手機掃走結果圖 ──────────
+  // 這裡刻意「不換頁」:QR 只是蓋在上面的一層,店主的占卜畫面完整
+  // 留在後面,關掉就能直接接下一位。
+  //
+  // QR 指的是圖片檔本身(/api/tarot/share/<token>,回 image/*),
+  // 不是站上任何一頁——客人掃到的就是一張圖,沒有導覽也沒有連結,
+  // 不會因此多一個回來繼續免費占卜的入口。
+  var SHARE_URL = /\.vercel\.app$/.test(location.hostname)
+    ? "/api/tarot/share"
+    : "https://healingasmr.vercel.app/api/tarot/share";
+
+  var qrShare = document.getElementById("qrShare");
+  var qrShareImg = document.getElementById("qrShareImg");
+  var qrShareLoading = document.getElementById("qrShareLoading");
+  var qrShareExpiry = document.getElementById("qrShareExpiry");
+  var qrShareError = document.getElementById("qrShareError");
+
+  function openQrPanel() {
+    qrShareImg.style.display = "none";
+    qrShareImg.removeAttribute("src");
+    qrShareLoading.style.display = "";
+    qrShareLoading.textContent = "本喵畫圖中⋯";
+    qrShareExpiry.textContent = "";
+    qrShareError.style.display = "none";
+    qrShare.style.display = "grid";
+  }
+
+  function closeQrPanel() {
+    qrShare.style.display = "none";
+  }
+
+  function qrFailed(msg) {
+    qrShareLoading.style.display = "none";
+    qrShareError.textContent = msg;
+    qrShareError.style.display = "";
+  }
+
+  qrBtn.addEventListener("click", function () {
+    if (!lastCards || !lastReading) return;
+    openQrPanel();
+
+    var spread = Tarot.SPREADS[lastSpread || "flow"];
+    TarotReport.render({
+      question: questionText(),
+      spreadName: spread ? spread.name : "",
+      cards: lastCards,
+      readingSegs: toSegs(lastReading),
+      artOf: function (n) { return "./assets/cards/" + (n < 10 ? "0" + n : n) + ".jpg"; }
+    }).then(function (cv) {
+      // JPEG 比 PNG 小很多,這張圖是照片式的塔羅牌面,壓縮痕跡看不出來
+      var dataUrl = cv.toDataURL("image/jpeg", 0.86);
+      qrShareLoading.textContent = "上傳中⋯";
+      return fetch(SHARE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl })
+      });
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !d.qr) throw new Error("回應缺少 QR");
+      qrShareImg.src = d.qr;
+      qrShareImg.style.display = "";
+      qrShareLoading.style.display = "none";
+      var days = Math.max(1, Math.round((new Date(d.expiresAt) - Date.now()) / 86400000));
+      qrShareExpiry.textContent = "這個連結 " + days + " 天後失效";
+    }).catch(function (e) {
+      console.error("[qr] 產生失敗", e);
+      qrFailed("QR 產生失敗了喵,先用「存成圖片」把結果存下來吧。");
+    });
+  });
+
+  qrCloseBtn.addEventListener("click", closeQrPanel);
+
+  qrNextBtn.addEventListener("click", function () {
+    closeQrPanel();
+    againBtn.click();          // 沿用既有的「再抽一次」重置流程
+  });
+
+  // Esc 關掉:店主現場操作,手不一定在滑鼠上
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && qrShare.style.display !== "none") closeQrPanel();
+  });
+
   retryBtn.addEventListener("click", function () {
     if (lastCards) requestReading(lastCards);
   });
@@ -1407,6 +1521,7 @@ document.addEventListener("DOMContentLoaded", function () {
     readingSummary.style.display = "none";
     againBtn.style.display = "none";
     reportBtn.style.display = "none";
+    qrBtn.style.display = "none";
     retryBtn.style.display = "none";
     errorNote.style.display = "none";
     questionInput.value = "";
