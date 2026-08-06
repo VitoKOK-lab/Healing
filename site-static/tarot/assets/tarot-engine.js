@@ -476,28 +476,35 @@ document.addEventListener("DOMContentLoaded", function () {
   // 手機網路慢一點就播到一半 stall 住,畫面停在某一格。
   //
   // 所以自己抓。頁面一載入就在背景把接下來會用到的影片整包 fetch 回來,
-  // 抓完換成 blob URL——播的時候完全不碰網路。
+  // 讓它進到瀏覽器的 HTTP 快取。等到真的要播時,<video> 直接從快取讀,
+  // 不必再等網路。
+  //
+  // 注意:抓回來之後「不要」把 <video> 的 src 換成 blob URL。試過,
+  // iOS Safari 上會卡住不播——Safari 的影片載入是走 range request 的,
+  // 而 blob URL 對 range 的支援很差,常常整個停在那裡,連 error 事件
+  // 都不發。用一般網址 + 已經暖好的快取,效果一樣而且到處都能跑。
   //
   // 順序是照「會用到的先後」排的,而且一支抓完才抓下一支:
   //   1. 進場影片:客人隨時可能點下去,最急
   //   2. 洗牌影片:大概三十秒到一分鐘後才會用到
   // 不併行是因為手機頻寬有限,兩支一起搶只會兩支都慢。
   // 等待影片不在名單裡——它 autoplay,瀏覽器自己就會抓。
-  var videoBlobs = {};          // 檔名 → blob URL
+  var videoReady = {};          // 檔名 → 已經抓進快取了
 
   function videoUrl(name) {
-    return videoBlobs[name] || "./assets/videos/" + name;
+    return "./assets/videos/" + name;
   }
 
   function prefetchVideo(name) {
-    if (videoBlobs[name]) return Promise.resolve();
+    if (videoReady[name]) return Promise.resolve();
     return fetch("./assets/videos/" + name)
+      // 一定要把 body 讀完,只拿到 headers 是不會進快取的
       .then(function (r) {
         if (!r.ok) throw new Error(r.status);
         return r.blob();
       })
-      .then(function (blob) { videoBlobs[name] = URL.createObjectURL(blob); })
-      // 抓不到就算了:videoUrl() 會退回原本的網址,行為跟以前一樣
+      .then(function () { videoReady[name] = true; })
+      // 抓不到就算了:播的時候照原本的方式走,行為跟加預抓之前一樣
       .catch(function () {});
   }
 
@@ -520,12 +527,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
     drawSrcMp4.src = videoUrl(v.mp4);
     drawVideo.poster = "./assets/videos/" + v.poster;
-    // load() 才是真正發出請求的那一步。開場時來源還是網址,這時呼叫
-    // load() 會讓瀏覽器去抓一遍,跟背景的預抓撞在一起,同一支下載兩次。
-    // 所以只有在來源已經是 blob(預抓完成)時才 load——那一步不碰網路。
-    // 預抓失敗的話這裡就不 load,等 playDraw 真的要播時再由 play() 觸發,
-    // 行為跟加預抓之前一樣。
-    if (drawSrcMp4.src.indexOf("blob:") === 0) drawVideo.load();
+    // 不在這裡 load():preload="none" 加上不呼叫 load(),瀏覽器就不會
+    // 主動去抓,背景那支 prefetch 才不會跟它撞成同一支下載兩次。
+    // 真的要播的時候 playDraw() 會 play(),那時檔案已經在快取裡了。
   }
   window.addEventListener("resize", pickVideo);
 
@@ -1431,34 +1435,22 @@ document.addEventListener("DOMContentLoaded", function () {
     var chain = Promise.resolve();
 
     if (enterName) {
-      chain = chain.then(function () {
-        return prefetchVideo(enterName).then(function () {
-          // 已經播過或正在播就不要動它,換 src 會把畫面打斷
-          if (!gateDone && enterVideo.paused && videoBlobs[enterName]) {
-            enterVideo.src = videoBlobs[enterName];
-            enterVideo.load();
-          }
-        });
-      });
+      chain = chain.then(function () { return prefetchVideo(enterName); });
     }
 
     // 洗牌影片:依現在的螢幕比例抓對應那一支
     chain.then(function () {
       var wide = window.matchMedia("(min-aspect-ratio: 1/1)").matches;
-      var v = SHUFFLE[wide ? "wide" : "portrait"];
-      return prefetchVideo(v.mp4).then(function () {
-        // 抓好了就重新指一次來源,換成 blob。洗牌罩正開著的時候不要動。
-        if (drawOverlay.style.display === "none") {
-          drawVideo.dataset.base = "";      // 清掉才會真的重跑
-          pickVideo();
-        }
-      });
+      return prefetchVideo(SHUFFLE[wide ? "wide" : "portrait"].mp4);
     });
   }
+
+  var gateCleanup = null;
 
   function openGate() {
     if (gateDone) return;
     gateDone = true;
+    if (gateCleanup) { gateCleanup(); gateCleanup = null; }
     // 影片還在播就先停,不然它會在關掉的圖層後面繼續跑、繼續出聲
     try { enterVideo.pause(); } catch (e) {}
     enterOverlay.style.display = "none";
@@ -1476,46 +1468,68 @@ document.addEventListener("DOMContentLoaded", function () {
       waitOverlay.style.display = "none";
       enterOverlay.style.display = "block";
 
+      // ── 這一關絕對不能卡住 ────────────────────────────────────
+      // 現場已經踩到兩次。原則改成:進場動畫是「附加的」,不是通往
+      // 占卜流程的門。它有機會播,但無論如何都不准擋著客人。
+      //
+      // 五道,任何一道成立就放人進來:
+      //   1. ended       —— 正常播完
+      //   2. error       —— 檔案壞了或載不到
+      //   3. 根本沒開始   —— play() 之後 1.2 秒還沒有任何播放進度
+      //   4. 播到一半停住 —— 進度連續 1.2 秒沒有前進
+      //   5. 點畫面      —— 客人自己跳過
+      // 另外還有一個依影片長度算的總保險,是最後一道。
+      //
+      // 第 3 道是這次補的。先前只有「播到一半停住」那一道,而它是拿
+      // currentTime 跟上一次比——影片如果根本沒載起來,currentTime
+      // 可能是 NaN,而 NaN === NaN 永遠是 false,那一道就永遠不會成立。
+      // 現在改用「有沒有前進」來判斷,NaN 進不來。
+      var gateTimers = [];
+      function later(fn, ms) { gateTimers.push(setTimeout(fn, ms)); return gateTimers[gateTimers.length - 1]; }
+      function clearGateTimers() {
+        gateTimers.forEach(clearTimeout);
+        gateTimers.length = 0;
+        clearInterval(stallWatch);
+      }
+
+      var progressed = false;               // 影片到底有沒有真的動過
+      var lastTime = 0, stillTicks = 0;
+
       enterVideo.addEventListener("ended", openGate);
       enterVideo.addEventListener("error", openGate);
-
-      // ── 卡住偵測 ────────────────────────────────────────────
-      // 現場踩到過:手機網路還沒把影片載完就開播,播到一半 stall 住,
-      // 畫面停在某一格。這時 ended 不會來、error 也不會來,先前只靠
-      // 一個固定 12 秒的保險,客人就對著靜止畫面乾等 12 秒——現場看
-      // 起來就是當機。
-      //
-      // 改成三道:
-      //   1. 依影片實際長度算保險時間(跟洗牌那段同一套做法)
-      //   2. 播放進度停住超過 1.6 秒就當它卡了,直接放人進來
-      //   3. 點畫面任何地方都能跳過
-      var guard = setTimeout(openGate, 6000);   // 還沒拿到 metadata 前的粗保險
-      var lastTime = -1, stallTicks = 0;
-
-      function armGuard() {
-        clearTimeout(guard);
-        var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 5;
-        guard = setTimeout(openGate, (dur - enterVideo.currentTime + 1.5) * 1000);
-      }
-      enterVideo.addEventListener("loadedmetadata", armGuard);
-      enterVideo.addEventListener("playing", armGuard);
+      enterVideo.addEventListener("timeupdate", function () { progressed = true; });
 
       var stallWatch = setInterval(function () {
-        if (gateDone) { clearInterval(stallWatch); return; }
-        if (enterVideo.currentTime === lastTime) {
-          // 連續四次(約 1.6 秒)進度都沒動 = 卡住了
-          if (++stallTicks >= 4) { clearInterval(stallWatch); openGate(); }
-        } else {
-          stallTicks = 0;
-          lastTime = enterVideo.currentTime;
+        if (gateDone) { clearGateTimers(); return; }
+        var t = enterVideo.currentTime;
+        // 只認「數字而且比上次大」才算有前進。NaN、undefined 都不算。
+        if (typeof t === "number" && isFinite(t) && t > lastTime + 0.01) {
+          lastTime = t;
+          stillTicks = 0;
+          progressed = true;
+        } else if (++stillTicks >= 3) {     // 連續三次 = 1.2 秒沒動
+          openGate();
         }
       }, 400);
 
-      // 點一下就跳過。對客人是「不想看動畫」,對店主是現場真的卡住時的逃生門。
+      // 總保險:影片長度 + 2 秒,最多不超過 10 秒。拿不到長度就用 4 秒。
+      later(function () {
+        var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 4;
+        var left = Math.min((dur + 2) * 1000, 10000);
+        later(openGate, left);
+      }, 0);
+
+      // 點畫面任何地方都能跳過
       enterOverlay.addEventListener("click", openGate);
 
       var p = enterVideo.play();
       if (p && p.catch) p.catch(openGate);
+
+      // 第 3 道:play() 之後 1.2 秒還沒有任何進度,就當它起不來
+      later(function () { if (!progressed) openGate(); }, 1200);
+
+      // openGate 收尾時要把這些計時器都清掉
+      gateCleanup = clearGateTimers;
     }
 
     // 背景預抓。等待畫面正在播、客人正在讀「點一下,本喵就開始」的那幾秒
