@@ -470,6 +470,37 @@ document.addEventListener("DOMContentLoaded", function () {
   //   mp4    直式洗牌影片(必要)
   //   webm   同一支的 webm 版,沒有就留空字串,程式會直接跳過不撞 404
   //   poster 影片載入前先顯示的靜態圖,避免黑畫面
+  // ── 影片預先抓下來 ──────────────────────────────────────────
+  // preload="auto" 只是「建議」,iOS Safari 基本上不理它——真的要等到
+  // play() 被呼叫才開始下載。結果就是:客人點下去,影片才開始抓,
+  // 手機網路慢一點就播到一半 stall 住,畫面停在某一格。
+  //
+  // 所以自己抓。頁面一載入就在背景把接下來會用到的影片整包 fetch 回來,
+  // 抓完換成 blob URL——播的時候完全不碰網路。
+  //
+  // 順序是照「會用到的先後」排的,而且一支抓完才抓下一支:
+  //   1. 進場影片:客人隨時可能點下去,最急
+  //   2. 洗牌影片:大概三十秒到一分鐘後才會用到
+  // 不併行是因為手機頻寬有限,兩支一起搶只會兩支都慢。
+  // 等待影片不在名單裡——它 autoplay,瀏覽器自己就會抓。
+  var videoBlobs = {};          // 檔名 → blob URL
+
+  function videoUrl(name) {
+    return videoBlobs[name] || "./assets/videos/" + name;
+  }
+
+  function prefetchVideo(name) {
+    if (videoBlobs[name]) return Promise.resolve();
+    return fetch("./assets/videos/" + name)
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.blob();
+      })
+      .then(function (blob) { videoBlobs[name] = URL.createObjectURL(blob); })
+      // 抓不到就算了:videoUrl() 會退回原本的網址,行為跟以前一樣
+      .catch(function () {});
+  }
+
   var SHUFFLE = {
     wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
     portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "tarot-shuffle-portrait-poster.jpg" }
@@ -483,11 +514,18 @@ document.addEventListener("DOMContentLoaded", function () {
     drawVideo.dataset.base = base;
     var v = SHUFFLE[base];
     // 沒有 webm 就把來源拿掉,瀏覽器才會直接跳到 mp4,而不是先撞一個 404
-    if (v.webm) drawSrcWebm.src = "./assets/videos/" + v.webm;
+    if (v.webm) drawSrcWebm.src = videoUrl(v.webm);
     else drawSrcWebm.removeAttribute("src");
-    drawSrcMp4.src = "./assets/videos/" + v.mp4;
+    // 已經預抓好就用 blob(不碰網路),還沒抓好就先掛原本的網址,
+    // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
+    drawSrcMp4.src = videoUrl(v.mp4);
     drawVideo.poster = "./assets/videos/" + v.poster;
-    drawVideo.load();
+    // load() 才是真正發出請求的那一步。開場時來源還是網址,這時呼叫
+    // load() 會讓瀏覽器去抓一遍,跟背景的預抓撞在一起,同一支下載兩次。
+    // 所以只有在來源已經是 blob(預抓完成)時才 load——那一步不碰網路。
+    // 預抓失敗的話這裡就不 load,等 playDraw 真的要播時再由 play() 觸發,
+    // 行為跟加預抓之前一樣。
+    if (drawSrcMp4.src.indexOf("blob:") === 0) drawVideo.load();
   }
   window.addEventListener("resize", pickVideo);
 
@@ -1384,6 +1422,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 不論進場影片是播完、播壞還是根本沒載到,都要把客人放進來,
   // 不能讓人卡在一片黑畫面上。
+  // 依「會用到的先後」一支一支抓。抓完就把來源換成 blob,
+  // 之後播放完全不碰網路。
+  function startPrefetch() {
+    var srcEl = enterVideo.querySelector("source");
+    var enterName = srcEl ? (srcEl.getAttribute("src") || "").split("/").pop() : null;
+
+    var chain = Promise.resolve();
+
+    if (enterName) {
+      chain = chain.then(function () {
+        return prefetchVideo(enterName).then(function () {
+          // 已經播過或正在播就不要動它,換 src 會把畫面打斷
+          if (!gateDone && enterVideo.paused && videoBlobs[enterName]) {
+            enterVideo.src = videoBlobs[enterName];
+            enterVideo.load();
+          }
+        });
+      });
+    }
+
+    // 洗牌影片:依現在的螢幕比例抓對應那一支
+    chain.then(function () {
+      var wide = window.matchMedia("(min-aspect-ratio: 1/1)").matches;
+      var v = SHUFFLE[wide ? "wide" : "portrait"];
+      return prefetchVideo(v.mp4).then(function () {
+        // 抓好了就重新指一次來源,換成 blob。洗牌罩正開著的時候不要動。
+        if (drawOverlay.style.display === "none") {
+          drawVideo.dataset.base = "";      // 清掉才會真的重跑
+          pickVideo();
+        }
+      });
+    });
+  }
+
   function openGate() {
     if (gateDone) return;
     gateDone = true;
@@ -1445,6 +1517,10 @@ document.addEventListener("DOMContentLoaded", function () {
       var p = enterVideo.play();
       if (p && p.catch) p.catch(openGate);
     }
+
+    // 背景預抓。等待畫面正在播、客人正在讀「點一下,本喵就開始」的那幾秒
+    // 就是最好的時機——網路是閒的,而接下來兩支影片都還沒被用到。
+    startPrefetch();
 
     waitOverlay.addEventListener("click", enterSite);
     // 等待畫面蓋住整頁,沒有鍵盤入口的話用鍵盤的人根本進不來

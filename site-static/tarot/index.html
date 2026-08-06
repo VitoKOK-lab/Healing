@@ -18,7 +18,11 @@
 <div class="draw-overlay" id="drawOverlay" style="display:none">
   <!-- 直式/橫式兩支影片,由 JS 依螢幕比例挑一支(來源在互動前就設好,
        iOS 才能在手勢當下解鎖播放) -->
-  <video id="drawVideo" class="draw-overlay-video" playsinline preload="auto">
+  <!-- preload 設成 none 是刻意的:引擎會在等待畫面播著的時候自己 fetch
+       整支影片並換成 blob URL(見 tarot-engine.js 的 startPrefetch)。
+       留 preload="auto" 的話瀏覽器會再抓一次,同一支影片下載兩遍,
+       手機頻寬白白多花一倍。實測確認過。 -->
+  <video id="drawVideo" class="draw-overlay-video" playsinline preload="none">
     <source id="drawSrcWebm" type="video/webm" />
     <source id="drawSrcMp4" type="video/mp4" />
   </video>
@@ -61,12 +65,16 @@
      的出路,不然畫面就停在某一格不動。 -->
 <div class="draw-overlay" id="enterOverlay" style="display:none"
      role="button" tabindex="-1" aria-label="進場動畫。點一下可以跳過。">
-  <!-- 直式進場影片:貓抬牌 → 金光爆開 → 煙散 → 舉起貓咪牌 → 收回。
-       這一支是從原始素材的第 2.8 秒剪起的——前面那段是標題卡,客人
-       在等待畫面剛看完,再放一次只是拖時間。整段再加速 1.6 倍到 4.6 秒,
-       現場一位接一位排隊,進場卡太久很有感。
+  <!-- 直式進場影片:貓抬牌 → 舉起貓咪牌 → 金光爆開。6.8 秒。
+       原始素材是 7.95 秒,從第 1.2 秒剪起——前面那段是標題卡,客人在
+       等待畫面剛看完,再放一次只是拖時間。這次沒有加速,店主自己已經
+       把長度剪短過了。
        這支不靜音(是在使用者點擊之後才播,瀏覽器允許出聲)。 -->
-  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto"
+  <!-- preload 設成 none 是刻意的:引擎會在等待畫面播著的時候自己 fetch
+       整支影片並換成 blob URL(見 tarot-engine.js 的 startPrefetch)。
+       留 preload="auto" 的話瀏覽器會再抓一次,同一支影片下載兩遍,
+       手機頻寬白白多花一倍。實測確認過。 -->
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="none"
          poster="./assets/videos/tarot-enter-portrait-poster.jpg">
     <source src="./assets/videos/tarot-enter-portrait.mp4" type="video/mp4" />
   </video>
