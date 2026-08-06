@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TAHIR ZAINAB TAROT</title>
+<meta name="description" content="抽三張牌,由本喵占卜師為你解讀感情、工作、金錢或人生抉擇。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./assets/base.css" />
+<link rel="stylesheet" href="./assets/tarot.css" />
+<link rel="stylesheet" href="./assets/mobile.css" />
+</head>
+<body class="tarot-page tarot-phone-page" data-mode="phone">
+
+<!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
+<div class="draw-overlay" id="drawOverlay" style="display:none">
+  <!-- 直式/橫式兩支影片,由 JS 依螢幕比例挑一支(來源在互動前就設好,
+       iOS 才能在手勢當下解鎖播放) -->
+  <video id="drawVideo" class="draw-overlay-video" playsinline preload="auto">
+    <source id="drawSrcWebm" type="video/webm" />
+    <source id="drawSrcMp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 遇到不能算的問題時,本喵唱歌賠罪的影片 -->
+<div class="draw-overlay" id="songOverlay" style="display:none">
+  <video id="songVideo" class="draw-overlay-video" playsinline preload="none"
+         poster="./assets/videos/tarot-song-poster.jpg">
+    <source src="./assets/videos/tarot-song.webm" type="video/webm" />
+    <source src="./assets/videos/tarot-song.mp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 背景音樂:進站那一下點擊就開始循環播放,整場不停。
+     瀏覽器不允許無使用者手勢的自動播放,所以起點綁在等待畫面那一下點擊。
+     音量壓得很低——客人是來讀文字的,音樂只是墊底的氛圍。 -->
+<audio id="bgm" loop preload="none">
+  <source src="./assets/audio/tarot-bgm.mp3" type="audio/mpeg" />
+</audio>
+
+<!-- 進站等待:一進頁面就循環播放,等客人點一下才往下走。
+     這一下點擊同時也是 iOS 解鎖影片播放的手勢來源。 -->
+<div class="draw-overlay tarot-gate" id="waitOverlay"
+     role="button" tabindex="0" aria-label="開始占卜。點一下畫面,或按 Enter 鍵。">
+  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
+    <!-- 直式的等待影片到位之後,把下面這行的檔名改成 tarot-wait-portrait.mp4。
+         現在先用橫式的那支,靠 object-fit:cover 填滿直式畫面(左右會被裁掉)。 -->
+    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
+  </video>
+  <p class="tarot-gate-hint">點一下,本喵就開始</p>
+</div>
+
+<!-- 進場動畫:點擊後播一次,播完才進入占卜流程 -->
+<div class="draw-overlay" id="enterOverlay" style="display:none">
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto">
+    <!-- 同上:直式進場影片到位後改成 tarot-enter-portrait.mp4 -->
+    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 給客人掃的 QR。這是覆蓋在畫面上的一層,不是換頁——
+     店主的占卜畫面原封不動留在後面,收掉就能直接接下一位。
+     QR 指向圖片檔本身,客人掃到的只有一張圖,沒有回站的入口。 -->
+<div class="qr-share" id="qrShare" style="display:none" role="dialog" aria-modal="true" aria-labelledby="qrShareTitle">
+  <div class="qr-share-card">
+    <p class="eyebrow">Scan</p>
+    <h2 class="display" id="qrShareTitle">請客人用手機掃這個</h2>
+    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。</p>
+    <p class="qr-share-keep">只保留 24 小時,請客人自行截圖</p>
+
+    <div class="qr-share-code" id="qrShareCode">
+      <div class="qr-share-loading" id="qrShareLoading">本喵畫圖中⋯</div>
+      <img id="qrShareImg" alt="占卜結果圖的 QR Code" style="display:none" />
+    </div>
+
+    <p class="qr-share-expiry" id="qrShareExpiry"></p>
+    <p class="qr-share-error" id="qrShareError" style="display:none"></p>
+
+    <div class="qr-share-actions">
+      <button type="button" class="btn-secondary" id="qrCloseBtn">關閉</button>
+      <button type="button" class="btn-primary" id="qrNextBtn">下一位客人</button>
+    </div>
+  </div>
+</div>
+
+<header class="tarot-phone-header rise">
+  <!-- 點標題 = 整場重來:回到最開頭的等待畫面,一切歸零。
+       現場換下一位客人時最常用到,所以放在最順手的位置。 -->
+  <a class="tarot-phone-brand" href="./index.html" id="brandHome" aria-label="TAHIR ZAINAB TAROT,回到開頭重新開始">
+    <span class="tarot-phone-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
+    <span><b>TAHIR ZAINAB TAROT</b><small>Jessica 解憂商店</small></span>
+  </a>
+  <p>給自己一段安靜的時間，讓牌替心裡的聲音排好位置。</p>
+</header>
+
+<main class="tarot-phone-shell">
+  <div class="tarot-bar">
+    <span class="tarot-credits" id="creditsBadge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
+      <span id="creditsText">剩餘 3 次</span>
+    </span>
+    <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
+      <span id="soundLabel">呼嚕聲</span>
+    </button>
+  </div>
+
+  <!-- 額度用完:導向購買 -->
+  <div class="card tarot-locked" id="lockedPanel" style="display:none">
+    <div class="dot" style="margin-inline:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
+    <h2 class="display" style="font-size:19px;margin-top:14px">占卜次數已用完</h2>
+    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">NT$100 可再加購 3 次喵喵占卜</p>
+    <a class="btn-primary" href="../checkout/tarot.html">前往加購</a>
+  </div>
+
+  <div id="tarotFlow">
+    <!-- 本喵占卜師:整段流程都透過這個對話框跟客人說話 -->
+    <div class="cat-dialogue" id="catDialogue">
+      <div class="cat-dialogue-top">
+        <span class="cat-dialogue-avatar" id="dialogueAvatar"></span>
+        <span class="cat-dialogue-name">喵喵占卜師</span>
+      </div>
+      <p class="cat-dialogue-text" id="dialogueText"></p>
+      <!-- 現在完全由客人控制節奏,所以講明白要點一下 -->
+      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點畫面任何地方繼續 ▼</span>
+    </div>
+
+    <!-- 說完開場白才出現 -->
+    <div class="step-panel" id="topicPanel" style="display:none">
+      <div class="topic-chips" id="topicChips">
+        <button type="button" class="topic-chip" data-topic="love">感情</button>
+        <button type="button" class="topic-chip" data-topic="career">工作</button>
+        <button type="button" class="topic-chip" data-topic="money">金錢</button>
+        <button type="button" class="topic-chip" data-topic="decision">抉擇</button>
+        <button type="button" class="topic-chip" data-topic="other">其他</button>
+      </div>
+    </div>
+
+    <!-- 選好主題才出現:第二層的具體處境,決定用哪個牌陣(客人不會看到「牌陣」二字) -->
+    <div class="step-panel" id="scenarioPanel" style="display:none">
+      <div class="scenario-list" id="scenarioList"></div>
+    </div>
+
+    <!-- 選好處境才出現 -->
+    <div class="step-panel" id="questionPanel" style="display:none">
+      <!-- autocomplete/autofill 全關:這是公用裝置也會用的頁面,
+           瀏覽器不能把前一位客人打過的心事當建議跳出來。 -->
+      <label class="pay-field tarot-question" id="questionField">
+        <input class="pay-input" id="questionInput" placeholder="想問最近三個月的什麼事呢⋯" maxlength="120"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               name="tarot-q" inputmode="text" />
+        <p class="field-hint" id="questionHint">至少寫五個字。本喵只看得到最近三個月喔</p>
+      </label>
+      <!-- 只有二擇一牌陣會用到。這時上面的問題欄會收起來,畫面只留兩格,
+           客人不會愣在那裡想「我到底要填哪一個」。 -->
+      <div class="option-pair" id="optionPanel" style="display:none">
+        <label class="pay-field">
+          <span class="option-tag">選項一</span>
+          <input class="pay-input" id="optionA" placeholder="例如:留在原公司,同事都很熟" maxlength="60"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 name="tarot-a" />
+        </label>
+        <label class="pay-field">
+          <span class="option-tag">選項二</span>
+          <input class="pay-input" id="optionB" placeholder="例如:接新工作,薪水高但要重新開始" maxlength="60"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 name="tarot-b" />
+        </label>
+        <p class="field-hint" id="optionHint">兩條路都寫下來,本喵就知道要比什麼了</p>
+      </div>
+      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
+    </div>
+
+    <!-- 本喵沒聽懂時的追問:先問清楚再開牌,不會扣點數 -->
+    <div class="step-panel" id="clarifyPanel" style="display:none">
+      <label class="pay-field">
+        <input class="pay-input" id="clarifyInput" placeholder="跟本喵說說⋯" maxlength="120"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               name="tarot-c" />
+        <p class="field-hint" id="clarifyHint">說清楚一點,本喵才不會看錯方向</p>
+      </label>
+      <button type="button" class="btn-primary" id="clarifyBtn" style="width:100%">回答本喵</button>
+    </div>
+
+    <!-- 呼叫追問 API 時的等待狀態 -->
+    <div class="step-panel" id="thinkingPanel" style="display:none">
+      <p class="stage-hint">喵喵占卜師正在聽你說⋯</p>
+    </div>
+
+    <!-- 洗牌:手指在牌面上來回滑,滑滿才算洗透 -->
+    <div class="step-panel" id="shufflePanel" style="display:none">
+      <div class="swipe-stage" id="swipeStage" role="button" tabindex="0"
+           aria-label="洗牌區。用滑鼠或手指來回滑動,或連按方向鍵,直到洗透為止。"
+           aria-describedby="swipeHint">
+        <span class="swipe-card" style="--i:0"></span>
+        <span class="swipe-card" style="--i:1"></span>
+        <span class="swipe-card" style="--i:2"></span>
+        <span class="swipe-card" style="--i:3"></span>
+        <span class="swipe-card" style="--i:4"></span>
+        <canvas class="swipe-trail" id="swipeTrail"></canvas>
+      </div>
+      <div class="swipe-meter" id="swipeMeter" role="progressbar"
+           aria-label="洗牌進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="swipeFill"></i></div>
+      <p class="stage-hint" id="swipeHint">用手指在牌上來回滑動,滑得越久洗得越透</p>
+    </div>
+
+    <!-- 切牌:牌堆側躺著,上下滑決定從第幾張切開。
+         cutLeft 是上疊(會被抬起來)、cutRight 是下疊(留在原位當底座)。 -->
+    <div class="step-panel" id="cutPanel" style="display:none">
+      <div class="cut-stage" id="cutStage"
+           role="slider" tabindex="0"
+           aria-label="切牌位置。上下方向鍵調整,Enter 確認。"
+           aria-valuemin="1" aria-valuemax="77" aria-valuenow="39" aria-valuetext="上疊 39 張,下疊 39 張">
+        <span class="cut-half cut-left" id="cutLeft"></span>
+        <span class="cut-half cut-right" id="cutRight"></span>
+        <span class="cut-seam" id="cutSeam"></span>
+      </div>
+      <div class="cut-counts">
+        <span>上疊 <b id="cutUpperCount">39</b> 張</span>
+        <span>下疊 <b id="cutLowerCount">39</b> 張</span>
+      </div>
+      <p class="stage-hint" id="cutHint">上下滑動,決定從第幾張切開這副牌</p>
+    </div>
+
+    <section class="tarot-phone-stage" aria-label="牌桌與占卜結果">
+      <!-- 三張卡片由 JS 建立 -->
+      <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
+
+      <div class="card tarot-result" id="resultPanel">
+      <p class="eyebrow">Reading</p>
+      <h2 class="display" style="font-size:18px;margin-top:6px">牌面解讀</h2>
+      <ul class="reading-list" id="cardSummary"></ul>
+      <div class="tarot-loading" id="loadingNote" style="display:none">
+        <span class="thinking-cat" id="thinkingCat"></span>
+        <span>喵喵占卜師思考中<span class="dots"><i>.</i><i>.</i><i>.</i></span></span>
+      </div>
+      <div class="tarot-error" id="errorNote" style="display:none"></div>
+
+      <div class="reading-summary" id="readingSummary" style="display:none">
+        <p class="eyebrow">Summary</p>
+        <h3 class="display">喵喵占卜師的完整解讀</h3>
+        <ol id="summaryList"></ol>
+      </div>
+
+      <!-- 石頭推薦:從這次的主題與牌面推出來的,客人不必多選任何東西 -->
+      <div class="gem-pick" id="gemPick" style="display:none">
+        <p class="eyebrow">For You</p>
+        <div class="gem-pick-row">
+          <span class="gem-pick-orb" id="gemOrb"></span>
+          <img class="gem-pick-photo" id="gemPhoto" alt="" style="display:none" />
+          <div class="gem-pick-text">
+            <b id="gemName"></b>
+            <span id="gemFamily"></span>
+            <p id="gemWhy"></p>
+            <p id="gemLine"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tarot-actions">
+        <button type="button" class="btn-secondary" id="qrBtn" style="display:none">傳給客人 · QR</button>
+        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片</button>
+        <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
+        <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
+      </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <p class="fine">© 2026 Jessica 解憂商店·課程影片僅限購買帳號觀看,禁止側錄與轉載</p>
+    <!-- 背景音樂授權要求標註出處,拿掉這行就不符合授權條件 -->
+    <p class="fine">背景音樂：<a href="https://breakingcopyright.com/song/keys-of-moon-enchanted" target="_blank" rel="noopener">Enchanted</a> by Keys Of Moon · Free To Use YouTube License</p>
+  </div>
+</footer>
+
+<script src="./assets/tarot-data.js"></script>
+<script src="./assets/gem-data.js"></script>
+<script src="./assets/tarot-report.js"></script>
+<script src="./assets/tarot-engine.js"></script>
+</body>
+</html>

@@ -15,7 +15,7 @@
 
 <main class="wrap-sm rise">
   <p class="breadcrumb">
-    <a href="../tarot.html">喵喵占卜</a> ／ 結帳
+    <a href="../tarot/">喵喵占卜</a> ／ 結帳
   </p>
 
   <div class="card" style="margin-top:24px;padding:32px;max-width:480px;margin-inline:auto">
@@ -79,7 +79,7 @@
     </div>
     <h2 class="display" style="font-size:22px;margin-top:18px">付款成功</h2>
     <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">已加值 3 次喵喵占卜</p>
-    <a class="btn-primary" href="../tarot.html" style="margin-top:24px">前往占卜</a>
+    <a class="btn-primary" href="../tarot/" style="margin-top:24px">前往占卜</a>
   </div>
 </main>
 
@@ -90,7 +90,10 @@
 </footer>
 
 <script src="../assets/checkout.js"></script>
-<script src="../assets/tarot-data.js"></script>
+<!-- 額度那一套跟著占卜搬到 /tarot/ 了。這一頁還留在課程站(它是結帳流程的
+     一部分,共用課程站的付款表單與樣式),所以路徑指過去。
+     額度存在 localStorage,同網域下讀寫,搬家不影響已經買過的次數。 -->
+<script src="../tarot/assets/tarot-data.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var form = document.getElementById("pay-form");
@@ -117,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.3"/><path stroke-linecap="round" d="M9.6 9.4a2.5 2.5 0 114 2c-.9.7-1.5 1.2-1.5 2.3"/><circle cx="12" cy="16.6" r=".35" fill="currentColor" stroke="none"/></svg>
     <span>常見問題</span>
   </a>
-  <a class="bottom-nav-item active" href="../tarot.html">
+  <a class="bottom-nav-item active" href="../tarot/">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
     <span>喵喵占卜</span>
   </a>

@@ -1,0 +1,615 @@
+/* TAHIR ZAINAB TAROT — 占卜元件
+   ────────────────────────────────────────────────────────────
+   這一段原本住在課程站的 style.css 第 364-826 行,切站時整段搬過來,
+   內容沒有改動。手機版與桌機版共用這一份;各自的版面差異分別放在
+   mobile.css 與 desk.css。
+   ──────────────────────────────────────────────────────────── */
+
+/* 喵喵占卜 */
+.tarot-credits {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 12px; font-weight: 500;
+  color: var(--plum); background: var(--blush); padding: 7px 16px; border-radius: 999px;
+}
+.tarot-credits svg { width: 14px; height: 14px; }
+.topic-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; justify-content: center; }
+.topic-chip {
+  padding: 12px 24px; border-radius: 999px; border: 2px solid var(--hairline); background: #fff;
+  font-family: var(--display); font-size: 15px; color: var(--inkdim); cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  min-height: 44px;
+}
+.topic-chip.active { border-color: var(--lavender); color: var(--plum); background: var(--blush); }
+.tarot-question { max-width: 420px; margin: 18px auto 0; }
+.field-hint { margin-top: 7px; font-size: 11.5px; line-height: 1.7; color: var(--inkdim); }
+.field-hint.is-error { color: #e0607a; font-weight: 500; }
+.pay-input.is-error { border-color: #e0607a; }
+
+.tarot-deck {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px;
+  max-width: min(460px, 100%); margin-inline: auto; perspective: 1200px;
+}
+/* 牌陣張數不同,版面跟著換:1 張放大、5 張縮小並收窄間距 */
+.tarot-deck.count-1 { grid-template-columns: minmax(0, 200px); max-width: 200px; }
+.tarot-deck.count-5 { grid-template-columns: repeat(5, 1fr); gap: 7px; max-width: min(560px, 100%); }
+.tarot-deck.count-5 .tarot-caption .name { font-size: 11px; }
+.tarot-deck.count-5 .tarot-caption .orientation,
+.tarot-deck.count-5 .slot-position { font-size: 9px; }
+
+/* 有圖形的牌陣:牌擺在哪裡本身就是意義的一部分,所以用 grid-template-areas
+   把每張牌固定在它該在的位置,而不是排成一列。 */
+.tarot-deck.layout-cross,
+.tarot-deck.layout-celtic,
+.tarot-deck.layout-tree { gap: 8px 8px; }
+.tarot-deck.layout-cross .tarot-caption .name,
+.tarot-deck.layout-celtic .tarot-caption .name,
+.tarot-deck.layout-tree .tarot-caption .name { font-size: 11px; }
+.tarot-deck.layout-cross .tarot-caption .orientation,
+.tarot-deck.layout-celtic .tarot-caption .orientation,
+.tarot-deck.layout-tree .tarot-caption .orientation,
+.tarot-deck.layout-cross .slot-position,
+.tarot-deck.layout-celtic .slot-position,
+.tarot-deck.layout-tree .slot-position { font-size: 9px; }
+/* 位置名稱較長(例如「往下走的樣子」),讓它換行而不是被截掉 */
+.tarot-deck.layout-cross .slot-position,
+.tarot-deck.layout-celtic .slot-position,
+.tarot-deck.layout-tree .slot-position { white-space: normal; line-height: 1.35; }
+
+/* 關係十字:你我對望,障礙壓在上面,根基在下面,展望在正中間 */
+.tarot-deck.layout-cross {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    ".  block ."
+    "me hope  you"
+    ".  base  .";
+  max-width: min(400px, 100%);
+}
+
+/* 賽爾特十字:左邊是十字本體,右邊那一直行是「權杖」 */
+.tarot-deck.layout-celtic {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-areas:
+    ".  p5 .  p10"
+    "p4 p1 p6 p9"
+    ".  p2 .  p8"
+    ".  p3 .  p7";
+  max-width: min(520px, 100%);
+}
+
+/* 生命之樹:左柱嚴厲、右柱慈悲、中柱平衡,最下面是總結 */
+.tarot-deck.layout-tree {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    ".  t1  ."
+    "t3 .   t2"
+    "t5 .   t4"
+    ".  t6  ."
+    "t8 .   t7"
+    ".  t9  ."
+    ".  t10 ."
+    ".  t11 .";
+  max-width: min(400px, 100%);
+}
+/* 位置名稱(過去 / 選 A 的結果⋯)放在牌上方,讓客人看得懂牌陣在講什麼 */
+.slot-position {
+  text-align: center; font-size: 10px; letter-spacing: .08em; margin-bottom: 6px;
+  color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 7:12 是塔羅牌的標準比例,牌面與牌背都已裁成這個尺寸 */
+.tarot-card { aspect-ratio: 7/12; cursor: pointer; animation: catCardIn .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.tarot-card-inner {
+  position: relative; width: 100%; height: 100%; transition: transform .65s cubic-bezier(.4,.2,.2,1);
+  transform-style: preserve-3d;
+}
+.tarot-card.flipped .tarot-card-inner { transform: rotateY(180deg); }
+.tarot-card-face {
+  position: absolute; inset: 0; border-radius: 16px; backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8px;
+  overflow: hidden;
+}
+/* 三個牌位各有自己的牌背:太陽、月亮、星星 */
+.tarot-card-back {
+  background-color: #16224a;
+  background-size: cover; background-position: center;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 12px 28px -10px rgba(108,79,168,.5);
+}
+.tarot-card[data-i="0"] .tarot-card-back {
+  background-image: url("card-sun.jpg");
+  background-image: image-set(url("card-sun.webp") type("image/webp"), url("card-sun.jpg") type("image/jpeg"));
+}
+.tarot-card[data-i="1"] .tarot-card-back {
+  background-image: url("card-moon.jpg");
+  background-image: image-set(url("card-moon.webp") type("image/webp"), url("card-moon.jpg") type("image/jpeg"));
+}
+.tarot-card[data-i="2"] .tarot-card-back {
+  background-image: url("card-star.jpg");
+  background-image: image-set(url("card-star.webp") type("image/webp"), url("card-star.jpg") type("image/jpeg"));
+}
+.tarot-card-front {
+  background: #2a1240; transform: rotateY(180deg); padding: 0;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 12px 28px -10px rgba(124,95,184,.4);
+}
+/* 牌面畫作。逆位時整張轉 180 度,和實體牌一樣。 */
+.card-art {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  transition: transform .4s ease;
+  /* 牌面本身偏暗,又疊在深紫底上,不提亮看不清楚畫的是什麼 */
+  filter: brightness(1.28) contrast(1.06) saturate(1.08);
+}
+.tarot-card.is-reversed .card-art { transform: rotate(180deg); }
+
+/* 牌名放在卡片下方,不擋住畫作。
+   min-width:0 是必要的——grid 項目預設 min-width:auto,Safari 會用 aspect-ratio
+   算出的尺寸當下限而不肯縮小,三張牌就會撐破容器、最後一張被切掉。 */
+.tarot-slot { display: flex; flex-direction: column; min-width: 0; }
+.tarot-caption { margin-top: 8px; text-align: center; }
+.tarot-caption .name { font-family: var(--display); font-size: 13px; color: var(--ink); }
+.tarot-caption .orientation { font-size: 10px; color: var(--gold); font-weight: 500; margin-top: 1px; }
+.tarot-caption.hidden { visibility: hidden; }
+.tarot-card.pending { pointer-events: none; }
+
+/* 手繪貓咪:頭與耳吃 currentColor,五官固定深色,兩種底色都讀得清楚 */
+.cat-art { width: 78%; max-width: 96px; display: block; overflow: visible; }
+.tarot-card-front .cat-art { width: 82%; }
+.cat-head, .cat-ear { fill: currentColor; }
+.cat-ear-in { fill: #f4a9c0; }
+.cat-eye { fill: #fff; }
+.cat-pupil { fill: #3a2d52; }
+.cat-glint { fill: #fff; }
+.cat-lash { fill: none; stroke: #3a2d52; stroke-width: 2.6; stroke-linecap: round; }
+.cat-whisker { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; opacity: .55; }
+.cat-nose { fill: #f4899f; }
+.cat-mouth { fill: none; stroke: #3a2d52; stroke-width: 1.7; stroke-linecap: round; opacity: .7; }
+.cat-stars { fill: rgba(255,255,255,.6); animation: catTwinkle 2.6s ease-in-out infinite; }
+.cat-ears { transform-origin: 50% 62%; }
+.tarot-card:hover .cat-ears, .tarot-card.just-flipped .cat-ears { animation: catEarTwitch .5s ease-in-out 2; }
+
+@keyframes catTwinkle { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+@keyframes catEarTwitch {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-5deg); }
+  65% { transform: rotate(4deg); }
+}
+@keyframes catCardIn {
+  from { opacity: 0; transform: translateY(26px) rotate(-7deg) scale(.88); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes catShuffle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(-5deg); }
+  60% { transform: translateY(-4px) rotate(5deg); }
+}
+@keyframes catPop { 45% { transform: scale(1.07); } }
+.tarot-card.shuffling { animation: catShuffle .42s ease-in-out 2; }
+.tarot-card.just-flipped { animation: catPop .45s ease-out; }
+
+/* 翻牌時從卡片中心散出的小星星 */
+.cat-sparkle {
+  position: absolute; left: 50%; top: 42%; width: 7px; height: 7px; pointer-events: none;
+  background: radial-gradient(circle, #ffd9a3 0%, rgba(255,190,120,0) 70%);
+  animation: catSparkle .75s ease-out forwards;
+}
+@keyframes catSparkle {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(.4); }
+  to { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.4); }
+}
+
+/* 占卜頁專用:滿版霓虹夜景底圖 + 暗色玻璃質感面板 */
+body.tarot-page::before, body.tarot-page::after { content: ""; position: fixed; inset: 0; pointer-events: none; }
+body.tarot-page::before {
+  z-index: -2;
+  background-image: url("tarot-bg.jpg");
+  background-image: image-set(url("tarot-bg.webp") type("image/webp"), url("tarot-bg.jpg") type("image/jpeg"));
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+body.tarot-page::after {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(20,7,32,.78) 0%, rgba(20,7,32,.6) 26%, rgba(18,6,28,.66) 58%, rgba(14,5,24,.9) 100%);
+}
+body.tarot-page { background: #16081f; color: #f6eeff; }
+body.tarot-page main { position: relative; z-index: 1; }
+body.tarot-page h1, body.tarot-page h2 { color: #fff; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+body.tarot-page .eyebrow { color: #ffb3e0; }
+body.tarot-page .lead, body.tarot-page .tarot-loading { color: rgba(246,238,255,.78); }
+body.tarot-page .card {
+  background: rgba(38,18,56,.62); border: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 18px 44px -12px rgba(0,0,0,.6);
+}
+body.tarot-page .card p, body.tarot-page .reading-list li { color: rgba(246,238,255,.8); }
+body.tarot-page .reading-list b, body.tarot-page .tarot-reading-text { color: #fff; }
+body.tarot-page .tarot-caption .name { color: #f6eeff; }
+body.tarot-page .cat-dialogue {
+  background: linear-gradient(165deg, rgba(52,26,74,.9), rgba(36,16,56,.92));
+  border-color: rgba(214,178,104,.45);
+}
+body.tarot-page .cat-dialogue-text { color: #fdf6ff; }
+body.tarot-page .hi { color: #ffcf87; text-shadow: 0 0 14px rgba(255,190,110,.4); }
+body.tarot-page .cat-dialogue-name { color: #ffd08a; }
+body.tarot-page .reading-summary { border-top-color: rgba(214,178,104,.35); }
+body.tarot-page .reading-summary li { color: rgba(246,238,255,.8); }
+body.tarot-page .pay-field span { color: rgba(246,238,255,.7); }
+body.tarot-page .field-hint { color: rgba(246,238,255,.55); }
+body.tarot-page .field-hint.is-error { color: #ff9ab4; }
+body.tarot-page .pay-input.is-error { border-color: #ff7fa2; }
+body.tarot-page .pay-input {
+  background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: #fff;
+}
+body.tarot-page .pay-input::placeholder { color: rgba(246,238,255,.4); }
+body.tarot-page .pay-input:focus { border-color: #ff8ad4; }
+body.tarot-page .topic-chip {
+  background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); color: rgba(246,238,255,.85);
+}
+body.tarot-page .topic-chip.active {
+  background: rgba(255,138,212,.24); border-color: #ff8ad4; color: #fff;
+}
+body.tarot-page .tarot-credits, body.tarot-page .sound-toggle {
+  background: rgba(255,255,255,.12); color: #ffd2ee;
+}
+body.tarot-page .btn-secondary { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); color: #fff; }
+body.tarot-page .tarot-card-back {
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.22), 0 0 26px rgba(160,110,226,.4), 0 14px 30px -10px rgba(0,0,0,.6);
+}
+body.tarot-page .tarot-card-front { background: #fdf7ff; border-color: rgba(255,255,255,.6); }
+body.tarot-page footer { display: none; }
+body.tarot-page .bottom-nav {
+  background: rgba(28,12,42,.82); border-top-color: rgba(255,255,255,.14);
+}
+body.tarot-page .bottom-nav-item { color: rgba(246,238,255,.6); }
+body.tarot-page .bottom-nav-item.active { color: #ff9bd8; }
+body.tarot-page .bottom-nav-item:active { background: rgba(255,255,255,.1); }
+
+.sound-toggle {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 7px 14px;
+  border-radius: 999px; border: none; cursor: pointer; font-family: var(--display); font-size: 12px;
+  background: var(--blush); color: var(--plum);
+}
+.sound-toggle.off { opacity: .55; }
+.sound-toggle svg { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tarot-card, .tarot-card.shuffling, .tarot-card.just-flipped,
+  .cat-stars, .tarot-card:hover .cat-ears { animation: none; }
+  .cat-sparkle { display: none; }
+}
+
+/* 洗牌動畫:滿版覆蓋整個畫面,播完淡出 */
+.draw-overlay {
+  position: fixed; inset: 0; z-index: 300; background: #000;
+  opacity: 1; transition: opacity .85s ease;
+}
+.draw-overlay.fading { opacity: 0; }
+/* 直式螢幕(手機)填滿畫面;寬螢幕(電腦)改成完整置中,不然直式影片會被裁到只剩中間一條 */
+.draw-overlay-video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+@media (min-aspect-ratio: 1/1) { .draw-overlay-video { object-fit: contain; } }
+body.no-scroll { overflow: hidden; touch-action: none; }
+
+/* 一步一步出現的操作區(選主題 / 選處境 / 打字 / 洗牌 / 切牌) */
+.step-panel { margin-top: 18px; animation: stepIn .45s ease-out both; }
+@keyframes stepIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* 第二層:具體處境。選了它才決定要用幾張牌,客人不必知道「牌陣」這個詞。 */
+.scenario-list { display: grid; gap: 10px; }
+.scenario-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left; padding: 16px 18px; border-radius: 14px; cursor: pointer;
+  /* 底圖很花,必須夠不透明才讀得到字 */
+  border: 1px solid rgba(255,255,255,.16); background: rgba(26,12,52,.78);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #f3ecff; font: inherit; transition: border-color .2s, background .2s, transform .2s;
+  min-height: 50px;
+}
+.scenario-item:hover { transform: translateY(-1px); background: rgba(42,22,78,.85); }
+.scenario-item.active { border-color: var(--gold); background: rgba(60,34,96,.88); }
+.scenario-label { font-size: 14px; }
+.scenario-spread { font-size: 11px; color: var(--gold); flex-shrink: 0; letter-spacing: .04em; }
+
+/* 提示文字浮在滿版底圖上,沒有底色會讀不到,所以給一層深色藥丸底 */
+/* 二擇一才會出現的兩個選項欄位 */
+.option-pair { display: grid; gap: 10px; margin-top: 12px; }
+.option-pair .pay-field { position: relative; margin: 0; }
+.option-pair .pay-input { padding-left: 74px; }
+.option-tag {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; letter-spacing: .06em; color: var(--gold); pointer-events: none;
+}
+.option-pair .field-hint { margin-top: 2px; }
+
+.stage-hint {
+  margin: 12px auto 0; width: fit-content; max-width: 100%;
+  text-align: center; font-size: 12px; color: rgba(246,238,255,.9);
+  padding: 5px 14px; border-radius: 99px; background: rgba(18,8,38,.66);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+
+/* 洗牌:手指在牌上來回滑,軌跡畫在 canvas 上,滑動距離換算成進度 */
+.swipe-stage {
+  position: relative; height: 168px; border-radius: 16px; overflow: hidden;
+  touch-action: none; user-select: none; cursor: grab;
+  border: 1px solid rgba(255,255,255,.14);
+  background: radial-gradient(120% 90% at 50% 20%, rgba(120,80,190,.4), rgba(20,10,40,.75));
+}
+.swipe-stage.is-live { cursor: grabbing; }
+.swipe-card {
+  position: absolute; top: 50%; left: 50%; width: 62px; height: 106px; margin: -53px 0 0 -31px;
+  border-radius: 7px; border: 1px solid rgba(245,205,130,.5);
+  background: repeating-linear-gradient(135deg, #3b2568 0 5px, #6a49b4 5px 7px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.45);
+  /* --churn 由 JS 隨滑動進度提高,牌就越散越開 */
+  transform: rotate(calc((var(--i) - 2) * 7deg * (0.4 + var(--churn, 0))))
+             translateX(calc((var(--i) - 2) * 15px * (0.5 + var(--churn, 0))));
+  transition: transform .18s ease-out;
+}
+.swipe-stage.is-settled .swipe-card {
+  transform: rotate(calc((var(--i) - 2) * 1.5deg)) translateX(calc((var(--i) - 2) * 3px));
+  transition: transform .55s cubic-bezier(.2,.9,.3,1.1);
+}
+.swipe-trail { position: absolute; inset: 0; pointer-events: none; }
+.swipe-meter {
+  margin-top: 12px; height: 7px; border-radius: 99px; overflow: hidden;
+  background: rgba(255,255,255,.12);
+}
+.swipe-meter i {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--lavender), var(--gold));
+  transition: width .12s linear;
+}
+
+/* 切牌:手指左右滑決定切點,兩疊即時分開並顯示張數 */
+.cut-stage {
+  position: relative; height: 130px; border-radius: 16px; overflow: hidden;
+  touch-action: none; user-select: none; cursor: ew-resize;
+  border: 1px solid rgba(255,255,255,.14); background: rgba(12,6,28,.6);
+}
+.cut-half {
+  position: absolute; top: 12px; bottom: 12px; display: block;
+  /* 一條條細線 = 牌堆側面看到的每一張牌的邊 */
+  background: repeating-linear-gradient(90deg, #241243 0 2px, #7a55c8 2px 3px, #341d5c 3px 5px);
+  box-shadow: inset 0 0 26px rgba(0,0,0,.55);
+  transition: transform .14s ease-out, width .14s ease-out;
+}
+.cut-left { left: 0; border-radius: 10px 3px 3px 10px; }
+.cut-right { right: 0; border-radius: 3px 10px 10px 3px; }
+.cut-seam {
+  position: absolute; top: 0; bottom: 0; width: 5px; margin-left: -2.5px; border-radius: 3px;
+  background: linear-gradient(180deg, transparent, #ffe6ae 22%, #fff 50%, #ffe6ae 78%, transparent);
+  opacity: 0; transition: opacity .2s, left .14s ease-out;
+}
+.cut-stage.is-cut .cut-seam {
+  opacity: 1; box-shadow: 0 0 22px 7px rgba(245,205,130,.75);
+  animation: seamPulse 1.6s ease-in-out infinite;
+}
+@keyframes seamPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+.cut-counts {
+  display: flex; justify-content: center; gap: 18px; margin-top: 12px;
+  font-size: 12px; color: rgba(246,238,255,.85);
+  text-shadow: 0 1px 6px rgba(10,4,26,.9);
+}
+.cut-counts b { font-family: var(--display); font-size: 15px; color: var(--gold); font-weight: 400; }
+#cutDoneBtn { margin-top: 14px; }
+.tarot-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 22px; }
+.tarot-bar .tarot-credits { margin-top: 0; }
+.tarot-bar .sound-toggle { margin-left: 0; }
+
+.tarot-result { margin-top: 32px; padding: 30px 28px; display: none; }
+.tarot-result.show { display: block; }
+.tarot-result .reading-list { list-style: none; display: grid; gap: 10px; margin-top: 16px; }
+.tarot-result .reading-list li { font-size: 15px; color: var(--inkdim); display: flex; gap: 8px; flex-wrap: wrap; }
+/* 還沒翻到的牌:項目先佔好位置但不顯示,列表順序才不會被翻牌順序打亂 */
+.tarot-result .reading-list li.pending-item { display: none; }
+.tarot-result .reading-list b { font-family: var(--display); font-weight: 400; color: var(--ink); flex-shrink: 0; }
+.tarot-result .reading-list .pos {
+  font-style: normal; font-size: 10px; letter-spacing: .06em; color: var(--gold);
+  align-self: center; flex-shrink: 0; border: 1px solid rgba(245,205,130,.4);
+  border-radius: 99px; padding: 2px 8px;
+}
+/* AI 沒回應時的簡版解讀:標一下,不要讓客人以為這就是完整占卜 */
+.tarot-result.is-fallback .reading-summary { border-color: rgba(245,205,130,.35); }
+.tarot-reading-text { margin-top: 20px; font-size: 16px; line-height: 2; color: var(--ink); }
+.tarot-loading {
+  margin-top: 20px; font-size: 13px; color: var(--inkdim);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.thinking-cat { width: 30px; flex-shrink: 0; display: block; animation: catThink 1.8s ease-in-out infinite; }
+.thinking-cat .cat-art { width: 100%; color: var(--lavender); }
+@keyframes catThink { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.tarot-loading .dots i { font-style: normal; animation: dotBlink 1.2s infinite; }
+.tarot-loading .dots i:nth-child(2) { animation-delay: .2s; }
+.tarot-loading .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes dotBlink { 0%,60%,100% { opacity: .25; } 30% { opacity: 1; } }
+
+/* 喵喵占卜師對話框:像遊戲一樣一句一句說 */
+.cat-dialogue {
+  position: relative; margin-top: 20px; padding: 18px 20px 40px; border-radius: 18px; cursor: pointer;
+  background: linear-gradient(165deg, rgba(255,255,255,.96), rgba(250,245,255,.96));
+  border: 1px solid rgba(196,160,86,.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 14px 32px -12px rgba(58,45,82,.4);
+  min-height: 132px;
+}
+.cat-dialogue-top { display: flex; align-items: center; gap: 9px; }
+.cat-dialogue-avatar { width: 34px; flex-shrink: 0; display: block; }
+.cat-dialogue-avatar .cat-art { width: 100%; color: #b79ae4; }
+.cat-dialogue-name { font-family: var(--display); font-size: 13px; color: var(--plum); }
+.cat-dialogue-text {
+  margin-top: 12px; font-size: 17px; line-height: 1.95; color: var(--ink); min-height: 60px;
+}
+/* 本喵用【】框住的重點:放大變色,長段文字才有落點 */
+.hi {
+  font-style: normal; font-weight: 500; font-size: 1.18em; color: #c98a1e;
+  letter-spacing: .01em;
+}
+/* 〔〕框住的牌名出處:做成小標籤,一眼看出這句話是哪張牌講的。
+   整頁底色都是紫的,標籤就不要再用紫——白字白框最乾淨也最好認。 */
+.card-ref {
+  font-style: normal; font-size: .82em; letter-spacing: .03em;
+  color: #fff; background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.4); border-radius: 6px;
+  padding: 1px 6px; margin: 0 2px; white-space: nowrap;
+}
+/* 對話不會自動前進,所以這個提示要看得見——它是唯一往下走的方法 */
+.cat-dialogue-caret {
+  position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: var(--gold);
+  letter-spacing: .04em; padding: 3px 9px; border-radius: 99px;
+  background: rgba(245,205,130,.13); border: 1px solid rgba(245,205,130,.3);
+  animation: caretBob .9s ease-in-out infinite;
+}
+.cat-dialogue { cursor: pointer; }
+@keyframes caretBob { 0%,100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(3px); opacity: 1; } }
+
+/* 說完後的完整解讀總表 */
+.reading-summary { margin-top: 22px; padding-top: 20px; border-top: 1px dashed rgba(196,160,86,.4); }
+.reading-summary h3 { font-size: 16px; font-weight: 400; margin-top: 5px; }
+.reading-summary ol { margin: 14px 0 0; padding-left: 20px; display: grid; gap: 9px; }
+.reading-summary li { font-size: 15.5px; line-height: 1.9; color: var(--inkdim); }
+.reading-summary li::marker { color: var(--gold); font-family: var(--display); }
+.tarot-error { margin-top: 20px; font-size: 13px; color: #c2483a; text-align: center; }
+.tarot-actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.tarot-actions .btn-secondary, .tarot-actions .btn-primary { margin-top: 0; }
+
+.tarot-locked { text-align: center; padding: 48px 28px; }
+.tarot-locked .dot { margin-bottom: 4px; }
+
+
+
+/* ══ 以下三塊原本在 desk.css,切站時搬過來 ══════════════════════
+   進站等待畫面、給客人掃的 QR、結果旁的石頭推薦——這三樣桌機版與
+   手機版長得一樣,不是版面差異,所以放在共用的這一份。
+   desk.css / mobile.css 只留真正因螢幕而異的東西。
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 進站等待畫面 ─────────────────────────────────────────────── */
+.tarot-gate { cursor: pointer; }
+
+/* 等待畫面在 shell 之外,牌堆是自訂控制項——都吃不到既有的 focus 樣式,
+   要另外補,不然用鍵盤的人不知道自己停在哪 */
+.tarot-gate:focus-visible,
+.tarot-desktop-shell .cut-stage:focus-visible,
+.tarot-desktop-shell .swipe-stage:focus-visible {
+  outline: 3px solid #f5cd82;
+  outline-offset: 4px;
+  border-radius: 20px;
+}
+.tarot-gate-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8vh;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 14px 30px;
+  border: 1px solid rgba(245, 205, 130, .45);
+  border-radius: 999px;
+  background: rgba(20, 7, 32, .62);
+  backdrop-filter: blur(10px);
+  color: #f8f0ff;
+  font-size: 16px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  animation: gatePulse 2.4s ease-in-out infinite;
+}
+@keyframes gatePulse {
+  0%, 100% { opacity: .82; box-shadow: 0 0 0 0 rgba(245, 205, 130, .28); }
+  50%      { opacity: 1;   box-shadow: 0 0 30px 6px rgba(245, 205, 130, .22); }
+}
+
+/* ── 給客人掃的 QR ─────────────────────────────────────────────
+   覆蓋層,不是換頁:店主的占卜畫面原封不動留在後面,關掉就能接下一位。
+   QR 要夠大、對比要夠強,客人是隔著一段距離用手機掃螢幕的。
+   ───────────────────────────────────────────────────────────── */
+.qr-share {
+  position: fixed;
+  inset: 0;
+  z-index: 280;               /* 在影片遮罩(300)之下,其餘之上 */
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 4, 18, .72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.qr-share-card {
+  width: min(460px, 100%);
+  padding: 34px 36px 30px;
+  border: 1px solid rgba(222, 197, 255, .22);
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(58, 36, 84, .96), rgba(32, 18, 50, .97));
+  box-shadow: 0 34px 90px rgba(0, 0, 0, .5);
+  text-align: center;
+}
+.qr-share-card h2 { margin-top: 6px; font-size: 22px; }
+.qr-share-note { margin-top: 10px; font-size: 13px; line-height: 1.75; color: rgba(240, 227, 255, .7); }
+
+/* 「只保留 24 小時」是店主口頭要交代的那句話,做成看得見的一條,
+   不要混在上面那段灰字裡,不然現場一定會漏講。 */
+.qr-share-keep {
+  margin: 12px 0 0;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 190, 112, .4);
+  background: rgba(245, 190, 112, .12);
+  color: #ffe0ae;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* QR 一定要白底黑碼才掃得穩,不要為了配色把它做成半透明或彩色 */
+.qr-share-code {
+  display: grid;
+  place-items: center;
+  width: 300px;
+  height: 300px;
+  margin: 22px auto 0;
+  padding: 14px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .5), 0 18px 44px rgba(0, 0, 0, .35);
+}
+.qr-share-code img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.qr-share-loading { color: #5b4470; font-size: 14px; }
+
+.qr-share-expiry { margin-top: 14px; font-size: 11.5px; color: rgba(240, 227, 255, .5); }
+.qr-share-error { margin-top: 14px; font-size: 13px; line-height: 1.7; color: #ffb3b3; }
+
+.qr-share-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.qr-share-actions .btn-primary,
+.qr-share-actions .btn-secondary { margin-top: 0; }
+
+/* ── 占卜結果旁的石頭推薦 ───────────────────────────────────────
+   不是另一個測驗,是從這一次的主題與牌面直接推出來的。
+   放在解讀之後、按鈕之前——客人剛讀完自己的狀態,這時候推最順。
+   ───────────────────────────────────────────────────────────── */
+.gem-pick {
+  margin-top: 26px;
+  padding: 20px 22px;
+  border: 1px solid rgba(245, 205, 130, .28);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(78, 52, 108, .5), rgba(44, 26, 66, .55));
+}
+.gem-pick-row { display: flex; gap: 18px; align-items: flex-start; margin-top: 12px; }
+/* 石頭用 CSS 畫,換庫存不必再切圖 */
+.gem-pick-orb {
+  flex: none; width: 74px; height: 74px; border-radius: 50%;
+  box-shadow: inset -6px -8px 18px rgba(0, 0, 0, .34), 0 0 26px var(--glow, rgba(255, 255, 255, .18));
+}
+/* 實拍寶石照(去背 PNG)。沒有照片時會改用上面的 .gem-pick-orb 漸層球,
+   兩者尺寸一致,換上換下版面不會跳。
+   這條一定要放在共用的這一份:它是 <img>,沒有明確寬高就會用圖檔的
+   原始尺寸把整個版面撐爆——桌機版曾經因為只在 desk.css 定義,
+   手機版的石頭大到蓋掉半頁。 */
+.gem-pick-photo {
+  flex: none;
+  width: 74px;
+  height: 74px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .45));
+}
+.gem-pick-text { min-width: 0; }
+.gem-pick-text b { font-family: var(--display); font-size: 20px; font-weight: 400; }
+.gem-pick-text > span { margin-left: 9px; font-size: 11.5px; color: rgba(240, 227, 255, .55); }
+.gem-pick-text p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.8; color: rgba(240, 227, 255, .82); }
+.gem-pick-text p + p { color: #f5cd82; }
