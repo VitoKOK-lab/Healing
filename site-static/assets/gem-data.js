@@ -226,7 +226,67 @@
     };
   }
 
-  // 有實拍照就用照片,沒有就退回漸層球。
+  // ── 用 SVG 畫寶石 ────────────────────────────────────────────
+  // 每顆天然石本來就長得不一樣,圖只是示意。與其去湊 70 張授權乾淨又
+  // 背景一致的照片(冷門的根本找不到),不如直接畫:零授權問題、
+  // 風格一致、70 顆立刻全有、檔案大小是零。
+  //
+  // 畫成經典切工的側面輪廓(檯面 + 冠部 + 亭部),不是圓球——
+  // 多邊形刻面各給不同深淺,一眼就讀得出是寶石而不是彈珠。
+
+  function hex2rgb(h) {
+    h = h.replace("#", "");
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+  function rgb2hex(r) {
+    return "#" + r.map(function (v) {
+      return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+    }).join("");
+  }
+  // amount > 0 提亮(往白靠)、< 0 壓暗
+  function shade(hex, amount) {
+    var c = hex2rgb(hex);
+    return rgb2hex(c.map(function (v) {
+      return amount >= 0 ? v + (255 - v) * amount : v * (1 + amount);
+    }));
+  }
+
+  function svgFor(stone) {
+    var c = stone.color, a = stone.accent;
+    var table  = shade(c,  0.42);   // 檯面:最亮
+    var crownL = shade(c,  0.14);
+    var crownR = shade(c, -0.10);
+    var pavL   = shade(a, -0.08);
+    var pavM   = shade(a,  0.16);   // 中間亭部亮一點,像光從底下透上來
+    var pavR   = shade(a, -0.26);
+
+    function poly(pts, fill) {
+      return '<polygon points="' + pts + '" fill="' + fill + '"/>';
+    }
+
+    var svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+        // 冠部
+        poly("34,26 66,26 74,44 26,44", table) +
+        poly("34,26 26,44 12,44", crownL) +
+        poly("66,26 74,44 88,44", crownR) +
+        poly("12,44 26,44 34,26", crownL) +
+        // 亭部:三面收斂到底端一點
+        poly("12,44 38,44 50,90", pavL) +
+        poly("38,44 62,44 50,90", pavM) +
+        poly("62,44 88,44 50,90", pavR) +
+        // 腰圍那條亮線,把冠部與亭部分開
+        '<polygon points="12,43 88,43 88,45.5 12,45.5" fill="#ffffff" opacity=".34"/>' +
+        // 檯面上的高光
+        '<polygon points="38,29 52,29 47,38 36,38" fill="#ffffff" opacity=".38"/>' +
+        // 整體外輪廓,壓一圈細邊讓形狀更利落
+        '<polygon points="34,26 66,26 88,44 50,90 12,44" fill="none" ' +
+          'stroke="' + shade(a, -0.35) + '" stroke-width="1.4" stroke-linejoin="round"/>' +
+      '</svg>';
+    return "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+
+  // 有實拍照就用照片,沒有就用上面畫的寶石。
   // 這樣店主可以一顆一顆補圖,不必等 60 幾顆全部到齊。
   var STONE_DIR = "./assets/stones/";
 
@@ -238,6 +298,7 @@
     FAMILIES: FAMILIES,
     STONE_DIR: STONE_DIR,
     imageFor: imageFor,
+    svgFor: svgFor,
     recommend: recommend
   };
 })(window);
