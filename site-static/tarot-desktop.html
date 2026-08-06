@@ -244,6 +244,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var creditsText = document.getElementById("creditsText");
+  var creditsBadge = document.getElementById("creditsBadge");
   var lockedPanel = document.getElementById("lockedPanel");
   var tarotFlow = document.getElementById("tarotFlow");
   var catDialogue = document.getElementById("catDialogue");
@@ -463,20 +464,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ── 額度 ──────────────────────────────────────────
-  // 只更新數字。扣款後絕不能連帶把畫面收掉——否則用掉最後一次的人
-  // 會在動畫播完後看不到自己的牌,只看到「次數已用完」。
+  // 桌面版不計次、不需儲值,無限使用。
+  // 手機版(tarot.html)仍然照原本的付費規則走——共用的 tarot-data.js
+  // 沒有動過,額度那一套完整留著,只有這一頁繞過它。
   function updateCredits() {
-    creditsText.textContent = "剩餘 " + Tarot.getCredits() + " 次";
+    creditsBadge.style.display = "none";   // 不計次就不該顯示「剩餘 N 次」
   }
 
-  // 擋在「要開始新的一輪」之前:沒次數就直接顯示購買頁,
-  // 不讓客人白花力氣選主題、打字、看完動畫才被擋下來。
   function canStartRound() {
-    var ok = Tarot.getCredits() > 0;
     updateCredits();
-    lockedPanel.style.display = ok ? "none" : "block";
-    tarotFlow.style.display = ok ? "grid" : "none";
-    return ok;
+    lockedPanel.style.display = "none";
+    tarotFlow.style.display = "grid";
+    return true;
   }
 
   // ── 音效開關 ───────────────────────────────────────
@@ -879,7 +878,7 @@ document.addEventListener("DOMContentLoaded", function () {
       autoPickedLine = null;
     }
     speak(opening, function () {
-      Tarot.useCredit();
+      // 桌面版不扣次數(手機付費版仍照扣,那是另一頁)
       updateCredits();
       startSwipeShuffle();
     });
