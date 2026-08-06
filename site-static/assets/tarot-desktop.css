@@ -517,6 +517,20 @@ body.tarot-desktop-page::after {
 .qr-share-card h2 { margin-top: 6px; font-size: 22px; }
 .qr-share-note { margin-top: 10px; font-size: 13px; line-height: 1.75; color: rgba(240, 227, 255, .7); }
 
+/* 「只保留 24 小時」是店主口頭要交代的那句話,做成看得見的一條,
+   不要混在上面那段灰字裡,不然現場一定會漏講。 */
+.qr-share-keep {
+  margin: 12px 0 0;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 190, 112, .4);
+  background: rgba(245, 190, 112, .12);
+  color: #ffe0ae;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 /* QR 一定要白底黑碼才掃得穩,不要為了配色把它做成半透明或彩色 */
 .qr-share-code {
   display: grid;
@@ -611,6 +625,7 @@ body.tarot-desktop-page::after {
 /* QR 面板 */
 .qr-share-card h2 { font-size: 30px; }
 .qr-share-note { font-size: 18px; }
+.qr-share-keep { font-size: 17px; padding: 12px 18px; }
 .qr-share-expiry { font-size: 15px; }
 .qr-share-actions button { font-size: 19px; min-height: 60px; }
 
@@ -637,4 +652,49 @@ body.tarot-desktop-page::after {
   height: 96px;
   object-fit: contain;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .45));
+}
+
+/* ── 捲軸 ──────────────────────────────────
+   瀏覽器預設的白色拉桿在這個深紫金的畫面上非常刺眼。
+   改成半透明的金色,配合面板的玻璃質感;軌道留一點暗色,
+   讓人知道可以捲,但不搶戲。
+
+   實作上分兩套,因為兩邊互斥：
+     ・ scrollbar-width / scrollbar-color 是標準寫法,Chrome 121+、
+       Firefox、Edge 都吃。這兩個屬性會繼承,所以直接下在
+       body 上,整頁所有捲動區（牌桌、解讀、以及排版意外溢出
+       時的整頁捲軸）一次到位。
+     ・ ::-webkit-scrollbar 只剩 Safari 還需要。注意：Chromium 一旦
+       看到 scrollbar-width 不是 auto,就會完全忽略這些 pseudo-element,
+       所以這裡的樣式在 Chrome 看不到也是正常的,不是壞了。
+       兩套顏色刻意調成一致,換瀏覽器不會看起來差很多。
+   ───────────────────────────────────── */
+body.tarot-desktop-page,
+body.tarot-desktop-page * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(238, 196, 128, .5) rgba(30, 14, 45, .35);
+}
+
+/* Safari 專用（Chromium 會因為上面的 scrollbar-width 而跳過這段） */
+body.tarot-desktop-page ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+body.tarot-desktop-page ::-webkit-scrollbar-track {
+  background: rgba(30, 14, 45, .35);
+  border-radius: 999px;
+}
+body.tarot-desktop-page ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(238, 196, 128, .5);
+  /* 用透明邊框把拉桿縮窄,看起來更細緻 */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+body.tarot-desktop-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 210, 145, .72);
+  background-clip: padding-box;
+}
+body.tarot-desktop-page ::-webkit-scrollbar-corner {
+  background: transparent;
 }
