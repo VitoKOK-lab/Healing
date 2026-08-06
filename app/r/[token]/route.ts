@@ -49,6 +49,16 @@ function page(body: string, title: string) {
     box-shadow: 0 22px 60px rgba(0,0,0,.45);
   }
   .hint { margin: 12px 0 0; font-size: 12px; color: rgba(240,227,255,.5); }
+  /* 24 小時就刪掉是這頁最重要的一件事——客人只會看一眼就滑走,
+     所以講在圖片前面,而且用看得出是提醒的樣子,不是灰灰的小字。 */
+  .keep {
+    display: block; max-width: 520px; margin: 20px auto 0;
+    padding: 13px 18px; border-radius: 14px;
+    border: 1px solid rgba(245,190,112,.42);
+    background: rgba(245,190,112,.12);
+    color: #ffe0ae; font-size: 14px; line-height: 1.75; font-weight: 600;
+  }
+  .keep small { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 400; opacity: .82; }
   .cta {
     display: block; max-width: 520px; margin: 30px auto 0;
     padding: 17px 24px; border-radius: 999px;
@@ -93,12 +103,14 @@ export async function GET(
   <h1>你的喵喵占卜結果</h1>
   <p class="sub">長按下面的圖片就能存到手機相簿,<br />也可以直接轉傳給朋友。</p>
 
+  <p class="keep">這個連結只保留 24 小時,請自行截圖<small>時間到就會自動刪除,之後這頁打不開了</small></p>
+
   <div class="shot"><img src="/api/tarot/share/${esc(token)}" alt="喵喵占卜結果圖" /></div>
-  <p class="hint">長按圖片 → 儲存影像</p>
+  <p class="hint">長按圖片 → 儲存影像,或直接截圖</p>
 
   <a class="cta" href="${LINE_OA}">想成為線上珠寶商<small>加 LINE 了解怎麼開始</small></a>
 
-  <p class="foot">這個連結 24 小時後失效,記得先存下來<br />© 2026 Jessica 解憂商店</p>`;
+  <p class="foot">連結只保留 24 小時,請自行截圖存下來<br />© 2026 Jessica 解憂商店</p>`;
 
   return new NextResponse(page(body, "你的喵喵占卜結果"), {
     status: 200,
