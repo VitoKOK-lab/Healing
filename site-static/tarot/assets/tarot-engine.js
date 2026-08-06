@@ -60,8 +60,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawBtn = document.getElementById("drawBtn");
   var drawOverlay = document.getElementById("drawOverlay");
   var drawVideo = document.getElementById("drawVideo");
-  var songOverlay = document.getElementById("songOverlay");
-  var songVideo = document.getElementById("songVideo");
   var tarotDeck = document.getElementById("tarotDeck");
   // 桌面版版面會隨階段改變:抽牌前單欄置中,抽牌後才展開成左右兩欄。
   // 沒有這個切換的話,選主題到切牌的整段流程右半邊都是空的。
@@ -535,16 +533,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // iOS 只允許「使用者手勢當下」開始播放。洗牌影片是等本喵說完話才播,
   // 中間隔了 setTimeout,手勢就失效了。所以在按下的當下先播一下再暫停,
-  // 把影片「解鎖」,稍後才能程式化播放並保有聲音。
-  // 兩支影片都要在手勢當下先解鎖:洗牌影片與唱歌影片都是等本喵說完話
-  // 才播,那時已經脫離手勢,iOS 會擋下來。
+  // 把洗牌影片「解鎖」,稍後才能程式化播放。它是等本喵說完話才播的,
+  // 那時已經脫離使用者手勢,iOS 會擋下來,所以要趁這一下先解鎖。
+  //
+  // 這裡踩過一個很痛的雷:原本是 play() 之後在 .then() 裡才 pause(),
+  // 而且同時解鎖洗牌與唱歌兩支。iOS 同一時間只准一支影片播放——那兩支
+  // 一搶,緊接著要播的進場影片就被凍住不動,但唱歌那支的聲音還在放。
+  // 店主現場遇到的就是這個:「卡住會發出唱歌的聲音」。
+  //
+  // 現在只解鎖洗牌那一支,而且 play() 之後「立刻同步」pause(),
+  // 讓它連一格都不要真的播出去——iOS 仍然會把這個元素記成已授權。
   function unlockVideo() {
-    [drawVideo, songVideo].forEach(function (v) {
-      var p = v.play();
-      if (p && p.then) {
-        p.then(function () { v.pause(); v.currentTime = 0; }).catch(function () {});
-      }
-    });
+    try {
+      var p = drawVideo.play();
+      drawVideo.pause();               // 同步暫停,不要跟進場影片搶播放權
+      drawVideo.currentTime = 0;
+      if (p && p.catch) p.catch(function () {});   // 被立刻 pause 會 reject,正常
+    } catch (e) {}
   }
 
   // 自由發問:先看懂客人問什麼,才決定用哪個牌陣。判斷成二擇一時要回頭
@@ -591,60 +596,12 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    speak(hit.lines, playSong.bind(null, restart));
+    // 本來這裡會播一支「唱歌賠罪」的影片才重來。那支影片已經移除:
+    // 它是店主現場卡住的元凶(見 unlockVideo 的說明),而且對客人來說,
+    // 被拒絕之後還要看十秒動畫才能重問,本來就不是好體驗。
+    // 拒絕的話還是要講清楚——尤其 crisis 那一條帶著 1925 安心專線。
+    speak(hit.lines, restart);
     return true;
-  }
-
-  // 唱歌賠罪的影片:跟洗牌動畫一樣滿版、鎖捲動,播完淡出
-  function playSong(next) {
-    var done = false;
-    var guard = null;
-    var playStarted = false;
-
-    function finish() {
-      if (done) return;
-      done = true;
-      clearTimeout(guard);
-      songVideo.removeEventListener("ended", finish);
-      songVideo.removeEventListener("error", finish);
-      songVideo.removeEventListener("playing", armGuard);
-      songOverlay.classList.add("fading");
-      setTimeout(function () {
-        songOverlay.style.display = "none";
-        songOverlay.classList.remove("fading");
-        songVideo.pause();
-        document.body.classList.remove("no-scroll");
-        next();
-      }, 900);
-    }
-
-    function armGuard() {
-      if (playStarted) return;
-      playStarted = true;
-      clearTimeout(guard);
-      var dur = isFinite(songVideo.duration) && songVideo.duration > 0 ? songVideo.duration : 10;
-      guard = setTimeout(finish, (dur - songVideo.currentTime + 1) * 1000);
-    }
-
-    songVideo.addEventListener("ended", finish);
-    songVideo.addEventListener("error", finish);
-    songVideo.addEventListener("playing", armGuard);
-    document.body.classList.add("no-scroll");
-    songOverlay.style.display = "block";
-    songVideo.currentTime = 0;
-    songVideo.muted = !Tarot.Sound.isOn();
-    var p = songVideo.play();
-    if (p && p.catch) p.catch(function () {
-      // 播放失敗時等待影片載入後再試一次,別急著結束
-      songVideo.addEventListener("canplay", function onCanPlay() {
-        songVideo.removeEventListener("canplay", onCanPlay);
-        songVideo.play().catch(finish);
-      }, { once: true });
-    });
-    // 影片長度未知時的保險(實際 10 秒),播不起來也不會卡住
-    guard = setTimeout(function () {
-      if (!playStarted) finish();
-    }, 12000);
   }
 
   // ── 開牌前先確認本喵真的聽懂了 ───────────────────────────
