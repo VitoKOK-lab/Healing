@@ -3,8 +3,44 @@
 // 全部用 Canvas 畫,不需要後端、不需要外部套件。牌面圖與本站同網域,
 // 所以 canvas 不會被污染,toBlob 拿得到圖。
 (function (global) {
-  var W = 1080;                    // LINE 上看起來剛好的寬度
-  var PAD = 64;
+  // 這張圖最後是在手機上讀的,所以照手機的閱讀距離設計,不是照電腦。
+  var W = 1620;
+  var PAD = 96;
+
+  // 字級與行高綁在一起。上一版只放大字級、行高留在原地,結果行與行
+  // 幾乎黏住——所以這裡一律成對定義,改字級就一定會改到行高。
+  // 行高比例:內文 1.85(中文長段落要鬆),短句 1.68。
+  var TYPE = {
+    title:    76,
+    meta:     40,
+    label:    44,   // 「你問的」「本喵的解讀」
+    question: 76,
+    qLh:     128,
+    reading:  80,
+    rLh:     148,
+    pos:      34,   // 牌陣位置
+    cardName: 40,
+    orient:   32,
+    ctaTop:   40,
+    ctaBot:   50,
+    fine:     30
+  };
+
+  // 垂直節奏。命名對應畫的順序,H 的計算與實際下筆用同一組數字,
+  // 才不會出現圖底下多一塊空白或被裁掉。
+  var GAP = {
+    titleToMeta:   70,
+    metaToRule:    56,
+    ruleToLabel:   88,
+    labelToText:  100,   // 標籤到內文:內文字大,基線要拉開才不會黏住標籤
+    questionToCards: 54,
+    cardsToLabel:  48,
+    labelToReading:116,  // 同上,解讀的字更大,留得更多
+    readingToCta:  46,
+    ctaBox:       190,
+    ctaToFine:     70,
+    bottom:        80
+  };
   // 報告書是拿來「讀」的,不是拿來營造氣氛的。整張深紫看久了眼睛很累,
   // 所以改成白底深字;牌面本身已經夠華麗,底色安靜一點反而好看。
   var INK = "#33244a";             // 主文
@@ -105,30 +141,33 @@
   // readingSegs 由呼叫端用 toSegs() 轉好(重點與牌名的標記已經拆開)
   function render(opts) {
     var cards = opts.cards || [];
+    var cta = opts.cta || { top: "也想讓本喵幫你看一次嗎?", bottom: SITE };
     return Promise.all(cards.map(function (c) { return loadImage(opts.artOf(c.n)); }))
       .then(function (imgs) {
         // 先用暫時的 canvas 量高度,再開真正的畫布,才不會留一大片空白
         var m = document.createElement("canvas").getContext("2d");
         var innerW = W - PAD * 2;
 
-        var qLines = wrapSegs(m, [{ t: opts.question || "", k: "" }], innerW, 36);
-        var rLines = wrapSegs(m, opts.readingSegs || [], innerW, 36);
+        var qLines = wrapSegs(m, [{ t: opts.question || "", k: "" }], innerW, TYPE.question);
+        var rLines = wrapSegs(m, opts.readingSegs || [], innerW, TYPE.reading);
 
         // 牌面:一排最多 5 張
         var perRow = Math.min(cards.length, 5);
-        var gap = 20;
+        var gap = 30;
         var cw = perRow ? Math.floor((innerW - gap * (perRow - 1)) / perRow) : 0;
         var chH = Math.round(cw * 12 / 7);
         var rows = perRow ? Math.ceil(cards.length / perRow) : 0;
-        // 一張牌要留的高度:牌面 + 牌名(32)+ 正逆位(58)+ 下一排位置標籤的空間。
-        // 少留就會像十張牌陣那樣,下一排的位置名壓到上一排的「正位」。
-        var rowH = chH + 130;
+        // 一張牌要留的高度:牌面 + 牌名 + 正逆位 + 下一排位置標籤的空間。
+        // 字放大之後這裡也要一起放大,不然下一排的位置名會壓到上一排的「正位」。
+        var rowH = chH + 200;
 
-        var H = PAD + 96 + 54                      // 標題區
-          + 48 + qLines.length * 54 + 44           // 你問的(更大間距)
-          + rows * rowH + 36                       // 牌面
-          + 48 + rLines.length * 60 + 48           // 解讀(更大間距)
-          + 28 + 120 + 44 + 56;                    // 頁尾:邀請框 + 一行小字 + 底部留白
+        var H = PAD + 100                                        // 標題基線
+          + GAP.titleToMeta + GAP.metaToRule + GAP.ruleToLabel   // 副標 → 分隔線 → 標籤
+          + GAP.labelToText + qLines.length * TYPE.qLh           // 你問的
+          + GAP.questionToCards + rows * rowH                    // 牌面
+          + GAP.cardsToLabel + GAP.labelToReading
+          + rLines.length * TYPE.rLh                             // 解讀
+          + GAP.readingToCta + GAP.ctaBox + GAP.ctaToFine + GAP.bottom;
 
         var cv = document.createElement("canvas");
         cv.width = W; cv.height = H;
@@ -142,46 +181,46 @@
         band.addColorStop(1, "#c9a3e8");
         ctx.fillStyle = band;
         ctx.fillRect(0, 0, W, 10);
-        var wash = ctx.createLinearGradient(0, 10, 0, 220);
+        var wash = ctx.createLinearGradient(0, 10, 0, 330);
         wash.addColorStop(0, "rgba(167,139,219,.13)");
         wash.addColorStop(1, "rgba(167,139,219,0)");
         ctx.fillStyle = wash;
-        ctx.fillRect(0, 10, W, 210);
+        ctx.fillRect(0, 10, W, 315);
 
-        var y = PAD + 62;
+        var y = PAD + 100;
         ctx.textBaseline = "alphabetic";
-        ctx.font = font(46, 400, true);
+        ctx.font = font(TYPE.title, 400, true);
         ctx.fillStyle = INK;
-        ctx.fillText("喵喵占卜報告書", PAD, y);
+        ctx.fillText("TAHIR ZAINAB TAROT", PAD, y);
 
-        y += 44;
-        ctx.font = font(26);
+        y += GAP.titleToMeta;
+        ctx.font = font(TYPE.meta);
         ctx.fillStyle = DIM;
         ctx.fillText("解憂商店 · " + today() + (opts.spreadName ? " · " + opts.spreadName : ""), PAD, y);
 
-        y += 36;
+        y += GAP.metaToRule;
         ctx.strokeStyle = LINE;
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
 
-        y += 56;
-        ctx.font = font(26, 500);
+        y += GAP.ruleToLabel;
+        ctx.font = font(TYPE.label, 500);
         ctx.fillStyle = GOLD;
         ctx.fillText("你問的", PAD, y);
-        y += 44;
-        y = drawLines(ctx, qLines, PAD, y, 36, 54);
+        y += GAP.labelToText;
+        y = drawLines(ctx, qLines, PAD, y, TYPE.question, TYPE.qLh);
 
         // 牌面
-        y += 34;
+        y += GAP.questionToCards;
         cards.forEach(function (c, i) {
           var col = i % perRow, row = Math.floor(i / perRow);
           var x = PAD + col * (cw + gap);
           var cy = y + row * rowH;
 
-          ctx.font = font(21);
+          ctx.font = font(TYPE.pos);
           ctx.fillStyle = GOLD;
           ctx.textAlign = "center";
-          ctx.fillText(c.position || "", x + cw / 2, cy - 10, cw);
+          ctx.fillText(c.position || "", x + cw / 2, cy - 18, cw);
 
           roundRect(ctx, x, cy, cw, chH, 12);
           ctx.save();
@@ -207,25 +246,25 @@
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          ctx.font = font(23, 400, true);
+          ctx.font = font(TYPE.cardName, 400, true);
           ctx.fillStyle = INK;
-          ctx.fillText(c.name, x + cw / 2, cy + chH + 32, cw);
-          ctx.font = font(19);
+          ctx.fillText(c.name, x + cw / 2, cy + chH + 58, cw);
+          ctx.font = font(TYPE.orient);
           ctx.fillStyle = c.orientation === "upright" ? DIM : GOLD;
-          ctx.fillText(c.orientation === "upright" ? "正位" : "逆位", x + cw / 2, cy + chH + 58, cw);
+          ctx.fillText(c.orientation === "upright" ? "正位" : "逆位", x + cw / 2, cy + chH + 104, cw);
           ctx.textAlign = "left";
         });
-        y += rows * rowH + 30;
+        y += rows * rowH + GAP.cardsToLabel;
 
-        ctx.font = font(26, 500);
+        ctx.font = font(TYPE.label, 500);
         ctx.fillStyle = GOLD;
         ctx.fillText("本喵的解讀", PAD, y);
-        y += 48;
-        y = drawLines(ctx, rLines, PAD, y, 36, 60);
+        y += GAP.labelToReading;
+        y = drawLines(ctx, rLines, PAD, y, TYPE.reading, TYPE.rLh);
 
         // 頁尾:收到圖的人要知道去哪裡也算一次,所以連結要大要清楚
-        y += 28;
-        roundRect(ctx, PAD, y, W - PAD * 2, 120, 16);
+        y += GAP.readingToCta;
+        roundRect(ctx, PAD, y, W - PAD * 2, GAP.ctaBox, 16);
         ctx.fillStyle = "#f4eefc";
         ctx.fill();
         ctx.strokeStyle = "#ded0f0";
@@ -233,18 +272,21 @@
         ctx.stroke();
 
         ctx.textAlign = "center";
-        ctx.font = font(24);
+        ctx.font = font(TYPE.ctaTop);
         ctx.fillStyle = DIM;
-        ctx.fillText("也想讓本喵幫你看一次嗎?", W / 2, y + 44);
-        ctx.font = font(28, 500);
+        // 這塊footer的兩行字可以由呼叫端換掉。
+        // 手機付費版沿用預設(導回占卜頁拉客);桌面現場版會換成 LINE 導客——
+        // 那張圖是要給現場客人帶走的,印上占卜頁網址等於告訴他們怎麼繞過付費。
+        ctx.fillText(cta.top, W / 2, y + 74);
+        ctx.font = font(TYPE.ctaBot, 500);
         ctx.fillStyle = "#6c4fa8";
-        ctx.fillText(SITE, W / 2, y + 86);
+        ctx.fillText(cta.bottom, W / 2, y + 138);
         ctx.textAlign = "left";
 
-        y += 120 + 44;
-        ctx.font = font(21);
+        y += GAP.ctaBox + GAP.ctaToFine;
+        ctx.font = font(TYPE.fine);
         ctx.fillStyle = DIM;
-        ctx.fillText("Jessica 解憂商店 · 喵喵占卜", PAD, y);
+        ctx.fillText("Jessica 解憂商店 · TAHIR ZAINAB TAROT", PAD, y);
         ctx.textAlign = "right";
         ctx.fillText("僅供參考,重要決定請自己做主", W - PAD, y);
         ctx.textAlign = "left";

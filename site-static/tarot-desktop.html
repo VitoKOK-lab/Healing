@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>喵喵占卜・桌面版|Jessica 解憂商店</title>
+<title>TAHIR ZAINAB TAROT|Jessica 解憂商店</title>
 <meta name="description" content="抽三張牌,由本喵占卜師為你解讀感情、工作、金錢或人生抉擇。" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,6 +32,54 @@
   </video>
 </div>
 
+<!-- 背景音樂:進站那一下點擊就開始循環播放,整場不停。
+     瀏覽器不允許無使用者手勢的自動播放,所以起點綁在等待畫面那一下點擊。
+     音量壓得很低——客人是來讀文字的,音樂只是墊底的氛圍。 -->
+<audio id="bgm" loop preload="none">
+  <source src="./assets/audio/tarot-bgm.mp3" type="audio/mpeg" />
+</audio>
+
+<!-- 進站等待:一進頁面就循環播放,等客人點一下才往下走。
+     這一下點擊同時也是 iOS 解鎖影片播放的手勢來源。 -->
+<div class="draw-overlay tarot-gate" id="waitOverlay"
+     role="button" tabindex="0" aria-label="開始占卜。點一下畫面,或按 Enter 鍵。">
+  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
+    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
+  </video>
+  <p class="tarot-gate-hint">點一下,本喵就開始</p>
+</div>
+
+<!-- 進場動畫:點擊後播一次,播完才進入占卜流程 -->
+<div class="draw-overlay" id="enterOverlay" style="display:none">
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto">
+    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 給客人掃的 QR。這是覆蓋在畫面上的一層,不是換頁——
+     店主的占卜畫面原封不動留在後面,收掉就能直接接下一位。
+     QR 指向圖片檔本身,客人掃到的只有一張圖,沒有回站的入口。 -->
+<div class="qr-share" id="qrShare" style="display:none" role="dialog" aria-modal="true" aria-labelledby="qrShareTitle">
+  <div class="qr-share-card">
+    <p class="eyebrow">Scan</p>
+    <h2 class="display" id="qrShareTitle">請客人用手機掃這個</h2>
+    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。<br />這是臨時連結,24 小時後自動刪除。</p>
+
+    <div class="qr-share-code" id="qrShareCode">
+      <div class="qr-share-loading" id="qrShareLoading">本喵畫圖中⋯</div>
+      <img id="qrShareImg" alt="占卜結果圖的 QR Code" style="display:none" />
+    </div>
+
+    <p class="qr-share-expiry" id="qrShareExpiry"></p>
+    <p class="qr-share-error" id="qrShareError" style="display:none"></p>
+
+    <div class="qr-share-actions">
+      <button type="button" class="btn-secondary" id="qrCloseBtn">關閉</button>
+      <button type="button" class="btn-primary" id="qrNextBtn">下一位客人</button>
+    </div>
+  </div>
+</div>
+
 <div class="desktop-only-notice">
   <div class="desktop-notice-card">
     <h1>這是電腦與 iPad 專用版</h1>
@@ -41,9 +89,11 @@
 </div>
 
 <header class="desktop-tarot-header">
-  <a class="desktop-brand" href="./index.html" aria-label="返回解憂商店首頁">
+  <!-- 點標題 = 整場重來:回到最開頭的等待畫面,一切歸零。
+       現場換下一位客人時最常用到,所以放在最順手的位置。 -->
+  <a class="desktop-brand" href="./tarot-desktop.html" id="brandHome" aria-label="TAHIR ZAINAB TAROT,回到開頭重新開始">
     <span class="desktop-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
-    <span><b>Jessica 解憂商店</b><small>喵喵占卜・桌面版</small></span>
+    <span><b>TAHIR ZAINAB TAROT</b><small>Jessica 解憂商店</small></span>
   </a>
   <p>給自己一段安靜的時間，讓牌替心裡的聲音排好位置。</p>
 </header>
@@ -77,7 +127,7 @@
       </div>
       <p class="cat-dialogue-text" id="dialogueText"></p>
       <!-- 現在完全由客人控制節奏,所以講明白要點一下 -->
-      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點一下繼續 ▼</span>
+      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點畫面任何地方繼續 ▼</span>
     </div>
 
     <!-- 說完開場白才出現 -->
@@ -144,7 +194,9 @@
 
     <!-- 洗牌:手指在牌面上來回滑,滑滿才算洗透 -->
     <div class="step-panel" id="shufflePanel" style="display:none">
-      <div class="swipe-stage" id="swipeStage">
+      <div class="swipe-stage" id="swipeStage" role="button" tabindex="0"
+           aria-label="洗牌區。用滑鼠或手指來回滑動,或連按方向鍵,直到洗透為止。"
+           aria-describedby="swipeHint">
         <span class="swipe-card" style="--i:0"></span>
         <span class="swipe-card" style="--i:1"></span>
         <span class="swipe-card" style="--i:2"></span>
@@ -152,13 +204,18 @@
         <span class="swipe-card" style="--i:4"></span>
         <canvas class="swipe-trail" id="swipeTrail"></canvas>
       </div>
-      <div class="swipe-meter"><i id="swipeFill"></i></div>
+      <div class="swipe-meter" id="swipeMeter" role="progressbar"
+           aria-label="洗牌進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="swipeFill"></i></div>
       <p class="stage-hint" id="swipeHint">用手指在牌上來回滑動,滑得越久洗得越透</p>
     </div>
 
-    <!-- 切牌:手指左右滑,決定從牌堆哪裡切開 -->
+    <!-- 切牌:牌堆側躺著,上下滑決定從第幾張切開。
+         cutLeft 是上疊(會被抬起來)、cutRight 是下疊(留在原位當底座)。 -->
     <div class="step-panel" id="cutPanel" style="display:none">
-      <div class="cut-stage" id="cutStage">
+      <div class="cut-stage" id="cutStage"
+           role="slider" tabindex="0"
+           aria-label="切牌位置。上下方向鍵調整,Enter 確認。"
+           aria-valuemin="1" aria-valuemax="77" aria-valuenow="39" aria-valuetext="上疊 39 張,下疊 39 張">
         <span class="cut-half cut-left" id="cutLeft"></span>
         <span class="cut-half cut-right" id="cutRight"></span>
         <span class="cut-seam" id="cutSeam"></span>
@@ -167,7 +224,7 @@
         <span>上疊 <b id="cutUpperCount">39</b> 張</span>
         <span>下疊 <b id="cutLowerCount">39</b> 張</span>
       </div>
-      <p class="stage-hint" id="cutHint">手指左右滑動,決定從哪裡切開這副牌</p>
+      <p class="stage-hint" id="cutHint">上下滑動,決定從第幾張切開這副牌</p>
     </div>
 
     <section class="tarot-desktop-stage" aria-label="牌桌與占卜結果">
@@ -190,8 +247,24 @@
         <ol id="summaryList"></ol>
       </div>
 
+      <!-- 石頭推薦:從這次的主題與牌面推出來的,客人不必多選任何東西 -->
+      <div class="gem-pick" id="gemPick" style="display:none">
+        <p class="eyebrow">For You</p>
+        <div class="gem-pick-row">
+          <span class="gem-pick-orb" id="gemOrb"></span>
+          <img class="gem-pick-photo" id="gemPhoto" alt="" style="display:none" />
+          <div class="gem-pick-text">
+            <b id="gemName"></b>
+            <span id="gemFamily"></span>
+            <p id="gemWhy"></p>
+            <p id="gemLine"></p>
+          </div>
+        </div>
+      </div>
+
       <div class="tarot-actions">
-        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片 · 傳給朋友</button>
+        <button type="button" class="btn-secondary" id="qrBtn" style="display:none">傳給客人 · QR</button>
+        <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片</button>
         <button type="button" class="btn-secondary" id="retryBtn" style="display:none">請本喵再看一次</button>
         <button type="button" class="btn-primary" id="againBtn" style="display:none">再抽一次</button>
       </div>
@@ -203,14 +276,18 @@
 <footer>
   <div class="foot-inner">
     <p class="fine">© 2026 Jessica 解憂商店·課程影片僅限購買帳號觀看,禁止側錄與轉載</p>
+    <!-- 背景音樂授權要求標註出處,拿掉這行就不符合授權條件 -->
+    <p class="fine">背景音樂：<a href="https://breakingcopyright.com/song/keys-of-moon-enchanted" target="_blank" rel="noopener">Enchanted</a> by Keys Of Moon · Free To Use YouTube License</p>
   </div>
 </footer>
 
 <script src="./assets/tarot-data.js"></script>
+<script src="./assets/gem-data.js"></script>
 <script src="./assets/tarot-report.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var creditsText = document.getElementById("creditsText");
+  var creditsBadge = document.getElementById("creditsBadge");
   var lockedPanel = document.getElementById("lockedPanel");
   var tarotFlow = document.getElementById("tarotFlow");
   var catDialogue = document.getElementById("catDialogue");
@@ -224,6 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var swipeStage = document.getElementById("swipeStage");
   var swipeTrail = document.getElementById("swipeTrail");
   var swipeFill = document.getElementById("swipeFill");
+  var swipeMeter = document.getElementById("swipeMeter");
   var swipeHint = document.getElementById("swipeHint");
   var cutPanel = document.getElementById("cutPanel");
   var cutStage = document.getElementById("cutStage");
@@ -252,6 +330,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var songOverlay = document.getElementById("songOverlay");
   var songVideo = document.getElementById("songVideo");
   var tarotDeck = document.getElementById("tarotDeck");
+  // 桌面版版面會隨階段改變:抽牌前單欄置中,抽牌後才展開成左右兩欄。
+  // 沒有這個切換的話,選主題到切牌的整段流程右半邊都是空的。
+  var tarotFlow = document.getElementById("tarotFlow");
   var resultPanel = document.getElementById("resultPanel");
   var cardSummary = document.getElementById("cardSummary");
   var loadingNote = document.getElementById("loadingNote");
@@ -261,6 +342,11 @@ document.addEventListener("DOMContentLoaded", function () {
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
   var reportBtn = document.getElementById("reportBtn");
+  var qrBtn = document.getElementById("qrBtn");
+  var gemPick = document.getElementById("gemPick");
+  var lastGem = null;
+  var qrCloseBtn = document.getElementById("qrCloseBtn");
+  var qrNextBtn = document.getElementById("qrNextBtn");
   var soundToggle = document.getElementById("soundToggle");
   var soundLabel = document.getElementById("soundLabel");
 
@@ -349,6 +435,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // 再叫人「點一下繼續」只會讓人卡在那裡不知道要繼續去哪。
   var typeTimer = null;
 
+  // ── 節奏 ──────────────────────────────────────────
+  // 現場是一個客人接一個排隊,每一段等待都會乘上人數。
+  // 這幾個數字是整場體驗快慢的總開關,要調就調這裡。
+  var TYPE_MS = 22;        // 每個字的打字間隔(原 42)
+  var LINE_GAP_MS = 420;   // 句與句之間的停頓(原 900)
+
   function speak(lines, onDone, manual) {
     clearTimeout(typeTimer);
     catDialogue.style.display = "block";
@@ -360,6 +452,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (done) return;
       done = true;
       catDialogue.onclick = null;
+      document.removeEventListener("click", onAnywhere);
       dialogueCaret.style.display = "none";
       if (onDone) onDone();
     }
@@ -369,7 +462,7 @@ document.addEventListener("DOMContentLoaded", function () {
       typing = false;
       if (isLast()) { finish(); return; }
       if (manual) dialogueCaret.style.display = "";
-      else typeTimer = setTimeout(next, 900);
+      else typeTimer = setTimeout(next, LINE_GAP_MS);
     }
 
     function typeLine() {
@@ -383,7 +476,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (ci >= total) { lineDone(); return; }
         dialogueText.innerHTML = renderSegs(segs, ++ci);
         if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
-        typeTimer = setTimeout(step, 42);
+        typeTimer = setTimeout(step, TYPE_MS);
       })();
     }
 
@@ -395,7 +488,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 點一下:打字中就把這句補完(最後一句補完即收尾),打完了才換下一句
-    catDialogue.onclick = function () {
+    function advance() {
       if (typing) {
         clearTimeout(typeTimer);
         var segs = toSegs(lines[li]);
@@ -404,7 +497,17 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         next();
       }
-    };
+    }
+
+    // 本喵在講話時,整個畫面都是「繼續」的按鈕——不必特地瞄準那行小字。
+    // 但按鈕、輸入框、洗牌切牌區、影片遮罩有自己的事要做,不搶它們的點擊。
+    function onAnywhere(e) {
+      if (e.target.closest("button, a, input, textarea, select, label, " +
+                           "#swipeStage, #cutStage, .draw-overlay")) return;
+      advance();
+    }
+
+    document.addEventListener("click", onAnywhere);
 
     typeLine();
   }
@@ -415,23 +518,32 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ── 額度 ──────────────────────────────────────────
-  // 只更新數字。扣款後絕不能連帶把畫面收掉——否則用掉最後一次的人
-  // 會在動畫播完後看不到自己的牌,只看到「次數已用完」。
+  // 桌面版不計次、不需儲值,無限使用。
+  // 手機版(tarot.html)仍然照原本的付費規則走——共用的 tarot-data.js
+  // 沒有動過,額度那一套完整留著,只有這一頁繞過它。
   function updateCredits() {
-    creditsText.textContent = "剩餘 " + Tarot.getCredits() + " 次";
+    creditsBadge.style.display = "none";   // 不計次就不該顯示「剩餘 N 次」
   }
 
-  // 擋在「要開始新的一輪」之前:沒次數就直接顯示購買頁,
-  // 不讓客人白花力氣選主題、打字、看完動畫才被擋下來。
   function canStartRound() {
-    var ok = Tarot.getCredits() > 0;
     updateCredits();
-    lockedPanel.style.display = ok ? "none" : "block";
-    tarotFlow.style.display = ok ? "grid" : "none";
-    return ok;
+    lockedPanel.style.display = "none";
+    tarotFlow.style.display = "grid";
+    return true;
   }
 
   // ── 音效開關 ───────────────────────────────────────
+  // 背景音樂:不另外做暫停鈕,跟著既有的音效開關走。
+  // 自動播放又完全關不掉對訪客很不友善,而這個開關本來就在畫面上,不必多一顆。
+  var bgm = document.getElementById("bgm");
+
+  function startBgm() {
+    if (!bgm || !Tarot.Sound.isOn()) return;
+    bgm.volume = 0.28;              // 墊底用,不能蓋過本喵講話的音效
+    var p = bgm.play();
+    if (p && p.catch) p.catch(function () {});   // 被瀏覽器擋下就算了,不影響占卜
+  }
+
   function paintSound() {
     var on = Tarot.Sound.isOn();
     soundToggle.classList.toggle("off", !on);
@@ -439,6 +551,10 @@ document.addEventListener("DOMContentLoaded", function () {
     soundLabel.textContent = on ? "呼嚕聲" : "已靜音";
     soundToggle.querySelector(".wave").style.display = on ? "" : "none";
     soundToggle.querySelector(".cross").style.display = on ? "none" : "";
+    if (bgm) {
+      if (on) startBgm();
+      else bgm.pause();
+    }
   }
   soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
@@ -470,6 +586,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tarotDeck.style.display = "none";
     tarotDeck.innerHTML = "";
     tarotDeck.className = "tarot-deck";
+    if (tarotFlow) tarotFlow.classList.remove("has-cards");
     resultPanel.classList.remove("show");
     speak([
       "歡迎光臨解憂商店,本喵是這裡的占卜師。",
@@ -604,15 +721,24 @@ document.addEventListener("DOMContentLoaded", function () {
   var drawSrcWebm = document.getElementById("drawSrcWebm");
   var drawSrcMp4 = document.getElementById("drawSrcMp4");
 
+  // 新的橫式洗牌影片只有 mp4,沒有 webm;直式仍沿用舊的三件組。
+  var SHUFFLE = {
+    wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
+    portrait: { mp4: "tarot-draw.mp4", webm: "tarot-draw.webm", poster: "tarot-draw-poster.jpg" }
+  };
+
   function pickVideo() {
     var wide = window.matchMedia("(min-aspect-ratio: 1/1)").matches;
-    var base = wide ? "tarot-draw-wide" : "tarot-draw";
+    var base = wide ? "wide" : "portrait";
     if (drawVideo.dataset.base === base) return;
     if (drawOverlay.style.display !== "none") return;
     drawVideo.dataset.base = base;
-    drawSrcWebm.src = "./assets/videos/" + base + ".webm";
-    drawSrcMp4.src = "./assets/videos/" + base + ".mp4";
-    drawVideo.poster = "./assets/videos/" + base + "-poster.jpg";
+    var v = SHUFFLE[base];
+    // 沒有 webm 就把來源拿掉,瀏覽器才會直接跳到 mp4,而不是先撞一個 404
+    if (v.webm) drawSrcWebm.src = "./assets/videos/" + v.webm;
+    else drawSrcWebm.removeAttribute("src");
+    drawSrcMp4.src = "./assets/videos/" + v.mp4;
+    drawVideo.poster = "./assets/videos/" + v.poster;
     drawVideo.load();
   }
   window.addEventListener("resize", pickVideo);
@@ -806,7 +932,7 @@ document.addEventListener("DOMContentLoaded", function () {
       autoPickedLine = null;
     }
     speak(opening, function () {
-      Tarot.useCredit();
+      // 桌面版不扣次數(手機付費版仍照扣,那是另一頁)
       updateCredits();
       startSwipeShuffle();
     });
@@ -826,7 +952,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第四步:手指洗牌 ────────────────────────────────────
   // 累積滑動距離達標才算洗透。種子由這段軌跡長度組成,所以「洗牌的是客人自己」。
-  var SWIPE_TARGET = 800;
+  var SWIPE_TARGET = 480;   // 原本 800。現場一個接一個排隊,滑太久會卡住流程
 
   function trailCtx() {
     var r = swipeStage.getBoundingClientRect();
@@ -838,6 +964,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function startSwipeShuffle() {
     swipeDistance = 0;
     swipeFill.style.width = "0%";
+    if (swipeMeter) swipeMeter.setAttribute("aria-valuenow", 0);
     swipeHint.textContent = "用手指在牌上來回滑動,滑得越久洗得越透";
     swipeHint.classList.remove("is-done");
     swipeStage.classList.remove("is-settled");
@@ -879,6 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
       swipeStage.classList.remove("is-live");
       swipeStage.classList.add("is-settled");
       swipeStage.removeEventListener("pointerdown", onDown);
+      swipeStage.removeEventListener("keydown", onKey);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -909,6 +1037,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var progress = Math.min(swipeDistance / SWIPE_TARGET, 1);
       swipeFill.style.width = (progress * 100).toFixed(1) + "%";
       swipeStage.style.setProperty("--churn", progress.toFixed(3));
+      if (swipeMeter) swipeMeter.setAttribute("aria-valuenow", Math.round(progress * 100));
       if (navigator.vibrate) navigator.vibrate(6);
       if (progress >= 1) finish();
     }
@@ -922,7 +1051,24 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    // 洗牌同樣不能只有滑動一種操作。連按方向鍵/空白鍵一樣累積洗牌距離,
+    // 種子照樣來自客人自己的動作,不是程式亂數決定的。
+    function onKey(e) {
+      if (done) return;
+      var k = e.key;
+      if (k !== "ArrowLeft" && k !== "ArrowRight" && k !== "ArrowUp" && k !== "ArrowDown" &&
+          k !== " " && k !== "Spacebar" && k !== "Enter") return;
+      e.preventDefault();
+      swipeDistance += 55;
+      var progress = Math.min(swipeDistance / SWIPE_TARGET, 1);
+      swipeFill.style.width = (progress * 100).toFixed(1) + "%";
+      swipeStage.style.setProperty("--churn", progress.toFixed(3));
+      if (swipeMeter) swipeMeter.setAttribute("aria-valuenow", Math.round(progress * 100));
+      if (progress >= 1) finish();
+    }
+
     swipeStage.addEventListener("pointerdown", onDown);
+    swipeStage.addEventListener("keydown", onKey);
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
@@ -930,23 +1076,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第五步:切牌 ───────────────────────────────────────
   // 上下疊張數即時顯示,離手才鎖定——讓客人隨時可以改主意。
+  // 切牌是垂直動作:牌堆側躺著,由上往下疊 78 張,
+  // p = 從頂端算下來的切點。cutLeft 是上疊、cutRight 是下疊。
   function paintCut(p) {
     var pct = (p * 100).toFixed(2) + "%";
-    cutLeft.style.width = pct;
-    cutRight.style.width = (100 - p * 100).toFixed(2) + "%";
-    cutSeam.style.left = pct;
-    var gap = 6 + Math.abs(p - 0.5) * 16;
-    cutLeft.style.transform = "translateX(-" + gap + "px)";
-    cutRight.style.transform = "translateX(" + gap + "px)";
+    cutLeft.style.height = pct;
+    cutRight.style.height = (100 - p * 100).toFixed(2) + "%";
+    cutSeam.style.top = pct;
+    // 上疊被抬起來:離中點越遠抬得越開,再帶一點側移與傾斜,
+    // 模擬手抓著一疊牌斜斜提起來的樣子
+    var lift = 10 + Math.abs(p - 0.5) * 26;
+    cutLeft.style.transform =
+      "translateY(-" + lift.toFixed(1) + "px) translateX(" + (lift * 0.35).toFixed(1) + "px) rotate(-1.1deg)";
+    cutRight.style.transform = "translateY(" + (lift * 0.18).toFixed(1) + "px)";
     var upper = Math.max(1, Math.min(77, Math.round(p * 78)));
     cutUpperCount.textContent = upper;
     cutLowerCount.textContent = 78 - upper;
+    // 讀螢幕的人看不到牌堆,靠這兩個值知道自己切到哪
+    cutStage.setAttribute("aria-valuenow", upper);
+    cutStage.setAttribute("aria-valuetext", "上疊 " + upper + " 張,下疊 " + (78 - upper) + " 張");
   }
 
   function startCut() {
     cutPoint = 0.5;
     paintCut(cutPoint);
-    cutHint.textContent = "手指左右滑動,決定從哪裡切開這副牌";
+    cutHint.textContent = "上下滑動,決定從第幾張切開這副牌";
     cutStage.classList.remove("is-cut");
     showStage(cutPanel);
 
@@ -955,7 +1109,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function at(e) {
       var r = cutStage.getBoundingClientRect();
-      return Math.max(0.05, Math.min(0.95, (e.clientX - r.left) / r.width));
+      return Math.max(0.05, Math.min(0.95, (e.clientY - r.top) / r.height));
     }
 
     function onDown(e) {
@@ -975,13 +1129,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (navigator.vibrate) navigator.vibrate(4);
     }
 
-    function onUp() {
-      if (!dragging) return;
-      dragging = false;
-      // 切完牌手放開就直接進入下一步,但要確保用戶有實際觸摸操作
+    // 切完牌就進入下一步,但要確保客人真的操作過(不是一載入就衝過去)
+    function commitCut() {
       if (!touched) return;
       Tarot.Sound.blip(620);
       cutStage.removeEventListener("pointerdown", onDown);
+      cutStage.removeEventListener("keydown", onKey);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -989,7 +1142,40 @@ document.addEventListener("DOMContentLoaded", function () {
       playShuffle(revealCards);
     }
 
+    function onUp() {
+      if (!dragging) return;
+      dragging = false;
+      commitCut();
+    }
+
+    // 滑動是主要操作,但不能是唯一操作——鍵盤要有等價的切牌方式。
+    // 上下鍵移動切點(Shift 加速),Enter 確認,對應 role="slider"。
+    function onKey(e) {
+      var step = e.shiftKey ? 0.08 : 0.015;
+      var next = cutPoint;
+      if (e.key === "ArrowUp") next = cutPoint - step;
+      else if (e.key === "ArrowDown") next = cutPoint + step;
+      else if (e.key === "Home") next = 0.05;
+      else if (e.key === "End") next = 0.95;
+      else if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        if (!touched) {           // 還沒動過就按 Enter,當作在正中間切
+          touched = true;
+          cutStage.classList.add("is-cut");
+          paintCut(cutPoint);
+        }
+        commitCut();
+        return;
+      } else return;
+      e.preventDefault();
+      touched = true;
+      cutStage.classList.add("is-cut");
+      cutPoint = Math.max(0.05, Math.min(0.95, next));
+      paintCut(cutPoint);
+    }
+
     cutStage.addEventListener("pointerdown", onDown);
+    cutStage.addEventListener("keydown", onKey);
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
@@ -1096,6 +1282,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var layout = (Tarot.SPREADS[lastSpread] || {}).layout;
     tarotDeck.className = "tarot-deck count-" + cards.length + (layout ? " layout-" + layout : "");
     tarotDeck.style.display = "grid";
+    if (tarotFlow) tarotFlow.classList.add("has-cards");
     cardSummary.innerHTML = "";
     resultPanel.classList.add("show");
     tarotDeck.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1163,8 +1350,17 @@ document.addEventListener("DOMContentLoaded", function () {
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
       reportBtn.style.display = "inline-flex";
+      qrBtn.style.display = "inline-flex";
+      showGemPick();
       Tarot.Sound.purr(1.6);
-      readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
+      // 所以直接把畫面帶到最下面那兩顆按鈕,不要讓人自己往下捲一大段。
+      // 桌面版解讀有自己的捲動區,要捲的是那一區而不是整頁。
+      var scroller = resultPanel.scrollHeight > resultPanel.clientHeight ? resultPanel : null;
+      requestAnimationFrame(function () {
+        if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+        else document.querySelector(".tarot-actions").scrollIntoView({ behavior: "smooth", block: "end" });
+      });
     }, true);   // 解牌字多,一句一句自己點著讀
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -1258,6 +1454,118 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // ── 從這次的占卜推薦一顆石頭 ──────────────────────────────
+  // 客人不必再選任何東西:他選的主題、抽到的牌、正逆位就夠了。
+  // 剛讀完自己的狀態,這時候推最順,也最像「本喵替你想到的」。
+  function showGemPick() {
+    if (!gemPick || !window.Gem || !lastCards) return;
+    lastGem = Gem.recommend(topic, lastCards);
+    // 有實拍照就用照片,沒有就退回漸層球——店主可以一顆一顆補圖
+    var orb = document.getElementById("gemOrb");
+    var photo = document.getElementById("gemPhoto");
+    // 有實拍照就用照片,沒有就用 SVG 畫的寶石(不是扁圓球,有刻面與高光)
+    var src = Gem.imageFor(lastGem.stone) || Gem.svgFor(lastGem.stone);
+    photo.onerror = function () { photo.src = Gem.svgFor(lastGem.stone); };
+    photo.src = src;
+    photo.alt = lastGem.stone.name;
+    photo.style.display = "";
+    photo.style.filter = "drop-shadow(0 6px 18px " + lastGem.stone.accent + "99)";
+    orb.style.display = "none";
+    document.getElementById("gemName").textContent = lastGem.stone.name;
+    document.getElementById("gemFamily").textContent = lastGem.family.label;
+    document.getElementById("gemWhy").textContent = lastGem.why;
+    document.getElementById("gemLine").textContent = lastGem.stone.line;
+    gemPick.style.display = "block";
+  }
+
+  // ── 傳給客人:螢幕出現 QR,客人用自己的手機掃走結果圖 ──────────
+  // 這裡刻意「不換頁」:QR 只是蓋在上面的一層,店主的占卜畫面完整
+  // 留在後面,關掉就能直接接下一位。
+  //
+  // QR 指的是圖片檔本身(/api/tarot/share/<token>,回 image/*),
+  // 不是站上任何一頁——客人掃到的就是一張圖,沒有導覽也沒有連結,
+  // 不會因此多一個回來繼續免費占卜的入口。
+  var SHARE_URL = /\.vercel\.app$/.test(location.hostname)
+    ? "/api/tarot/share"
+    : "https://healingasmr.vercel.app/api/tarot/share";
+
+  var qrShare = document.getElementById("qrShare");
+  var qrShareImg = document.getElementById("qrShareImg");
+  var qrShareLoading = document.getElementById("qrShareLoading");
+  var qrShareExpiry = document.getElementById("qrShareExpiry");
+  var qrShareError = document.getElementById("qrShareError");
+
+  function openQrPanel() {
+    qrShareImg.style.display = "none";
+    qrShareImg.removeAttribute("src");
+    qrShareLoading.style.display = "";
+    qrShareLoading.textContent = "本喵畫圖中⋯";
+    qrShareExpiry.textContent = "";
+    qrShareError.style.display = "none";
+    qrShare.style.display = "grid";
+  }
+
+  function closeQrPanel() {
+    qrShare.style.display = "none";
+  }
+
+  function qrFailed(msg) {
+    qrShareLoading.style.display = "none";
+    qrShareError.textContent = msg;
+    qrShareError.style.display = "";
+  }
+
+  qrBtn.addEventListener("click", function () {
+    if (!lastCards || !lastReading) return;
+    openQrPanel();
+
+    var spread = Tarot.SPREADS[lastSpread || "flow"];
+    TarotReport.render({
+      question: questionText(),
+      spreadName: spread ? spread.name : "",
+      cards: lastCards,
+      readingSegs: toSegs(lastReading),
+      // 這張圖是要給現場客人帶走的。預設的 footer 會印上占卜頁網址,
+      // 等於告訴客人怎麼繞過付費自己去玩,所以換成 LINE 導客。
+      cta: { top: "想成為線上珠寶商?", bottom: "加 LINE 了解怎麼開始" },
+      artOf: function (n) { return "./assets/cards/" + (n < 10 ? "0" + n : n) + ".jpg"; }
+    }).then(function (cv) {
+      // JPEG 比 PNG 小很多,這張圖是照片式的塔羅牌面,壓縮痕跡看不出來
+      var dataUrl = cv.toDataURL("image/jpeg", 0.86);
+      qrShareLoading.textContent = "上傳中⋯";
+      return fetch(SHARE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl })
+      });
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !d.qr) throw new Error("回應缺少 QR");
+      qrShareImg.src = d.qr;
+      qrShareImg.style.display = "";
+      qrShareLoading.style.display = "none";
+      var hrs = Math.max(1, Math.round((new Date(d.expiresAt) - Date.now()) / 3600000));
+      qrShareExpiry.textContent = "這個連結 " + hrs + " 小時後失效,請客人現在就存起來";
+    }).catch(function (e) {
+      console.error("[qr] 產生失敗", e);
+      qrFailed("QR 產生失敗了喵,先用「存成圖片」把結果存下來吧。");
+    });
+  });
+
+  qrCloseBtn.addEventListener("click", closeQrPanel);
+
+  qrNextBtn.addEventListener("click", function () {
+    closeQrPanel();
+    againBtn.click();          // 沿用既有的「再抽一次」重置流程
+  });
+
+  // Esc 關掉:店主現場操作,手不一定在滑鼠上
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && qrShare.style.display !== "none") closeQrPanel();
+  });
+
   retryBtn.addEventListener("click", function () {
     if (lastCards) requestReading(lastCards);
   });
@@ -1267,6 +1575,9 @@ document.addEventListener("DOMContentLoaded", function () {
     readingSummary.style.display = "none";
     againBtn.style.display = "none";
     reportBtn.style.display = "none";
+    qrBtn.style.display = "none";
+    if (gemPick) gemPick.style.display = "none";
+    lastGem = null;
     retryBtn.style.display = "none";
     errorNote.style.display = "none";
     questionInput.value = "";
@@ -1288,7 +1599,53 @@ document.addEventListener("DOMContentLoaded", function () {
   dialogueAvatar.innerHTML = Tarot.catFace("happy", false);
   document.getElementById("thinkingCat").innerHTML = Tarot.catFace("calm", false);
   paintSound();
-  if (canStartRound()) startIntro();
+
+  // ── 進站動線:等待影片(循環) → 點一下 → 進場影片(播一次) → 開始占卜 ──
+  // 這一下點擊是整頁唯一保證存在的使用者手勢,所以順手把後面那幾支
+  // 要程式化播放的影片一起解鎖(iOS 不給無手勢播放)。
+  var waitOverlay = document.getElementById("waitOverlay");
+  var enterOverlay = document.getElementById("enterOverlay");
+  var enterVideo = document.getElementById("enterVideo");
+  var gateDone = false;
+
+  // 不論進場影片是播完、播壞還是根本沒載到,都要把客人放進來,
+  // 不能讓人卡在一片黑畫面上。
+  function openGate() {
+    if (gateDone) return;
+    gateDone = true;
+    enterOverlay.style.display = "none";
+    document.body.classList.remove("no-scroll");
+    if (canStartRound()) startIntro();
+  }
+
+  if (waitOverlay && enterOverlay && enterVideo) {
+    document.body.classList.add("no-scroll");
+
+    function enterSite() {
+      if (gateDone) return;
+      unlockVideo();                       // 借這個手勢解鎖洗牌／唱歌影片
+      startBgm();                          // 同一下手勢也是背景音樂的起點
+      waitOverlay.style.display = "none";
+      enterOverlay.style.display = "block";
+      enterVideo.addEventListener("ended", openGate);
+      enterVideo.addEventListener("error", openGate);
+      var p = enterVideo.play();
+      if (p && p.catch) p.catch(openGate);
+      setTimeout(openGate, 12000);         // 最後保險,影片再長也不會卡住
+    }
+
+    waitOverlay.addEventListener("click", enterSite);
+    // 等待畫面蓋住整頁,沒有鍵盤入口的話用鍵盤的人根本進不來
+    waitOverlay.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        enterSite();
+      }
+    });
+    waitOverlay.focus();
+  } else {
+    if (canStartRound()) startIntro();
+  }
 });
 </script>
 <nav class="bottom-nav">

@@ -240,3 +240,19 @@ model WebhookEvent {
   result      String?
   createdAt   DateTime  @default(now())
 }
+
+// ── 占卜結果分享圖 ────────────────────────────────────
+// 現場占卜完,螢幕上出現 QR,客人用自己的手機掃走這張結果圖。
+// token 是隨機的,猜不到也列舉不出來;取圖那支 route 只吐圖片位元組,
+// 沒有 HTML、沒有連結,所以掃到的人不會因此多一個回站繼續玩的入口。
+// expiresAt 到期後不再提供,並由後續請求順手清掉,資料庫不會無限長大。
+model TarotShare {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  image     Bytes
+  mimeType  String   @default("image/jpeg")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
