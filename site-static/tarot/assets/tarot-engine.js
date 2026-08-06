@@ -470,6 +470,37 @@ document.addEventListener("DOMContentLoaded", function () {
   //   mp4    直式洗牌影片(必要)
   //   webm   同一支的 webm 版,沒有就留空字串,程式會直接跳過不撞 404
   //   poster 影片載入前先顯示的靜態圖,避免黑畫面
+  // ── 影片預先抓下來 ──────────────────────────────────────────
+  // preload="auto" 只是「建議」,iOS Safari 基本上不理它——真的要等到
+  // play() 被呼叫才開始下載。結果就是:客人點下去,影片才開始抓,
+  // 手機網路慢一點就播到一半 stall 住,畫面停在某一格。
+  //
+  // 所以自己抓。頁面一載入就在背景把接下來會用到的影片整包 fetch 回來,
+  // 抓完換成 blob URL——播的時候完全不碰網路。
+  //
+  // 順序是照「會用到的先後」排的,而且一支抓完才抓下一支:
+  //   1. 進場影片:客人隨時可能點下去,最急
+  //   2. 洗牌影片:大概三十秒到一分鐘後才會用到
+  // 不併行是因為手機頻寬有限,兩支一起搶只會兩支都慢。
+  // 等待影片不在名單裡——它 autoplay,瀏覽器自己就會抓。
+  var videoBlobs = {};          // 檔名 → blob URL
+
+  function videoUrl(name) {
+    return videoBlobs[name] || "./assets/videos/" + name;
+  }
+
+  function prefetchVideo(name) {
+    if (videoBlobs[name]) return Promise.resolve();
+    return fetch("./assets/videos/" + name)
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        return r.blob();
+      })
+      .then(function (blob) { videoBlobs[name] = URL.createObjectURL(blob); })
+      // 抓不到就算了:videoUrl() 會退回原本的網址,行為跟以前一樣
+      .catch(function () {});
+  }
+
   var SHUFFLE = {
     wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
     portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "tarot-shuffle-portrait-poster.jpg" }
@@ -483,11 +514,18 @@ document.addEventListener("DOMContentLoaded", function () {
     drawVideo.dataset.base = base;
     var v = SHUFFLE[base];
     // 沒有 webm 就把來源拿掉,瀏覽器才會直接跳到 mp4,而不是先撞一個 404
-    if (v.webm) drawSrcWebm.src = "./assets/videos/" + v.webm;
+    if (v.webm) drawSrcWebm.src = videoUrl(v.webm);
     else drawSrcWebm.removeAttribute("src");
-    drawSrcMp4.src = "./assets/videos/" + v.mp4;
+    // 已經預抓好就用 blob(不碰網路),還沒抓好就先掛原本的網址,
+    // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
+    drawSrcMp4.src = videoUrl(v.mp4);
     drawVideo.poster = "./assets/videos/" + v.poster;
-    drawVideo.load();
+    // load() 才是真正發出請求的那一步。開場時來源還是網址,這時呼叫
+    // load() 會讓瀏覽器去抓一遍,跟背景的預抓撞在一起,同一支下載兩次。
+    // 所以只有在來源已經是 blob(預抓完成)時才 load——那一步不碰網路。
+    // 預抓失敗的話這裡就不 load,等 playDraw 真的要播時再由 play() 觸發,
+    // 行為跟加預抓之前一樣。
+    if (drawSrcMp4.src.indexOf("blob:") === 0) drawVideo.load();
   }
   window.addEventListener("resize", pickVideo);
 
@@ -943,6 +981,11 @@ document.addEventListener("DOMContentLoaded", function () {
       drawVideo.removeEventListener("ended", finish);
       drawVideo.removeEventListener("error", finish);
       drawVideo.removeEventListener("playing", armGuard);
+      drawVideo.removeEventListener("loadedmetadata", armGuard);
+      // 這兩個是這一輪才掛上去的,一定要拆掉:playDraw 每抽一次牌就會
+      // 再跑一遍,不拆的話監聽器會一輪一輪疊上去。
+      drawOverlay.removeEventListener("click", finish);
+      clearInterval(stallWatch);
       drawOverlay.classList.add("fading");
       setTimeout(function () {
         drawOverlay.style.display = "none";
@@ -964,6 +1007,24 @@ document.addEventListener("DOMContentLoaded", function () {
     drawVideo.addEventListener("ended", finish);
     drawVideo.addEventListener("error", finish);
     drawVideo.addEventListener("playing", armGuard);
+    drawVideo.addEventListener("loadedmetadata", armGuard);
+
+    // 跟進場那一層同一套卡住偵測:手機網路上影片 stall 住的時候,
+    // ended 不會來、error 也不會來,只靠上面那個保險就得等它跑完。
+    // 進度停住超過 1.6 秒就當它卡了,直接收掉往下走。
+    var lastTime = -1, stallTicks = 0;
+    var stallWatch = setInterval(function () {
+      if (drawOverlay.style.display === "none") { clearInterval(stallWatch); return; }
+      if (drawVideo.currentTime === lastTime) {
+        if (++stallTicks >= 4) { clearInterval(stallWatch); finish(); }
+      } else {
+        stallTicks = 0;
+        lastTime = drawVideo.currentTime;
+      }
+    }, 400);
+
+    // 點一下跳過。現場真的卡住時的逃生門。
+    drawOverlay.addEventListener("click", finish);
 
     document.body.classList.add("no-scroll");
     drawOverlay.style.display = "block";
@@ -1361,9 +1422,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 不論進場影片是播完、播壞還是根本沒載到,都要把客人放進來,
   // 不能讓人卡在一片黑畫面上。
+  // 依「會用到的先後」一支一支抓。抓完就把來源換成 blob,
+  // 之後播放完全不碰網路。
+  function startPrefetch() {
+    var srcEl = enterVideo.querySelector("source");
+    var enterName = srcEl ? (srcEl.getAttribute("src") || "").split("/").pop() : null;
+
+    var chain = Promise.resolve();
+
+    if (enterName) {
+      chain = chain.then(function () {
+        return prefetchVideo(enterName).then(function () {
+          // 已經播過或正在播就不要動它,換 src 會把畫面打斷
+          if (!gateDone && enterVideo.paused && videoBlobs[enterName]) {
+            enterVideo.src = videoBlobs[enterName];
+            enterVideo.load();
+          }
+        });
+      });
+    }
+
+    // 洗牌影片:依現在的螢幕比例抓對應那一支
+    chain.then(function () {
+      var wide = window.matchMedia("(min-aspect-ratio: 1/1)").matches;
+      var v = SHUFFLE[wide ? "wide" : "portrait"];
+      return prefetchVideo(v.mp4).then(function () {
+        // 抓好了就重新指一次來源,換成 blob。洗牌罩正開著的時候不要動。
+        if (drawOverlay.style.display === "none") {
+          drawVideo.dataset.base = "";      // 清掉才會真的重跑
+          pickVideo();
+        }
+      });
+    });
+  }
+
   function openGate() {
     if (gateDone) return;
     gateDone = true;
+    // 影片還在播就先停,不然它會在關掉的圖層後面繼續跑、繼續出聲
+    try { enterVideo.pause(); } catch (e) {}
     enterOverlay.style.display = "none";
     document.body.classList.remove("no-scroll");
     if (canStartRound()) startIntro();
@@ -1378,12 +1475,52 @@ document.addEventListener("DOMContentLoaded", function () {
       startBgm();                          // 同一下手勢也是背景音樂的起點
       waitOverlay.style.display = "none";
       enterOverlay.style.display = "block";
+
       enterVideo.addEventListener("ended", openGate);
       enterVideo.addEventListener("error", openGate);
+
+      // ── 卡住偵測 ────────────────────────────────────────────
+      // 現場踩到過:手機網路還沒把影片載完就開播,播到一半 stall 住,
+      // 畫面停在某一格。這時 ended 不會來、error 也不會來,先前只靠
+      // 一個固定 12 秒的保險,客人就對著靜止畫面乾等 12 秒——現場看
+      // 起來就是當機。
+      //
+      // 改成三道:
+      //   1. 依影片實際長度算保險時間(跟洗牌那段同一套做法)
+      //   2. 播放進度停住超過 1.6 秒就當它卡了,直接放人進來
+      //   3. 點畫面任何地方都能跳過
+      var guard = setTimeout(openGate, 6000);   // 還沒拿到 metadata 前的粗保險
+      var lastTime = -1, stallTicks = 0;
+
+      function armGuard() {
+        clearTimeout(guard);
+        var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 5;
+        guard = setTimeout(openGate, (dur - enterVideo.currentTime + 1.5) * 1000);
+      }
+      enterVideo.addEventListener("loadedmetadata", armGuard);
+      enterVideo.addEventListener("playing", armGuard);
+
+      var stallWatch = setInterval(function () {
+        if (gateDone) { clearInterval(stallWatch); return; }
+        if (enterVideo.currentTime === lastTime) {
+          // 連續四次(約 1.6 秒)進度都沒動 = 卡住了
+          if (++stallTicks >= 4) { clearInterval(stallWatch); openGate(); }
+        } else {
+          stallTicks = 0;
+          lastTime = enterVideo.currentTime;
+        }
+      }, 400);
+
+      // 點一下就跳過。對客人是「不想看動畫」,對店主是現場真的卡住時的逃生門。
+      enterOverlay.addEventListener("click", openGate);
+
       var p = enterVideo.play();
       if (p && p.catch) p.catch(openGate);
-      setTimeout(openGate, 12000);         // 最後保險,影片再長也不會卡住
     }
+
+    // 背景預抓。等待畫面正在播、客人正在讀「點一下,本喵就開始」的那幾秒
+    // 就是最好的時機——網路是閒的,而接下來兩支影片都還沒被用到。
+    startPrefetch();
 
     waitOverlay.addEventListener("click", enterSite);
     // 等待畫面蓋住整頁,沒有鍵盤入口的話用鍵盤的人根本進不來

@@ -355,9 +355,11 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 }
 
 /* 切牌:手指左右滑決定切點,兩疊即時分開並顯示張數 */
+/* 舊的「左右切」尺寸已經由下面那塊上下切的設計取代,
+   這裡只留跟方向無關的基本屬性。 */
 .cut-stage {
-  position: relative; height: 130px; border-radius: 16px; overflow: hidden;
-  touch-action: none; user-select: none; cursor: ew-resize;
+  position: relative; border-radius: 16px;
+  touch-action: none; user-select: none;
   border: 1px solid rgba(255,255,255,.14); background: rgba(12,6,28,.6);
 }
 .cut-half {
@@ -613,3 +615,147 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .gem-pick-text > span { margin-left: 9px; font-size: 11.5px; color: rgba(240, 227, 255, .55); }
 .gem-pick-text p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.8; color: rgba(240, 227, 255, .82); }
 .gem-pick-text p + p { color: #f5cd82; }
+
+/* ── 進場動畫的「跳過」提示 ────────────────────────────────────
+   影片在手機網路上 stall 住時,畫面會停在某一格不動,客人不知道還能做
+   什麼。這句話延遲 1.2 秒才淡進來——正常播完的人(4.6 秒)幾乎不會注意
+   到它,真的卡住的人才會看到。
+   整層 overlay 都可以點,這句只是告訴人「可以點」。
+   ───────────────────────────────────────────────────────────── */
+.tarot-skip-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(6vh, calc(18px + env(safe-area-inset-bottom)));
+  transform: translateX(-50%);
+  z-index: 2;
+  margin: 0;
+  padding: 10px 22px;
+  border: 1px solid rgba(245, 205, 130, .34);
+  border-radius: 999px;
+  background: rgba(20, 7, 32, .58);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(248, 240, 255, .82);
+  font-size: 13px;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  pointer-events: none;          /* 點擊交給底下那整層 overlay 處理 */
+  opacity: 0;
+  animation: skipHintIn .5s ease-out 1.2s forwards;
+}
+@keyframes skipHintIn { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tarot-skip-hint { animation: none; opacity: 1; }
+}
+
+/* ══ 切牌:上下切(兩個版面共用) ══════════════════════════════════
+   這一整塊原本只寫在 desk.css 裡,前綴是 .tarot-desktop-shell。
+   結果手機版拿到的還是更早以前「左右切」那版樣式——.cut-stage 是
+   height:130px / cursor:ew-resize、兩半靠 left/right 並排——但引擎
+   早就改成用 height 驅動上下切了。兩邊對不上,手機上那一關等於整個
+   不見。切站的時候沒發現,因為當時只截了桌機的圖。
+
+   現在把設計本身移到共用這一份,desk.css 只留桌機要放大的尺寸。
+   ═══════════════════════════════════════════════════════════════ */
+/* ═══ 切牌:改成上下切 ═══════════════════════════════════════════
+   真實切牌是「抓住上半疊、抬起來、移到旁邊」，是垂直動作。
+   原本做成左右拉的兩條色塊,既不像切牌,滑鼠也要橫move。
+   這裡把牌堆轉成側面視角:每一條橫線 = 一張牌的側邊,
+   由上往下疊 78 條。往上／往下滑決定從第幾張切開,
+   上半疊會真的抬起、偏移、微微傾斜,露出中間發光的切口。
+   ═══════════════════════════════════════════════════════════════ */
+.cut-stage {
+  height: 210px;
+  padding: 0;
+  margin-top: 24px;           /* 留給上疊抬起來的空間,否則會頂到面板邊緣 */
+  overflow: visible;          /* 上半疊要能抬出容器外 */
+  cursor: ns-resize;
+  perspective: 900px;
+  border-radius: 20px;
+  background: transparent;
+  border: 0;
+}
+
+/* 牌堆的桌面陰影——證明它是有厚度、浮在桌上的實體 */
+.cut-stage::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -14px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.cut-half {
+  /* 從左右並排改成上下堆疊 */
+  left: 8%;
+  right: 8%;
+  top: auto;
+  bottom: auto;
+  width: auto;
+  /* 橫向細線 = 從側面看到的每一張牌的邊 */
+  background: repeating-linear-gradient(
+    0deg,
+    #241243 0 2px,
+    #8a63d6 2px 3px,
+    #341d5c 3px 5px
+  );
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 10px 26px rgba(0, 0, 0, .4);
+  transition: transform .16s cubic-bezier(.22, 1, .36, 1),
+              height .16s cubic-bezier(.22, 1, .36, 1),
+              top .16s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* 上疊:貼齊頂端,被抬起的是這一疊 */
+.cut-left {
+  top: 0;
+  border-radius: 12px 12px 4px 4px;
+}
+/* 下疊:留在原位當底座 */
+.cut-right {
+  bottom: 0;
+  border-radius: 4px 4px 12px 12px;
+}
+
+/* 切口:從直線轉成橫線,橫躺在兩疊之間 */
+.cut-seam {
+  left: 4%;
+  right: 4%;
+  top: 50%;
+  bottom: auto;
+  width: auto;
+  height: 5px;
+  margin-left: 0;
+  margin-top: -2.5px;
+  background: linear-gradient(90deg, transparent, #ffe6ae 20%, #fff 50%, #ffe6ae 80%, transparent);
+  transition: opacity .2s, top .16s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* 上下箭頭提示:讓人一眼知道要往上下滑,而不是左右 */
+.cut-stage::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -34px;
+  width: 18px;
+  height: 46px;
+  margin-top: -23px;
+  pointer-events: none;
+  opacity: .5;
+  transition: opacity .2s;
+  background: no-repeat center / contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 46' fill='none' stroke='%23f5cd82' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4v38M9 4L4 9M9 4l5 5M9 42l-5-5M9 42l5-5'/%3E%3C/svg%3E");
+}
+.cut-stage.is-cut::before { opacity: 0; }
+
+.cut-counts {
+  gap: 34px;
+  margin-top: 26px;
+}
