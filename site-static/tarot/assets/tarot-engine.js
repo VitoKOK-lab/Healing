@@ -472,7 +472,7 @@ document.addEventListener("DOMContentLoaded", function () {
   //   poster 影片載入前先顯示的靜態圖,避免黑畫面
   var SHUFFLE = {
     wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
-    portrait: { mp4: "tarot-draw.mp4", webm: "tarot-draw.webm", poster: "tarot-draw-poster.jpg" }
+    portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "tarot-shuffle-portrait-poster.jpg" }
   };
 
   function pickVideo() {
