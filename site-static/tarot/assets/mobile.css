@@ -173,10 +173,40 @@ body.tarot-phone-page .tarot-result {
 /* ── 進站等待畫面的提示 ──────────────────────────────────────── */
 .tarot-phone-page .tarot-gate-hint { font-size: 15px; }
 
-/* ── 影片:直式螢幕用 cover 填滿 ───────────────────────────────
-   直式素材補齊之前,橫式影片會被裁掉左右兩側。cover 至少不會出現
-   上下黑邊,畫面仍然是滿的。 */
+/* ── 影片:直式螢幕怎麼擺 ─────────────────────────────────────
+   影片是 9:16(0.5625),但現在的手機大多是 19.5:9(約 0.46)——比
+   9:16 還要細長。用 cover 填滿的話,左右各會被切掉約 9%,開場影片上
+   那行 TAHIR ZAINAB TAROT 剛好橫跨整個畫面寬度,頭尾兩個字母就這樣
+   被吃掉了。
+
+   所以開場那一支改用 contain:完整顯示、一個字都不切。空出來的上下
+   邊不留黑條,改用同一張 poster 放大模糊墊在後面——看起來像是畫面
+   自己延伸出去,不像播放器的黑邊。用靜態圖而不是再開一個影片元素,
+   是為了不要在手機上同時解兩軌影像。
+
+   其餘的影片(洗牌、唱歌)沒有貼邊的文字,維持 cover 填滿比較好看。 */
 .tarot-phone-page .draw-overlay-video { object-fit: cover; }
+
+.tarot-phone-page #waitOverlay {
+  background-image: url("videos/tarot-wait-portrait-poster.jpg");
+  background-size: cover;
+  background-position: center;
+}
+.tarot-phone-page #waitOverlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(28px) saturate(1.1) brightness(.72);
+  -webkit-backdrop-filter: blur(28px) saturate(1.1) brightness(.72);
+}
+.tarot-phone-page #waitVideo {
+  position: relative;
+  z-index: 1;
+  object-fit: contain;
+}
+/* 影片墊高到 z-index:1 之後,提示那顆膠囊(原本沒有 z-index)就被壓在
+   底下看不見了。把它再抬一層。 */
+.tarot-phone-page .tarot-gate-hint { z-index: 2; }
 
 /* ── 頁尾 ─────────────────────────────────────────────────── */
 .tarot-phone-page footer { margin-top: 28px; }

@@ -44,10 +44,14 @@
      這一下點擊同時也是 iOS 解鎖影片播放的手勢來源。 -->
 <div class="draw-overlay tarot-gate" id="waitOverlay"
      role="button" tabindex="0" aria-label="開始占卜。點一下畫面,或按 Enter 鍵。">
-  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted>
-    <!-- 直式的等待影片到位之後,把下面這行的檔名改成 tarot-wait-portrait.mp4。
-         現在先用橫式的那支,靠 object-fit:cover 填滿直式畫面(左右會被裁掉)。 -->
-    <source src="./assets/videos/tarot-wait.mp4" type="video/mp4" />
+  <!-- 直式的開場影片:720x1280,循環播放。影片本身帶了 TAHIR ZAINAB TAROT
+       的標題卡,所以下面那句提示只補上「怎麼開始」,不重複講品牌。
+       原始檔有一軌 AAC,但這支是 muted 自動播放(瀏覽器規定),聲音永遠
+       不會響——留著只是白白多下載,所以轉檔時把音軌拿掉了(影像串流是
+       直接 copy 的,沒有重壓,畫質不變)。 -->
+  <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted
+         poster="./assets/videos/tarot-wait-portrait-poster.jpg">
+    <source src="./assets/videos/tarot-wait-portrait.mp4" type="video/mp4" />
   </video>
   <p class="tarot-gate-hint">點一下,本喵就開始</p>
 </div>
