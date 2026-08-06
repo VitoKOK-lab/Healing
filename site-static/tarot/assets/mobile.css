@@ -1,0 +1,236 @@
+/* TAHIR ZAINAB TAROT — 手機版面(直式)
+   ────────────────────────────────────────────────────────────
+   跟桌機版共用同一套流程引擎與元件樣式(tarot.css),這一份只處理
+   「螢幕是直的、而且拿在手上」帶來的版面差異:
+
+     ・單欄:牌桌與解讀上下排,不像桌機左右並排
+     ・字級往上帶:手拿的距離雖然近,但客人多半在店裡站著看,
+       原本 13px 那一級太吃力
+     ・動作列釘在畫面底:解讀很長,捲到一半也要按得到「再抽一次」
+     ・影片與底圖都吃直式素材
+
+   品牌識別刻意跟桌機版一致(同樣的星芒標記、同樣的 TAHIR ZAINAB
+   TAROT),客人在店裡看店主的螢幕、回家看自己的手機,要認得出是同一個。
+   ──────────────────────────────────────────────────────────── */
+
+.tarot-phone-page {
+  min-height: 100dvh;
+  color: #f8f3ff;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(175, 119, 238, .24), transparent 34%),
+    radial-gradient(circle at 88% 14%, rgba(245, 190, 112, .14), transparent 30%),
+    linear-gradient(160deg, #100a1d 0%, #211335 48%, #130c22 100%);
+  background-attachment: fixed;
+  /* 底部釘著動作列,內容要留出它的高度,不然最後一段會被壓住 */
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+/* 星點層。跟桌機版同一組參數,只是密度按螢幕縮小一點,
+   免得在小螢幕上看起來像雜訊。 */
+.tarot-phone-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .3;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, .8) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(245, 205, 130, .65) 0 1px, transparent 1.5px);
+  background-position: 0 0, 33px 47px;
+  background-size: 69px 69px, 103px 103px;
+}
+
+/* ── 頁首 ─────────────────────────────────────────────────────
+   點標題 = 整場重來。手機版一樣保留,客人自己想重抽時最直覺。 */
+.tarot-phone-header {
+  position: relative;
+  z-index: 2;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 14px;
+  border-bottom: 1px solid rgba(233, 215, 255, .14);
+  text-align: center;
+}
+.tarot-phone-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #fff;
+}
+.tarot-phone-brand-mark {
+  display: grid; place-items: center;
+  width: 38px; height: 38px; border-radius: 13px;
+  color: #3b244e;
+  background: linear-gradient(145deg, #ffe4a5, #f3a95d);
+  box-shadow: 0 0 24px rgba(245, 190, 112, .26);
+}
+.tarot-phone-brand-mark svg { width: 20px; height: 20px; }
+.tarot-phone-brand span:last-child {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+}
+.tarot-phone-brand b { font-family: var(--display); font-size: 17px; letter-spacing: .04em; font-weight: 400; }
+.tarot-phone-brand small { color: rgba(240, 227, 255, .62); font-size: 10.5px; letter-spacing: .12em; }
+.tarot-phone-header > p {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: rgba(240, 227, 255, .58);
+}
+
+/* ── 外殼 ─────────────────────────────────────────────────── */
+.tarot-phone-shell {
+  position: relative;
+  z-index: 1;
+  width: min(560px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 16px 0 24px;
+}
+
+/* 次數與音效那一列 */
+.tarot-phone-shell .tarot-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.tarot-phone-shell .tarot-credits { margin-top: 0; }
+
+/* 單欄:牌桌在上、解讀在下,照客人視線由上往下的順序 */
+.tarot-phone-stage {
+  display: block;
+  padding-top: 0;          /* base.css 沒有 section 的 88px 了,這裡保險 */
+}
+
+/* ── 字級 ─────────────────────────────────────────────────────
+   原本的手機版字偏小,店裡光線又不一定好。整體往上帶一級,
+   行距跟著一起調——只放大字級不動行距,長段中文會擠成一團。 */
+.tarot-phone-shell .cat-dialogue-text { font-size: 17px; line-height: 2.05; }
+.tarot-phone-shell .cat-dialogue-name { font-size: 13px; }
+.tarot-phone-shell .cat-dialogue-caret { font-size: 12.5px; }
+.tarot-phone-shell .topic-chip { font-size: 16px; padding: 13px 26px; }
+.tarot-phone-shell .scenario-item { font-size: 15px; line-height: 1.8; }
+.tarot-phone-shell .stage-hint { font-size: 13px; line-height: 1.8; }
+.tarot-phone-shell .field-hint { font-size: 12.5px; line-height: 1.8; }
+.tarot-phone-shell .reading-list li { font-size: 15px; line-height: 2; }
+.tarot-phone-shell .tarot-reading-text { font-size: 16px; line-height: 2.05; }
+.tarot-phone-shell .reading-summary ol li { font-size: 15px; line-height: 2; }
+.tarot-phone-shell .tarot-caption .name { font-size: 13px; }
+.tarot-phone-shell .tarot-caption .orientation,
+.tarot-phone-shell .slot-position { font-size: 11px; }
+.tarot-phone-shell .gem-pick-text b { font-size: 21px; }
+.tarot-phone-shell .gem-pick-text p { font-size: 14.5px; line-height: 1.85; }
+
+/* ── 動作列:釘在畫面底 ───────────────────────────────────────
+   解讀捲起來很長,如果動作列跟在文末,客人得一路捲到底才按得到
+   「再抽一次」。釘在底部,隨時都按得到。 */
+.tarot-phone-shell .tarot-actions {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(26, 12, 40, .82) 0%, rgba(18, 9, 30, .96) 62%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(233, 215, 255, .14);
+}
+/* 釘住之後就不需要原本跟在文末的上邊距 */
+.tarot-phone-shell .tarot-actions .btn-primary,
+.tarot-phone-shell .tarot-actions .btn-secondary {
+  margin-top: 0;
+  font-size: 15px;
+  padding: 13px 24px;
+  min-height: 48px;
+}
+/* 一顆按鈕都還沒出現時,那條底列不該先橫在畫面上。
+   用「有沒有按鈕被打開」來判斷,而不是「是不是全部關著」——引擎打開
+   按鈕時一律寫 style.display = "inline-flex",這個字串比對得準;
+   反過來比對 "display:none" 會失手,因為瀏覽器序列化成 "display: none"
+   中間是有一個空格的。 */
+.tarot-phone-shell .tarot-actions:not(:has(button[style*="inline-flex"])) {
+  display: none;
+}
+
+/* position:fixed 要生效,祖先不能有 backdrop-filter / transform / filter
+   ——那些會讓祖先變成 containing block,把 fixed 元素關在裡面。
+   解讀面板是 .card,共用樣式給了它 backdrop-filter: blur(16px),
+   底列因此被釘在卡片內部而不是畫面底部(實測 y=1278,遠在畫面外)。
+   手機版把那層模糊拿掉:半透明底色留著,玻璃感損失有限,
+   換到的是按鈕真的固定在拇指構得到的地方。 */
+body.tarot-phone-page .tarot-result {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(32, 15, 48, .88);
+}
+
+/* ── 牌面 ─────────────────────────────────────────────────────
+   直式螢幕寬度有限,三張牌並排就好;五張的牌陣間距再收一點。 */
+.tarot-phone-shell .tarot-deck { margin-top: 22px; }
+
+/* ── 進站等待畫面的提示 ──────────────────────────────────────── */
+.tarot-phone-page .tarot-gate-hint { font-size: 15px; }
+
+/* ── 影片:直式螢幕怎麼擺 ─────────────────────────────────────
+   影片是 9:16(0.5625),但現在的手機大多是 19.5:9(約 0.46)——比
+   9:16 還要細長。用 cover 填滿的話,左右各會被切掉約 9%,開場影片上
+   那行 TAHIR ZAINAB TAROT 剛好橫跨整個畫面寬度,頭尾兩個字母就這樣
+   被吃掉了。
+
+   所以開場那一支改用 contain:完整顯示、一個字都不切。空出來的上下
+   邊不留黑條,改用同一張 poster 放大模糊墊在後面——看起來像是畫面
+   自己延伸出去,不像播放器的黑邊。用靜態圖而不是再開一個影片元素,
+   是為了不要在手機上同時解兩軌影像。
+
+   其餘的影片(洗牌、唱歌)沒有貼邊的文字,維持 cover 填滿比較好看。 */
+.tarot-phone-page .draw-overlay-video { object-fit: cover; }
+
+.tarot-phone-page #waitOverlay {
+  background-image: url("videos/tarot-wait-portrait-poster.jpg");
+  background-size: cover;
+  background-position: center;
+}
+.tarot-phone-page #waitOverlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(28px) saturate(1.1) brightness(.72);
+  -webkit-backdrop-filter: blur(28px) saturate(1.1) brightness(.72);
+}
+.tarot-phone-page #waitVideo {
+  position: relative;
+  z-index: 1;
+  object-fit: contain;
+}
+/* 影片墊高到 z-index:1 之後,提示那顆膠囊(原本沒有 z-index)就被壓在
+   底下看不見了。把它再抬一層。 */
+.tarot-phone-page .tarot-gate-hint { z-index: 2; }
+
+/* ── 頁尾 ─────────────────────────────────────────────────── */
+.tarot-phone-page footer { margin-top: 28px; }
+.tarot-phone-page .foot-inner {
+  background: rgba(38, 18, 56, .5);
+  border: 1px solid rgba(233, 215, 255, .12);
+  box-shadow: none;
+}
+.tarot-phone-page .foot-inner a { color: #f5cd82; text-decoration: underline; }
+
+/* ── 捲軸 ─────────────────────────────────────────────────────
+   跟桌機版同一組顏色,白色拉桿在暗紫底上太跳。scrollbar-color 會繼承,
+   下在 body 上就整頁通用;::-webkit-scrollbar 只剩 Safari 需要
+   (Chromium 看到 scrollbar-width 不是 auto 就會忽略那一組)。 */
+body.tarot-phone-page,
+body.tarot-phone-page * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(238, 196, 128, .5) rgba(30, 14, 45, .35);
+}
+body.tarot-phone-page ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.tarot-phone-page ::-webkit-scrollbar-track { background: rgba(30, 14, 45, .35); border-radius: 999px; }
+body.tarot-phone-page ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(238, 196, 128, .5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

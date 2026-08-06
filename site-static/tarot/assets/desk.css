@@ -222,39 +222,6 @@ body.tarot-desktop-page::after {
   background-size: 92px 92px, 137px 137px, auto;
 }
 
-/* ── 進站等待畫面 ─────────────────────────────────────────────── */
-.tarot-gate { cursor: pointer; }
-
-/* 等待畫面在 shell 之外,牌堆是自訂控制項——都吃不到既有的 focus 樣式,
-   要另外補,不然用鍵盤的人不知道自己停在哪 */
-.tarot-gate:focus-visible,
-.tarot-desktop-shell .cut-stage:focus-visible,
-.tarot-desktop-shell .swipe-stage:focus-visible {
-  outline: 3px solid #f5cd82;
-  outline-offset: 4px;
-  border-radius: 20px;
-}
-.tarot-gate-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 8vh;
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 14px 30px;
-  border: 1px solid rgba(245, 205, 130, .45);
-  border-radius: 999px;
-  background: rgba(20, 7, 32, .62);
-  backdrop-filter: blur(10px);
-  color: #f8f0ff;
-  font-size: 16px;
-  letter-spacing: .06em;
-  white-space: nowrap;
-  animation: gatePulse 2.4s ease-in-out infinite;
-}
-@keyframes gatePulse {
-  0%, 100% { opacity: .82; box-shadow: 0 0 0 0 rgba(245, 205, 130, .28); }
-  50%      { opacity: 1;   box-shadow: 0 0 30px 6px rgba(245, 205, 130, .22); }
-}
 
 /* ── 版面隨階段變形 ─────────────────────────────────────────────
    先前不管哪一步都固定左欄 430px + 右欄牌桌,但牌桌要抽完牌才有東西,
@@ -489,99 +456,7 @@ body.tarot-desktop-page::after {
   .tarot-desktop-shell .cut-stage { height: 340px; }
 }
 
-/* ── 給客人掃的 QR ─────────────────────────────────────────────
-   覆蓋層,不是換頁:店主的占卜畫面原封不動留在後面,關掉就能接下一位。
-   QR 要夠大、對比要夠強,客人是隔著一段距離用手機掃螢幕的。
-   ───────────────────────────────────────────────────────────── */
-.qr-share {
-  position: fixed;
-  inset: 0;
-  z-index: 280;               /* 在影片遮罩(300)之下,其餘之上 */
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(10, 4, 18, .72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
 
-.qr-share-card {
-  width: min(460px, 100%);
-  padding: 34px 36px 30px;
-  border: 1px solid rgba(222, 197, 255, .22);
-  border-radius: 28px;
-  background: linear-gradient(160deg, rgba(58, 36, 84, .96), rgba(32, 18, 50, .97));
-  box-shadow: 0 34px 90px rgba(0, 0, 0, .5);
-  text-align: center;
-}
-.qr-share-card h2 { margin-top: 6px; font-size: 22px; }
-.qr-share-note { margin-top: 10px; font-size: 13px; line-height: 1.75; color: rgba(240, 227, 255, .7); }
-
-/* 「只保留 24 小時」是店主口頭要交代的那句話,做成看得見的一條,
-   不要混在上面那段灰字裡,不然現場一定會漏講。 */
-.qr-share-keep {
-  margin: 12px 0 0;
-  padding: 9px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(245, 190, 112, .4);
-  background: rgba(245, 190, 112, .12);
-  color: #ffe0ae;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.6;
-}
-
-/* QR 一定要白底黑碼才掃得穩,不要為了配色把它做成半透明或彩色 */
-.qr-share-code {
-  display: grid;
-  place-items: center;
-  width: 300px;
-  height: 300px;
-  margin: 22px auto 0;
-  padding: 14px;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .5), 0 18px 44px rgba(0, 0, 0, .35);
-}
-.qr-share-code img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-.qr-share-loading { color: #5b4470; font-size: 14px; }
-
-.qr-share-expiry { margin-top: 14px; font-size: 11.5px; color: rgba(240, 227, 255, .5); }
-.qr-share-error { margin-top: 14px; font-size: 13px; line-height: 1.7; color: #ffb3b3; }
-
-.qr-share-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-}
-.qr-share-actions .btn-primary,
-.qr-share-actions .btn-secondary { margin-top: 0; }
-
-@media (max-width: 767px) { .qr-share { display: none !important; } }
-
-/* ── 占卜結果旁的石頭推薦 ───────────────────────────────────────
-   不是另一個測驗,是從這一次的主題與牌面直接推出來的。
-   放在解讀之後、按鈕之前——客人剛讀完自己的狀態,這時候推最順。
-   ───────────────────────────────────────────────────────────── */
-.gem-pick {
-  margin-top: 26px;
-  padding: 20px 22px;
-  border: 1px solid rgba(245, 205, 130, .28);
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(78, 52, 108, .5), rgba(44, 26, 66, .55));
-}
-.gem-pick-row { display: flex; gap: 18px; align-items: flex-start; margin-top: 12px; }
-/* 石頭用 CSS 畫,換庫存不必再切圖 */
-.gem-pick-orb {
-  flex: none; width: 74px; height: 74px; border-radius: 50%;
-  box-shadow: inset -6px -8px 18px rgba(0, 0, 0, .34), 0 0 26px var(--glow, rgba(255, 255, 255, .18));
-}
-.gem-pick-text { min-width: 0; }
-.gem-pick-text b { font-family: var(--display); font-size: 20px; font-weight: 400; }
-.gem-pick-text > span { margin-left: 9px; font-size: 11.5px; color: rgba(240, 227, 255, .55); }
-.gem-pick-text p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.8; color: rgba(240, 227, 255, .82); }
-.gem-pick-text p + p { color: #f5cd82; }
 
 /* ── 字級整體放大 ──────────────────────────────────────────────
    現場是店主拿著螢幕給客人看,距離比自己用電腦遠得多,
@@ -646,13 +521,7 @@ body.tarot-desktop-page::after {
 
 /* 實拍寶石照(去背 PNG)。沒有照片時會改用上面的 .gem-pick-orb 漸層球,
    兩者尺寸一致,換上換下版面不會跳。 */
-.tarot-desktop-shell .gem-pick-photo {
-  flex: none;
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .45));
-}
+.tarot-desktop-shell .gem-pick-photo { width: 96px; height: 96px; }
 
 /* ── 捲軸 ──────────────────────────────────
    瀏覽器預設的白色拉桿在這個深紫金的畫面上非常刺眼。
