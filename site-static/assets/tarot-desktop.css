@@ -284,14 +284,66 @@ body.tarot-desktop-page::after {
   justify-items: stretch;
   gap: 22px 40px;
 }
+/* 看解讀時底部不需要那麼多留白,而 shell 的 min-height 是給流程階段用的,
+   到這一步只會多撐出一段空白,一起收掉 */
+.tarot-desktop-shell:has(#tarotFlow.has-cards) {
+  padding-bottom: 24px;
+  min-height: 0;
+}
 .tarot-desktop-shell #tarotFlow.has-cards > .cat-dialogue,
 .tarot-desktop-shell #tarotFlow.has-cards > .step-panel {
   width: 100%;
 }
+/* 抽完牌之後:牌桌與解讀「並排」,各自捲動,頁面本身不再長到要一路往下拉。
+   生命之樹那種 8 排的牌陣本來就高,硬壓進一個螢幕高度會讓每張牌只剩
+   二十幾 px 寬,牌面根本看不清;所以不縮牌,改成兩區並排、各自捲,
+   而最重要的兩顆按鈕釘在解讀區底部,永遠不必找。 */
 .tarot-desktop-shell #tarotFlow.has-cards .tarot-desktop-stage {
   display: grid;
   grid-column: 2;
   grid-row: 1 / span 8;
+  grid-template-columns: minmax(290px, 380px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  /* 這是 <section>,會吃到站台通用的區塊上緣留白(88px)。
+     在牌桌這裡那段留白只是把整個版面往下推,擠出外層捲軸。 */
+  padding-top: 0;
+}
+
+.tarot-desktop-shell #tarotFlow.has-cards .tarot-deck {
+  margin-top: 0;        /* style.css 給牌桌的 36px 上緣留白,並排之後只會浪費高度 */
+  min-height: 0;
+  /* 扣掉頁首 85 + 狀態列 45 + 上下留白,讓兩區剛好落在一個螢幕內,
+     整頁就不會再出現外層捲軸把釘底的按鈕推出畫面 */
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  padding: 20px;
+  overscroll-behavior: contain;   /* 牌桌捲到底時不要把整頁一起帶著捲 */
+}
+
+.tarot-desktop-shell #tarotFlow.has-cards .tarot-result {
+  min-height: 0;
+  /* 扣掉頁首 85 + 狀態列 45 + 上下留白,讓兩區剛好落在一個螢幕內,
+     整頁就不會再出現外層捲軸把釘底的按鈕推出畫面 */
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 28px 32px;
+}
+
+/* 按鈕釘在解讀區底部:解讀再長,「存成圖片」「再抽一次」都在視線內。
+   底色要跟解讀面板同一個深紫(rgba(38,18,56,…))——先前誤用淺色,
+   會讓白字的次要按鈕整顆消失在背景裡。這裡加深到接近不透明,
+   文字捲到按鈕下面才不會透出來糊成一片。 */
+.tarot-desktop-shell #tarotFlow.has-cards .tarot-actions {
+  position: sticky;
+  bottom: -28px;
+  z-index: 2;
+  margin: 26px -32px -28px;
+  padding: 22px 32px 26px;
+  background: linear-gradient(180deg, rgba(30, 14, 45, 0), rgba(30, 14, 45, .94) 30%, rgba(30, 14, 45, .98) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* ── 字級:桌面看的距離比手機遠,基準要往上帶 ───────────────────── */

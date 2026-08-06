@@ -94,7 +94,7 @@
       </div>
       <p class="cat-dialogue-text" id="dialogueText"></p>
       <!-- 現在完全由客人控制節奏,所以講明白要點一下 -->
-      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點一下繼續 ▼</span>
+      <span class="cat-dialogue-caret" id="dialogueCaret" style="display:none">點畫面任何地方繼續 ▼</span>
     </div>
 
     <!-- 說完開場白才出現 -->
@@ -388,6 +388,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (done) return;
       done = true;
       catDialogue.onclick = null;
+      document.removeEventListener("click", onAnywhere);
       dialogueCaret.style.display = "none";
       if (onDone) onDone();
     }
@@ -423,7 +424,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 點一下:打字中就把這句補完(最後一句補完即收尾),打完了才換下一句
-    catDialogue.onclick = function () {
+    function advance() {
       if (typing) {
         clearTimeout(typeTimer);
         var segs = toSegs(lines[li]);
@@ -432,7 +433,17 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         next();
       }
-    };
+    }
+
+    // 本喵在講話時,整個畫面都是「繼續」的按鈕——不必特地瞄準那行小字。
+    // 但按鈕、輸入框、洗牌切牌區、影片遮罩有自己的事要做,不搶它們的點擊。
+    function onAnywhere(e) {
+      if (e.target.closest("button, a, input, textarea, select, label, " +
+                           "#swipeStage, #cutStage, .draw-overlay")) return;
+      advance();
+    }
+
+    document.addEventListener("click", onAnywhere);
 
     typeLine();
   }
@@ -1263,7 +1274,14 @@ document.addEventListener("DOMContentLoaded", function () {
       againBtn.style.display = "inline-flex";
       reportBtn.style.display = "inline-flex";
       Tarot.Sound.purr(1.6);
-      readingSummary.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
+      // 所以直接把畫面帶到最下面那兩顆按鈕,不要讓人自己往下捲一大段。
+      // 桌面版解讀有自己的捲動區,要捲的是那一區而不是整頁。
+      var scroller = resultPanel.scrollHeight > resultPanel.clientHeight ? resultPanel : null;
+      requestAnimationFrame(function () {
+        if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: "smooth" });
+        else document.querySelector(".tarot-actions").scrollIntoView({ behavior: "smooth", block: "end" });
+      });
     }, true);   // 解牌字多,一句一句自己點著讀
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   }
