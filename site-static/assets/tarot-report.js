@@ -3,8 +3,12 @@
 // 全部用 Canvas 畫,不需要後端、不需要外部套件。牌面圖與本站同網域,
 // 所以 canvas 不會被污染,toBlob 拿得到圖。
 (function (global) {
-  var W = 1080;                    // LINE 上看起來剛好的寬度
-  var PAD = 64;
+  // 現場給客人看、客人再存到手機上,原本的字級在手機上要放大才讀得清楚。
+  // 字級統一乘上 TEXT_SCALE(見 font()),版面寬度與留白同步放大,
+  // 不然字變大就會擠在一起。
+  var TEXT_SCALE = 1.5;
+  var W = Math.round(1080 * TEXT_SCALE);
+  var PAD = Math.round(64 * TEXT_SCALE);
   // 報告書是拿來「讀」的,不是拿來營造氣氛的。整張深紫看久了眼睛很累,
   // 所以改成白底深字;牌面本身已經夠華麗,底色安靜一點反而好看。
   var INK = "#33244a";             // 主文
@@ -15,6 +19,7 @@
   var SITE = "vitokok-lab.github.io/Healing";
 
   function font(size, weight, display) {
+    size = Math.round(size * TEXT_SCALE);
     var family = display
       ? '"Huninn","Noto Sans TC",system-ui,sans-serif'
       : '"Noto Sans TC",system-ui,sans-serif';

@@ -545,3 +545,81 @@ body.tarot-desktop-page::after {
 .qr-share-actions .btn-secondary { margin-top: 0; }
 
 @media (max-width: 767px) { .qr-share { display: none !important; } }
+
+/* ── 占卜結果旁的石頭推薦 ───────────────────────────────────────
+   不是另一個測驗,是從這一次的主題與牌面直接推出來的。
+   放在解讀之後、按鈕之前——客人剛讀完自己的狀態,這時候推最順。
+   ───────────────────────────────────────────────────────────── */
+.gem-pick {
+  margin-top: 26px;
+  padding: 20px 22px;
+  border: 1px solid rgba(245, 205, 130, .28);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(78, 52, 108, .5), rgba(44, 26, 66, .55));
+}
+.gem-pick-row { display: flex; gap: 18px; align-items: flex-start; margin-top: 12px; }
+/* 石頭用 CSS 畫,換庫存不必再切圖 */
+.gem-pick-orb {
+  flex: none; width: 74px; height: 74px; border-radius: 50%;
+  box-shadow: inset -6px -8px 18px rgba(0, 0, 0, .34), 0 0 26px var(--glow, rgba(255, 255, 255, .18));
+}
+.gem-pick-text { min-width: 0; }
+.gem-pick-text b { font-family: var(--display); font-size: 20px; font-weight: 400; }
+.gem-pick-text > span { margin-left: 9px; font-size: 11.5px; color: rgba(240, 227, 255, .55); }
+.gem-pick-text p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.8; color: rgba(240, 227, 255, .82); }
+.gem-pick-text p + p { color: #f5cd82; }
+
+/* ── 字級整體放大 ──────────────────────────────────────────────
+   現場是店主拿著螢幕給客人看,距離比自己用電腦遠得多,
+   原本的字級站遠一點就吃力。這裡把整頁的字往上帶一級。
+   ───────────────────────────────────────────────────────────── */
+.desktop-brand b { font-size: 24px; }
+.desktop-brand small { font-size: 14px; }
+.desktop-tarot-header > p { font-size: 17px; }
+
+.tarot-desktop-shell .cat-dialogue p { font-size: 23px; line-height: 1.85; }
+.tarot-desktop-shell .stage-hint { font-size: 19px; }
+.tarot-desktop-shell .topic-chip { font-size: 21px; min-height: 60px; padding-inline: 28px; }
+.tarot-desktop-shell .scenario-label { font-size: 21px; }
+.tarot-desktop-shell .scenario-spread { font-size: 16px; }
+.tarot-desktop-shell .scenario-item { min-height: 84px; }
+.tarot-desktop-shell .pay-input { font-size: 20px; min-height: 62px; }
+.tarot-desktop-shell .field-hint { font-size: 16px; }
+.tarot-desktop-shell .cut-counts { font-size: 18px; }
+.tarot-desktop-shell .cut-counts b { font-size: 25px; }
+.tarot-desktop-shell .tarot-credits,
+.tarot-desktop-shell .sound-toggle { font-size: 16px; }
+
+/* 解讀是客人讀最久的東西,放大最有感 */
+.tarot-desktop-shell .tarot-result .eyebrow { font-size: 14px; }
+.tarot-desktop-shell .tarot-result h2 { font-size: 26px; }
+.tarot-desktop-shell .reading-summary h3 { font-size: 27px; }
+.tarot-desktop-shell #summaryList li { font-size: 21px; line-height: 2; max-width: 52ch; }
+.tarot-desktop-shell .reading-list li { font-size: 19px; }
+.tarot-desktop-shell .tarot-actions button { font-size: 19px; min-height: 60px; }
+
+.tarot-desktop-shell .gem-pick-text b { font-size: 27px; }
+.tarot-desktop-shell .gem-pick-text > span { font-size: 16px; }
+.tarot-desktop-shell .gem-pick-text p { font-size: 18.5px; }
+.tarot-desktop-shell .gem-pick-orb { width: 96px; height: 96px; }
+
+/* 牌面下方的牌名與正逆位 */
+.tarot-desktop-shell .tarot-caption .name { font-size: 17px !important; }
+.tarot-desktop-shell .tarot-caption .orientation,
+.tarot-desktop-shell .slot-position { font-size: 14px !important; }
+
+/* QR 面板 */
+.qr-share-card h2 { font-size: 30px; }
+.qr-share-note { font-size: 18px; }
+.qr-share-expiry { font-size: 15px; }
+.qr-share-actions button { font-size: 19px; min-height: 60px; }
+
+/* 字放大之後按鈕列變成兩排,最後一段內容(石頭推薦)會被釘底那條壓住。
+   捲動區尾端補一段留白,內容才捲得出來;按鈕也收窄一點好排回一排。 */
+.tarot-desktop-shell #tarotFlow.has-cards .tarot-result { padding-bottom: 150px; }
+.tarot-desktop-shell .tarot-actions { gap: 10px; }
+.tarot-desktop-shell .tarot-actions button {
+  font-size: 17px;
+  min-height: 54px;
+  padding-inline: 18px;
+}

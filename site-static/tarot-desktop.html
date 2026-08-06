@@ -89,10 +89,10 @@
 </div>
 
 <header class="desktop-tarot-header">
-  <a class="desktop-brand" href="./index.html" aria-label="返回解憂商店首頁">
+  <span class="desktop-brand" aria-label="喵喵占卜">
     <span class="desktop-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
-    <span><b>Jessica 解憂商店</b><small>喵喵占卜・桌面版</small></span>
-  </a>
+    <span><b>喵喵占卜</b><small>Jessica 解憂商店</small></span>
+  </span>
   <p>給自己一段安靜的時間，讓牌替心裡的聲音排好位置。</p>
 </header>
 
@@ -245,6 +245,20 @@
         <ol id="summaryList"></ol>
       </div>
 
+      <!-- 石頭推薦:從這次的主題與牌面推出來的,客人不必多選任何東西 -->
+      <div class="gem-pick" id="gemPick" style="display:none">
+        <p class="eyebrow">For You</p>
+        <div class="gem-pick-row">
+          <span class="gem-pick-orb" id="gemOrb"></span>
+          <div class="gem-pick-text">
+            <b id="gemName"></b>
+            <span id="gemFamily"></span>
+            <p id="gemWhy"></p>
+            <p id="gemLine"></p>
+          </div>
+        </div>
+      </div>
+
       <div class="tarot-actions">
         <button type="button" class="btn-secondary" id="qrBtn" style="display:none">傳給客人 · QR</button>
         <button type="button" class="btn-secondary" id="reportBtn" style="display:none">存成圖片</button>
@@ -265,6 +279,7 @@
 </footer>
 
 <script src="./assets/tarot-data.js"></script>
+<script src="./assets/gem-data.js"></script>
 <script src="./assets/tarot-report.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -325,6 +340,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var againBtn = document.getElementById("againBtn");
   var reportBtn = document.getElementById("reportBtn");
   var qrBtn = document.getElementById("qrBtn");
+  var gemPick = document.getElementById("gemPick");
+  var lastGem = null;
   var qrCloseBtn = document.getElementById("qrCloseBtn");
   var qrNextBtn = document.getElementById("qrNextBtn");
   var soundToggle = document.getElementById("soundToggle");
@@ -1331,6 +1348,7 @@ document.addEventListener("DOMContentLoaded", function () {
       againBtn.style.display = "inline-flex";
       reportBtn.style.display = "inline-flex";
       qrBtn.style.display = "inline-flex";
+      showGemPick();
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
       // 所以直接把畫面帶到最下面那兩顆按鈕,不要讓人自己往下捲一大段。
@@ -1433,6 +1451,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // ── 從這次的占卜推薦一顆石頭 ──────────────────────────────
+  // 客人不必再選任何東西:他選的主題、抽到的牌、正逆位就夠了。
+  // 剛讀完自己的狀態,這時候推最順,也最像「本喵替你想到的」。
+  function showGemPick() {
+    if (!gemPick || !window.Gem || !lastCards) return;
+    lastGem = Gem.recommend(topic, lastCards);
+    var orb = document.getElementById("gemOrb");
+    orb.style.background = "radial-gradient(circle at 32% 28%, #ffffffcc, " +
+      lastGem.stone.color + " 46%, " + lastGem.stone.accent + " 100%)";
+    orb.style.setProperty("--glow", lastGem.stone.accent + "88");
+    document.getElementById("gemName").textContent = lastGem.stone.name;
+    document.getElementById("gemFamily").textContent = lastGem.family.label;
+    document.getElementById("gemWhy").textContent = lastGem.why;
+    document.getElementById("gemLine").textContent = lastGem.stone.line;
+    gemPick.style.display = "block";
+  }
+
   // ── 傳給客人:螢幕出現 QR,客人用自己的手機掃走結果圖 ──────────
   // 這裡刻意「不換頁」:QR 只是蓋在上面的一層,店主的占卜畫面完整
   // 留在後面,關掉就能直接接下一位。
@@ -1531,6 +1566,8 @@ document.addEventListener("DOMContentLoaded", function () {
     againBtn.style.display = "none";
     reportBtn.style.display = "none";
     qrBtn.style.display = "none";
+    if (gemPick) gemPick.style.display = "none";
+    lastGem = null;
     retryBtn.style.display = "none";
     errorNote.style.display = "none";
     questionInput.value = "";
