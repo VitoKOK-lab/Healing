@@ -641,7 +641,9 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   white-space: nowrap;
   pointer-events: none;          /* 點擊交給底下那整層 overlay 處理 */
   opacity: 0;
-  animation: skipHintIn .5s ease-out 1.2s forwards;
+  /* 延遲從 1.2 秒縮到 0.3 秒。現場回報影片卡住時,客人第一時間需要
+     知道「可以點」——等一秒才出現太慢,那一秒他已經在懷疑當機了。 */
+  animation: skipHintIn .35s ease-out .3s forwards;
 }
 @keyframes skipHintIn { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
