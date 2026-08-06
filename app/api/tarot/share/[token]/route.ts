@@ -32,7 +32,9 @@ export async function GET(
       "Content-Type": row.mimeType,
       // 手機瀏覽器直接顯示,客人長按就能存
       "Content-Disposition": "inline",
-      "Cache-Control": "public, max-age=86400, immutable",
+      // 快取不能長過保留時間(24h),否則資料刪掉了 CDN 還在供圖,
+      // 就違背了「24 小時自動刪除」。壓到一小時,重看也還算快。
+      "Cache-Control": "public, max-age=3600",
       // 這是私人的占卜結果,不希望被搜尋引擎收錄
       "X-Robots-Tag": "noindex, nofollow",
     },

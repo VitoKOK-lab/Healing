@@ -80,7 +80,7 @@ export async function GET(
   if (!row || row.expiresAt.getTime() < Date.now()) {
     return new NextResponse(
       page(
-        `<p class="gone">這張占卜結果已經過期了喵。<br />結果圖只保留 30 天。</p>
+        `<p class="gone">這張占卜結果已經過期了喵。<br />連結只保留 24 小時。</p>
          <a class="cta" href="${LINE_OA}">想成為線上珠寶商<small>加 LINE 了解怎麼開始</small></a>`,
         "占卜結果已過期"
       ),
@@ -98,7 +98,7 @@ export async function GET(
 
   <a class="cta" href="${LINE_OA}">想成為線上珠寶商<small>加 LINE 了解怎麼開始</small></a>
 
-  <p class="foot">這個連結 30 天後失效<br />© 2026 Jessica 解憂商店</p>`;
+  <p class="foot">這個連結 24 小時後失效,記得先存下來<br />© 2026 Jessica 解憂商店</p>`;
 
   return new NextResponse(page(body, "你的喵喵占卜結果"), {
     status: 200,

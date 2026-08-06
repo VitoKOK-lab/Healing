@@ -63,7 +63,7 @@
   <div class="qr-share-card">
     <p class="eyebrow">Scan</p>
     <h2 class="display" id="qrShareTitle">請客人用手機掃這個</h2>
-    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。</p>
+    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。<br />這是臨時連結,24 小時後自動刪除。</p>
 
     <div class="qr-share-code" id="qrShareCode">
       <div class="qr-share-loading" id="qrShareLoading">本喵畫圖中⋯</div>
@@ -1546,8 +1546,8 @@ document.addEventListener("DOMContentLoaded", function () {
       qrShareImg.src = d.qr;
       qrShareImg.style.display = "";
       qrShareLoading.style.display = "none";
-      var days = Math.max(1, Math.round((new Date(d.expiresAt) - Date.now()) / 86400000));
-      qrShareExpiry.textContent = "這個連結 " + days + " 天後失效";
+      var hrs = Math.max(1, Math.round((new Date(d.expiresAt) - Date.now()) / 3600000));
+      qrShareExpiry.textContent = "這個連結 " + hrs + " 小時後失效,請客人現在就存起來";
     }).catch(function (e) {
       console.error("[qr] 產生失敗", e);
       qrFailed("QR 產生失敗了喵,先用「存成圖片」把結果存下來吧。");

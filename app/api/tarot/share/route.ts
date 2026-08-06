@@ -19,9 +19,27 @@ const CORS_HEADERS = {
 // 給到 4MB 已經很寬鬆,再大幾乎可以確定是誤送或濫用。
 const MAX_BYTES = 4 * 1024 * 1024;
 
-// 保留 30 天。現場掃走的圖沒有長期保存的理由,
-// 留太久只是讓資料庫一直長大。
-const KEEP_DAYS = 30;
+// 只保留 24 小時。這是給現場客人當下掃走用的臨時連結,
+// 不是相簿——客人掃了就該立刻存到自己手機。
+// 留短一點對雙方都好:客人的占卜內容不會一直躺在別人的伺服器上,
+// 資料庫也不會越長越大。
+const KEEP_HOURS = 24;
+
+// 對外公開的網域。
+//
+// 不能用「請求進來的網域」:preview 部署有 Vercel 的存取保護,
+// 客人掃了會被丟到 Vercel 登入頁。店主在 preview 上試玩時一定會踩到。
+// 所以正式環境一律用固定網域,完全不看請求來源。
+// 之後換自訂網域,設 PUBLIC_SITE_URL 環境變數即可,不必改程式。
+const FALLBACK_SITE = "https://healingasmr.vercel.app";
+
+function publicBase(req: NextRequest) {
+  const env = process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  if (env) return env.replace(/\/+$/, "");
+  // 本機開發才用當下網域,不然掃了連不到自己的機器
+  if (process.env.NODE_ENV !== "production") return req.nextUrl.origin;
+  return FALLBACK_SITE;
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
@@ -49,11 +67,12 @@ export async function POST(req: NextRequest) {
 
   // 猜不到也列舉不出來的 token——這是唯一保護,因為取圖那支不需要登入
   const token = randomBytes(16).toString("base64url");
-  const expiresAt = new Date(Date.now() + KEEP_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + KEEP_HOURS * 60 * 60 * 1000);
 
   try {
     await prisma.tarotShare.create({ data: { token, image, mimeType, expiresAt } });
-    // 順手清掉過期的,不另外養一支排程
+    // 順手把過期的實際刪掉,不另外養一支排程。
+    // 過期的在 GET 那邊本來就取不到,這一步是真的把資料清掉。
     await prisma.tarotShare.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   } catch (e) {
     console.error("[tarot/share] 存圖失敗", e);
@@ -63,8 +82,11 @@ export async function POST(req: NextRequest) {
   // QR 指向 /r/<token>:一頁極簡的結果頁,只有結果圖與一顆 LINE 按鈕。
   // 那一頁是 route handler 直接吐的 HTML,不套站台 layout,所以沒有
   // 導覽列、沒有回到占卜頁的連結——客人拿得走結果,但回不來繼續免費玩。
-  const origin = req.nextUrl.origin;
-  const url = `${origin}/r/${token}`;
+  //
+  // 網域一定要用正式站,不能用 req 進來的那個:preview 部署有 Vercel 的
+  // 存取保護,客人掃了會被丟到 Vercel 登入頁。店主在 preview 上試玩時
+  // 尤其會踩到。正式站沒有保護,誰都打得開。
+  const url = `${publicBase(req)}/r/${token}`;
 
   const qr = await QRCode.toDataURL(url, {
     errorCorrectionLevel: "M",
