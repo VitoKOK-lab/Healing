@@ -60,10 +60,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "存圖失敗" }, { status: 500, headers: CORS_HEADERS });
   }
 
-  // QR 指向圖片本身,不是網站。掃到的人只會看到一張圖,
-  // 沒有導覽也沒有連結,不會多出一個回站繼續占卜的入口。
+  // QR 指向 /r/<token>:一頁極簡的結果頁,只有結果圖與一顆 LINE 按鈕。
+  // 那一頁是 route handler 直接吐的 HTML,不套站台 layout,所以沒有
+  // 導覽列、沒有回到占卜頁的連結——客人拿得走結果,但回不來繼續免費玩。
   const origin = req.nextUrl.origin;
-  const url = `${origin}/api/tarot/share/${token}`;
+  const url = `${origin}/r/${token}`;
 
   const qr = await QRCode.toDataURL(url, {
     errorCorrectionLevel: "M",

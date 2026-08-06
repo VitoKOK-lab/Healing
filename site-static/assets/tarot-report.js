@@ -105,6 +105,7 @@
   // readingSegs 由呼叫端用 toSegs() 轉好(重點與牌名的標記已經拆開)
   function render(opts) {
     var cards = opts.cards || [];
+    var cta = opts.cta || { top: "也想讓本喵幫你看一次嗎?", bottom: SITE };
     return Promise.all(cards.map(function (c) { return loadImage(opts.artOf(c.n)); }))
       .then(function (imgs) {
         // 先用暫時的 canvas 量高度,再開真正的畫布,才不會留一大片空白
@@ -235,10 +236,13 @@
         ctx.textAlign = "center";
         ctx.font = font(24);
         ctx.fillStyle = DIM;
-        ctx.fillText("也想讓本喵幫你看一次嗎?", W / 2, y + 44);
+        // 這塊footer的兩行字可以由呼叫端換掉。
+        // 手機付費版沿用預設(導回占卜頁拉客);桌面現場版會換成 LINE 導客——
+        // 那張圖是要給現場客人帶走的,印上占卜頁網址等於告訴他們怎麼繞過付費。
+        ctx.fillText(cta.top, W / 2, y + 44);
         ctx.font = font(28, 500);
         ctx.fillStyle = "#6c4fa8";
-        ctx.fillText(SITE, W / 2, y + 86);
+        ctx.fillText(cta.bottom, W / 2, y + 86);
         ctx.textAlign = "left";
 
         y += 120 + 44;

@@ -415,6 +415,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // 再叫人「點一下繼續」只會讓人卡在那裡不知道要繼續去哪。
   var typeTimer = null;
 
+  // ── 節奏 ──────────────────────────────────────────
+  // 現場是一個客人接一個排隊,每一段等待都會乘上人數。
+  // 這幾個數字是整場體驗快慢的總開關,要調就調這裡。
+  var TYPE_MS = 22;        // 每個字的打字間隔(原 42)
+  var LINE_GAP_MS = 420;   // 句與句之間的停頓(原 900)
+
   function speak(lines, onDone, manual) {
     clearTimeout(typeTimer);
     catDialogue.style.display = "block";
@@ -436,7 +442,7 @@ document.addEventListener("DOMContentLoaded", function () {
       typing = false;
       if (isLast()) { finish(); return; }
       if (manual) dialogueCaret.style.display = "";
-      else typeTimer = setTimeout(next, 900);
+      else typeTimer = setTimeout(next, LINE_GAP_MS);
     }
 
     function typeLine() {
@@ -450,7 +456,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (ci >= total) { lineDone(); return; }
         dialogueText.innerHTML = renderSegs(segs, ++ci);
         if (ci % 2 === 0) Tarot.Sound.blip(940 + (ci % 3) * 45);
-        typeTimer = setTimeout(step, 42);
+        typeTimer = setTimeout(step, TYPE_MS);
       })();
     }
 
@@ -926,7 +932,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第四步:手指洗牌 ────────────────────────────────────
   // 累積滑動距離達標才算洗透。種子由這段軌跡長度組成,所以「洗牌的是客人自己」。
-  var SWIPE_TARGET = 800;
+  var SWIPE_TARGET = 480;   // 原本 800。現場一個接一個排隊,滑太久會卡住流程
 
   function trailCtx() {
     var r = swipeStage.getBoundingClientRect();
@@ -1474,6 +1480,9 @@ document.addEventListener("DOMContentLoaded", function () {
       spreadName: spread ? spread.name : "",
       cards: lastCards,
       readingSegs: toSegs(lastReading),
+      // 這張圖是要給現場客人帶走的。預設的 footer 會印上占卜頁網址,
+      // 等於告訴客人怎麼繞過付費自己去玩,所以換成 LINE 導客。
+      cta: { top: "想成為線上珠寶商?", bottom: "加 LINE 了解怎麼開始" },
       artOf: function (n) { return "./assets/cards/" + (n < 10 ? "0" + n : n) + ".jpg"; }
     }).then(function (cv) {
       // JPEG 比 PNG 小很多,這張圖是照片式的塔羅牌面,壓縮痕跡看不出來
