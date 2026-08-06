@@ -191,7 +191,7 @@
         ctx.textBaseline = "alphabetic";
         ctx.font = font(TYPE.title, 400, true);
         ctx.fillStyle = INK;
-        ctx.fillText("Tahoe Zainab Tarot", PAD, y);
+        ctx.fillText("TAHIR ZAINAB TAROT", PAD, y);
 
         y += GAP.titleToMeta;
         ctx.font = font(TYPE.meta);
@@ -286,7 +286,7 @@
         y += GAP.ctaBox + GAP.ctaToFine;
         ctx.font = font(TYPE.fine);
         ctx.fillStyle = DIM;
-        ctx.fillText("Jessica 解憂商店 · Tahoe Zainab Tarot", PAD, y);
+        ctx.fillText("Jessica 解憂商店 · TAHIR ZAINAB TAROT", PAD, y);
         ctx.textAlign = "right";
         ctx.fillText("僅供參考,重要決定請自己做主", W - PAD, y);
         ctx.textAlign = "left";
