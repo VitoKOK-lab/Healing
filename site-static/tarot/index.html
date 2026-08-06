@@ -56,8 +56,11 @@
   <p class="tarot-gate-hint">點一下,本喵就開始</p>
 </div>
 
-<!-- 進場動畫:點擊後播一次,播完才進入占卜流程 -->
-<div class="draw-overlay" id="enterOverlay" style="display:none">
+<!-- 進場動畫:點擊後播一次,播完才進入占卜流程。
+     整層都可以點來跳過——影片在手機網路上 stall 住的時候,這是客人唯一
+     的出路,不然畫面就停在某一格不動。 -->
+<div class="draw-overlay" id="enterOverlay" style="display:none"
+     role="button" tabindex="-1" aria-label="進場動畫。點一下可以跳過。">
   <!-- 直式進場影片:貓抬牌 → 金光爆開 → 煙散 → 舉起貓咪牌 → 收回。
        這一支是從原始素材的第 2.8 秒剪起的——前面那段是標題卡,客人
        在等待畫面剛看完,再放一次只是拖時間。整段再加速 1.6 倍到 4.6 秒,
@@ -67,6 +70,7 @@
          poster="./assets/videos/tarot-enter-portrait-poster.jpg">
     <source src="./assets/videos/tarot-enter-portrait.mp4" type="video/mp4" />
   </video>
+  <p class="tarot-skip-hint">點一下跳過</p>
 </div>
 
 <!-- 給客人掃的 QR。這是覆蓋在畫面上的一層,不是換頁——

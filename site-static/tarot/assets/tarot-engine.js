@@ -943,6 +943,11 @@ document.addEventListener("DOMContentLoaded", function () {
       drawVideo.removeEventListener("ended", finish);
       drawVideo.removeEventListener("error", finish);
       drawVideo.removeEventListener("playing", armGuard);
+      drawVideo.removeEventListener("loadedmetadata", armGuard);
+      // 這兩個是這一輪才掛上去的,一定要拆掉:playDraw 每抽一次牌就會
+      // 再跑一遍,不拆的話監聽器會一輪一輪疊上去。
+      drawOverlay.removeEventListener("click", finish);
+      clearInterval(stallWatch);
       drawOverlay.classList.add("fading");
       setTimeout(function () {
         drawOverlay.style.display = "none";
@@ -964,6 +969,24 @@ document.addEventListener("DOMContentLoaded", function () {
     drawVideo.addEventListener("ended", finish);
     drawVideo.addEventListener("error", finish);
     drawVideo.addEventListener("playing", armGuard);
+    drawVideo.addEventListener("loadedmetadata", armGuard);
+
+    // 跟進場那一層同一套卡住偵測:手機網路上影片 stall 住的時候,
+    // ended 不會來、error 也不會來,只靠上面那個保險就得等它跑完。
+    // 進度停住超過 1.6 秒就當它卡了,直接收掉往下走。
+    var lastTime = -1, stallTicks = 0;
+    var stallWatch = setInterval(function () {
+      if (drawOverlay.style.display === "none") { clearInterval(stallWatch); return; }
+      if (drawVideo.currentTime === lastTime) {
+        if (++stallTicks >= 4) { clearInterval(stallWatch); finish(); }
+      } else {
+        stallTicks = 0;
+        lastTime = drawVideo.currentTime;
+      }
+    }, 400);
+
+    // 點一下跳過。現場真的卡住時的逃生門。
+    drawOverlay.addEventListener("click", finish);
 
     document.body.classList.add("no-scroll");
     drawOverlay.style.display = "block";
@@ -1364,6 +1387,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function openGate() {
     if (gateDone) return;
     gateDone = true;
+    // 影片還在播就先停,不然它會在關掉的圖層後面繼續跑、繼續出聲
+    try { enterVideo.pause(); } catch (e) {}
     enterOverlay.style.display = "none";
     document.body.classList.remove("no-scroll");
     if (canStartRound()) startIntro();
@@ -1378,11 +1403,47 @@ document.addEventListener("DOMContentLoaded", function () {
       startBgm();                          // 同一下手勢也是背景音樂的起點
       waitOverlay.style.display = "none";
       enterOverlay.style.display = "block";
+
       enterVideo.addEventListener("ended", openGate);
       enterVideo.addEventListener("error", openGate);
+
+      // ── 卡住偵測 ────────────────────────────────────────────
+      // 現場踩到過:手機網路還沒把影片載完就開播,播到一半 stall 住,
+      // 畫面停在某一格。這時 ended 不會來、error 也不會來,先前只靠
+      // 一個固定 12 秒的保險,客人就對著靜止畫面乾等 12 秒——現場看
+      // 起來就是當機。
+      //
+      // 改成三道:
+      //   1. 依影片實際長度算保險時間(跟洗牌那段同一套做法)
+      //   2. 播放進度停住超過 1.6 秒就當它卡了,直接放人進來
+      //   3. 點畫面任何地方都能跳過
+      var guard = setTimeout(openGate, 6000);   // 還沒拿到 metadata 前的粗保險
+      var lastTime = -1, stallTicks = 0;
+
+      function armGuard() {
+        clearTimeout(guard);
+        var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 5;
+        guard = setTimeout(openGate, (dur - enterVideo.currentTime + 1.5) * 1000);
+      }
+      enterVideo.addEventListener("loadedmetadata", armGuard);
+      enterVideo.addEventListener("playing", armGuard);
+
+      var stallWatch = setInterval(function () {
+        if (gateDone) { clearInterval(stallWatch); return; }
+        if (enterVideo.currentTime === lastTime) {
+          // 連續四次(約 1.6 秒)進度都沒動 = 卡住了
+          if (++stallTicks >= 4) { clearInterval(stallWatch); openGate(); }
+        } else {
+          stallTicks = 0;
+          lastTime = enterVideo.currentTime;
+        }
+      }, 400);
+
+      // 點一下就跳過。對客人是「不想看動畫」,對店主是現場真的卡住時的逃生門。
+      enterOverlay.addEventListener("click", openGate);
+
       var p = enterVideo.play();
       if (p && p.catch) p.catch(openGate);
-      setTimeout(openGate, 12000);         // 最後保險,影片再長也不會卡住
     }
 
     waitOverlay.addEventListener("click", enterSite);
