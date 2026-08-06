@@ -623,3 +623,8 @@ body.tarot-desktop-page::after {
   min-height: 54px;
   padding-inline: 18px;
 }
+
+/* 標題可以點(整場重來),要看得出來是可點的 */
+.desktop-brand { cursor: pointer; transition: opacity .18s; }
+.desktop-brand:hover { opacity: .82; }
+.desktop-brand:focus-visible { outline: 3px solid #f5cd82; outline-offset: 6px; border-radius: 14px; }
