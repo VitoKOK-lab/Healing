@@ -32,6 +32,13 @@
   </video>
 </div>
 
+<!-- 背景音樂:進站那一下點擊就開始循環播放,整場不停。
+     瀏覽器不允許無使用者手勢的自動播放,所以起點綁在等待畫面那一下點擊。
+     音量壓得很低——客人是來讀文字的,音樂只是墊底的氛圍。 -->
+<audio id="bgm" loop preload="none">
+  <source src="./assets/audio/tarot-bgm.mp3" type="audio/mpeg" />
+</audio>
+
 <!-- 進站等待:一進頁面就循環播放,等客人點一下才往下走。
      這一下點擊同時也是 iOS 解鎖影片播放的手勢來源。 -->
 <div class="draw-overlay tarot-gate" id="waitOverlay"
@@ -227,6 +234,8 @@
 <footer>
   <div class="foot-inner">
     <p class="fine">© 2026 Jessica 解憂商店·課程影片僅限購買帳號觀看,禁止側錄與轉載</p>
+    <!-- 背景音樂授權要求標註出處,拿掉這行就不符合授權條件 -->
+    <p class="fine">背景音樂：<a href="https://breakingcopyright.com/song/keys-of-moon-enchanted" target="_blank" rel="noopener">Enchanted</a> by Keys Of Moon · Free To Use YouTube License</p>
   </div>
 </footer>
 
@@ -471,6 +480,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // ── 音效開關 ───────────────────────────────────────
+  // 背景音樂:不另外做暫停鈕,跟著既有的音效開關走。
+  // 自動播放又完全關不掉對訪客很不友善,而這個開關本來就在畫面上,不必多一顆。
+  var bgm = document.getElementById("bgm");
+
+  function startBgm() {
+    if (!bgm || !Tarot.Sound.isOn()) return;
+    bgm.volume = 0.28;              // 墊底用,不能蓋過本喵講話的音效
+    var p = bgm.play();
+    if (p && p.catch) p.catch(function () {});   // 被瀏覽器擋下就算了,不影響占卜
+  }
+
   function paintSound() {
     var on = Tarot.Sound.isOn();
     soundToggle.classList.toggle("off", !on);
@@ -478,6 +498,10 @@ document.addEventListener("DOMContentLoaded", function () {
     soundLabel.textContent = on ? "呼嚕聲" : "已靜音";
     soundToggle.querySelector(".wave").style.display = on ? "" : "none";
     soundToggle.querySelector(".cross").style.display = on ? "none" : "";
+    if (bgm) {
+      if (on) startBgm();
+      else bgm.pause();
+    }
   }
   soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
@@ -1430,6 +1454,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function enterSite() {
       if (gateDone) return;
       unlockVideo();                       // 借這個手勢解鎖洗牌／唱歌影片
+      startBgm();                          // 同一下手勢也是背景音樂的起點
       waitOverlay.style.display = "none";
       enterOverlay.style.display = "block";
       enterVideo.addEventListener("ended", openGate);
