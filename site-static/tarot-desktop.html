@@ -252,6 +252,7 @@
         <p class="eyebrow">For You</p>
         <div class="gem-pick-row">
           <span class="gem-pick-orb" id="gemOrb"></span>
+          <img class="gem-pick-photo" id="gemPhoto" alt="" style="display:none" />
           <div class="gem-pick-text">
             <b id="gemName"></b>
             <span id="gemFamily"></span>
@@ -1459,10 +1460,26 @@ document.addEventListener("DOMContentLoaded", function () {
   function showGemPick() {
     if (!gemPick || !window.Gem || !lastCards) return;
     lastGem = Gem.recommend(topic, lastCards);
+    // 有實拍照就用照片,沒有就退回漸層球——店主可以一顆一顆補圖
     var orb = document.getElementById("gemOrb");
-    orb.style.background = "radial-gradient(circle at 32% 28%, #ffffffcc, " +
-      lastGem.stone.color + " 46%, " + lastGem.stone.accent + " 100%)";
-    orb.style.setProperty("--glow", lastGem.stone.accent + "88");
+    var photo = document.getElementById("gemPhoto");
+    var src = Gem.imageFor(lastGem.stone);
+    if (src) {
+      photo.onerror = function () {          // 圖掛了也要看得到東西
+        photo.style.display = "none";
+        orb.style.display = "";
+      };
+      photo.src = src;
+      photo.alt = lastGem.stone.name;
+      photo.style.display = "";
+      orb.style.display = "none";
+    } else {
+      photo.style.display = "none";
+      orb.style.display = "";
+      orb.style.background = "radial-gradient(circle at 32% 28%, #ffffffcc, " +
+        lastGem.stone.color + " 46%, " + lastGem.stone.accent + " 100%)";
+      orb.style.setProperty("--glow", lastGem.stone.accent + "88");
+    }
     document.getElementById("gemName").textContent = lastGem.stone.name;
     document.getElementById("gemFamily").textContent = lastGem.family.label;
     document.getElementById("gemWhy").textContent = lastGem.why;

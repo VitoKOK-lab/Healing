@@ -5,6 +5,12 @@
  * 客人不必多按任何一步。
  *
  * 要加減貨就改 FAMILIES 裡的 stones 陣列。
+ *
+ * 放實拍照片:在那一顆加上 img 欄位,例如
+ *     { name: "紫水晶", img: "amethyst.png", ... }
+ * 檔案放 assets/stones/ 底下,去背 PNG,方形、建議 400×400 以上。
+ * 沒有 img 的就自動用 color/accent 畫的漸層球代替,所以可以一顆一顆
+ * 慢慢補,不必等全部到齊才上線。
  * want 是拿來跟心境配對的標籤,五選一:
  *   calm 安定 / courage 勇氣 / love 桃花 / wealth 財運 / clarity 清晰
  */
@@ -220,8 +226,18 @@
     };
   }
 
+  // 有實拍照就用照片,沒有就退回漸層球。
+  // 這樣店主可以一顆一顆補圖,不必等 60 幾顆全部到齊。
+  var STONE_DIR = "./assets/stones/";
+
+  function imageFor(stone) {
+    return stone && stone.img ? STONE_DIR + stone.img : "";
+  }
+
   global.Gem = {
     FAMILIES: FAMILIES,
+    STONE_DIR: STONE_DIR,
+    imageFor: imageFor,
     recommend: recommend
   };
 })(window);

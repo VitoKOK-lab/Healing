@@ -628,3 +628,13 @@ body.tarot-desktop-page::after {
 .desktop-brand { cursor: pointer; transition: opacity .18s; }
 .desktop-brand:hover { opacity: .82; }
 .desktop-brand:focus-visible { outline: 3px solid #f5cd82; outline-offset: 6px; border-radius: 14px; }
+
+/* 實拍寶石照(去背 PNG)。沒有照片時會改用上面的 .gem-pick-orb 漸層球,
+   兩者尺寸一致,換上換下版面不會跳。 */
+.tarot-desktop-shell .gem-pick-photo {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .45));
+}
