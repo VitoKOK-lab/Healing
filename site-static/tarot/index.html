@@ -58,9 +58,14 @@
 
 <!-- 進場動畫:點擊後播一次,播完才進入占卜流程 -->
 <div class="draw-overlay" id="enterOverlay" style="display:none">
-  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto">
-    <!-- 同上:直式進場影片到位後改成 tarot-enter-portrait.mp4 -->
-    <source src="./assets/videos/tarot-enter.mp4" type="video/mp4" />
+  <!-- 直式進場影片:貓抬牌 → 金光爆開 → 煙散 → 舉起貓咪牌 → 收回。
+       這一支是從原始素材的第 2.8 秒剪起的——前面那段是標題卡,客人
+       在等待畫面剛看完,再放一次只是拖時間。整段再加速 1.6 倍到 4.6 秒,
+       現場一位接一位排隊,進場卡太久很有感。
+       這支不靜音(是在使用者點擊之後才播,瀏覽器允許出聲)。 -->
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="auto"
+         poster="./assets/videos/tarot-enter-portrait-poster.jpg">
+    <source src="./assets/videos/tarot-enter-portrait.mp4" type="video/mp4" />
   </video>
 </div>
 
