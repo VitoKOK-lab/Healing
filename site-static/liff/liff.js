@@ -217,6 +217,18 @@
   function renderDailyText(text) {
     $("dailyReading").hidden = false;
     $("dailyText").innerHTML = decorate(text);
+    // 分享卡:有牌面資料才開(share.js 需要牌與短評)
+    var cards = state.reading && state.reading.cards;
+    if (cards && cards.length && window.LiffShare) {
+      var shareBtn = $("shareBtn");
+      shareBtn.hidden = false;
+      shareBtn.onclick = function () {
+        shareBtn.disabled = true;
+        LiffShare.share(cards[0], text).finally(function () {
+          shareBtn.disabled = false;
+        });
+      };
+    }
     var credits = state.credits ? state.credits.deepenCredits : 0;
     $("upsell").hidden = false;
     $("deepenNote").textContent =

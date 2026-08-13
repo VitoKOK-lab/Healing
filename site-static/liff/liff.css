@@ -117,6 +117,18 @@
 }
 .liff-reading strong, .liff-deep-reading strong { color: #ffd98c; }
 
+/* 分享 */
+.liff-share-btn {
+  margin-top: 14px;
+  width: 100%;
+  border: 1px solid rgba(255, 214, 140, 0.5);
+  background: transparent;
+  color: #ffd98c;
+  border-radius: 12px;
+  padding: 12px 0;
+  font-size: 15px;
+}
+
 /* 加深 CTA */
 .liff-upsell { margin-top: 18px; }
 .liff-btn { width: 100%; }
