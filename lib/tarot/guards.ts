@@ -53,6 +53,35 @@ const MARKDOWN = /^[#*\-•]|\n[#*\-•]|\d+\.\s|\*\*/;
 // 常見簡體字抽查(繁體文本裡出現任一即失敗)
 const SIMPLIFIED_CORE = /[们说对时问题过还这为发现经体后让爱开业动战无点见议乐观极风头脑虑虽听]/;
 
+// 大陸用語攔截(Kimi 增補篇 §2):跑大陸模型時必備;對 Claude 也順便當保險。
+// 只收「在台灣塔羅文案裡幾乎不可能正當出現」的高信度詞——
+// 台灣也常用的(交往對象、考試通過、比賽項目)刻意不攔,避免誤殺。
+const CN_TERMS: Array<[string, RegExp]> = [
+  ["信息", /信息/],
+  ["視頻", /視頻/],
+  ["網絡", /網絡/],
+  ["屏幕", /屏幕/],
+  ["默認", /默認/],
+  ["激活", /激活/],
+  ["渠道", /渠道/],
+  ["反饋", /反饋/],
+  ["靠譜", /靠譜/],
+  ["走心", /走心/],
+  ["閨蜜", /閨蜜/],
+  ["拉黑", /拉黑/],
+  ["朋友圈", /朋友圈/],
+  ["聊天記錄", /聊天記錄/],
+  ["微信", /微信/],
+  ["相親", /相親/],
+  ["心累", /心累/],
+  ["破防", /破防/],
+  ["小哥哥/小姐姐", /小哥哥|小姐姐/],
+  ["處對象", /[處談找]對象/], // 「交往對象」是正常台灣用法,不攔
+  ["挺+形容詞", /挺(好|不錯|難|累|棒|重要)/],
+  ["一會兒", /一會兒/],
+  ["咋/啥", /[咋啥]/],
+];
+
 function checkFiller(text: string): Violation[] {
   return FILLER.filter(([, re]) => re.test(text)).map(([name]) => ({
     rule: "filler",
@@ -84,6 +113,9 @@ export function check(text: string, level: Level): Violation[] {
   if (EMOJI.test(t)) v.push({ rule: "emoji", detail: "出現表情符號" });
   if (MARKDOWN.test(t)) v.push({ rule: "markdown", detail: "出現條列/標題/粗體符號" });
   if (SIMPLIFIED_CORE.test(t)) v.push({ rule: "simplified", detail: "出現簡體字" });
+  for (const [name, re] of CN_TERMS) {
+    if (re.test(t)) v.push({ rule: "cn-term", detail: name });
+  }
 
   if (level === "paid") {
     if (TAIL_PARTICLES.test(t)) v.push({ rule: "tail-particle", detail: "付費層出現語尾助詞" });

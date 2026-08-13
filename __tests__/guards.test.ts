@@ -70,6 +70,26 @@ describe("付費層審核:每條規則的反例", () => {
     expect(check(t, "paid").some((v) => v.rule === "simplified")).toBe(true);
   });
 
+  it("大陸用語:靠譜/拉黑/微信/處對象/挺好", () => {
+    for (const bad of [
+      "他這個人其實蠻靠譜的",
+      "先把他拉黑冷靜一下",
+      "傳個微信問清楚",
+      "要不要開始找對象",
+      "牌面看起來挺好",
+    ]) {
+      const t = GOOD_PAID.replace("直接動手做完它。", "直接動手做完它。" + bad + "。");
+      expect(check(t, "paid").some((v) => v.rule === "cn-term")).toBe(true);
+    }
+  });
+
+  it("台灣正常用法不誤殺:交往對象/考試通過/項目", () => {
+    for (const okText of ["你們是穩定交往對象", "面試通過之後再說", "把該做的項目列出來"]) {
+      const t = GOOD_PAID.replace("直接動手做完它。", "直接動手做完它," + okText + "。");
+      expect(check(t, "paid").some((v) => v.rule === "cn-term")).toBe(false);
+    }
+  });
+
   it("段數不對", () => {
     const t = splitParagraphs(GOOD_PAID).slice(0, 3).join("\n\n");
     expect(check(t, "paid").some((v) => v.rule === "structure")).toBe(true);
