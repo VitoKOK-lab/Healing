@@ -1,19 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    // mock 影片串流 route 以 fs 讀取範例影片;Vercel serverless 需明確把檔案打包進 function
-    outputFileTracingIncludes: {
-      "/api/mock-video/[assetId]": ["./public/dev-videos/**"],
-    },
-  },
-  async rewrites() {
-    // Vercel 上首頁直接出品牌靜態站(build 時已把 site-static/ 複製進 public/);
-    // 本機開發沒有這份複製,維持原本的 Next 首頁。
-    if (process.env.VERCEL !== "1") return [];
-    return {
-      beforeFiles: [{ source: "/", destination: "/index.html" }],
-    };
+  async redirects() {
+    // 站上只剩塔羅:根網址直接帶去手機版占卜頁。
+    // 用 redirect 而非 rewrite——占卜頁的資源全是 ./assets/ 相對路徑,
+    // rewrite 停在 / 會讓瀏覽器把資源解析到根目錄而全數 404。
+    return [{ source: "/", destination: "/tarot/index.html", permanent: false }];
   },
 };
 
