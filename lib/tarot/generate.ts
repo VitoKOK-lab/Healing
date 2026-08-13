@@ -62,6 +62,45 @@ export const claudeClassifier: ClassifyCaller = async (prompt) => {
   return block?.text ?? "";
 };
 
+// ── Kimi/Moonshot(測試/備援供應商;OpenAI 相容端點)────────
+// 大陸用語與政策降溫的風險由 guards 的 cn-term/filler 規則 + 方向二次
+// 分類承接(增補篇 §2–§5 的 code 層攔截),不靠 prompt 自律。
+async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
+  const res = await fetch(`${env.KIMI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.KIMI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: env.KIMI_MODEL,
+      max_tokens: maxTokens,
+      temperature: 0.8,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(`kimi ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  return (data.choices?.[0]?.message?.content ?? "").trim();
+}
+
+export const kimiCaller: ModelCaller = (prompt, { paid }) => kimiChat(prompt, paid ? 4096 : 1024);
+export const kimiClassifier: ClassifyCaller = (prompt) => kimiChat(prompt, 16);
+
+function providerReady(): boolean {
+  return env.MODEL_PROVIDER === "kimi" ? Boolean(env.KIMI_API_KEY) : Boolean(env.ANTHROPIC_API_KEY);
+}
+
+function defaultCaller(): ModelCaller {
+  return env.MODEL_PROVIDER === "kimi" ? kimiCaller : claudeCaller;
+}
+
+function defaultClassifier(): ClassifyCaller {
+  // 方向二次分類優先用 Haiku(便宜且不會替 Kimi 的降溫護短);沒有 Claude 金鑰才用 Kimi 自查
+  if (env.ANTHROPIC_API_KEY) return claudeClassifier;
+  return kimiClassifier;
+}
+
 export function buildPrompt(input: GenerateInput, angleIndex: number): string {
   if (input.level === "daily") return dailyPrompt(input.cards, angleIndex);
   return paidPrompt({
@@ -98,14 +137,14 @@ export async function generateReading(
   input: GenerateInput,
   deps: { call?: ModelCaller; classify?: ClassifyCaller; seedAngle?: number } = {}
 ): Promise<GenerateResult> {
-  const call = deps.call ?? claudeCaller;
-  const classify = deps.classify ?? claudeClassifier;
+  const call = deps.call ?? defaultCaller();
+  const classify = deps.classify ?? defaultClassifier();
   const paid = input.level !== "daily";
   const guardLevel = paid ? "paid" : "free";
   // 角度輪替(不用 Math.random:可測、可回溯;正式呼叫端以 readingId 雜湊當 seed)
   const seedAngle = deps.seedAngle ?? 0;
 
-  if (!env.ANTHROPIC_API_KEY && !deps.call) {
+  if (!deps.call && !providerReady()) {
     return { text: fallbackText(input), fallback: true, attempts: 0 };
   }
 
