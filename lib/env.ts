@@ -5,9 +5,21 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   // 對外公開的完整網址(share API 組取圖連結的絕對路徑用)
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
-  // 塔羅 AI 占卜:Google AI Studio(aistudio.google.com/apikey)取得的 Gemini 金鑰,留空則該功能停用。
+
+  // ── 舊塔羅站(site-static/tarot)仍在用的 Gemini,LIFF 版穩定後退場 ──
   GEMINI_API_KEY: z.string().optional().default(""),
   GEMINI_MODEL: z.string().optional().default("gemini-flash-lite-latest"),
+
+  // ── LINE OA v1(規格 §4、§5)──────────────────────────
+  // Claude API 金鑰(console.anthropic.com);留空則解讀走本地降級文案
+  ANTHROPIC_API_KEY: z.string().optional().default(""),
+  ANTHROPIC_MODEL_FREE: z.string().optional().default("claude-haiku-4-5"),
+  ANTHROPIC_MODEL_PAID: z.string().optional().default("claude-sonnet-5"),
+  // 深度占卜定價(TWD)。NT$20 加深與免費日抽不在此;見規格 §1
+  PRICE_DEEP: z.coerce.number().int().positive().default(149),
+  // LINE Login channel ID(LIFF 的 token 驗證用);LINE_STUB=1 時跳過真驗證(開發/測試)
+  LINE_CHANNEL_ID: z.string().optional().default(""),
+  LINE_STUB: z.enum(["0", "1"]).optional().default("0"),
 });
 
 export const env = envSchema.parse(process.env);
