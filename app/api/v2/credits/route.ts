@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
   });
 
   const today = taipeiDateString();
-  const [todayDraw, cardsSeen] = await Promise.all([
+  const [todayDraw, seen] = await Promise.all([
     prisma.dailyDraw.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
-    prisma.cardSeen.count({ where: { userId: user.id } }),
+    prisma.cardSeen.findMany({ where: { userId: user.id }, select: { cardN: true } }),
   ]);
 
   return NextResponse.json({
@@ -31,6 +31,6 @@ export async function GET(req: NextRequest) {
     streak: user.streak,
     drawnToday: Boolean(todayDraw),
     todayReadingId: todayDraw?.readingId ?? null,
-    collection: { seen: cardsSeen, total: 78 },
+    collection: { seen: seen.length, total: 78, cards: seen.map((s) => s.cardN) },
   });
 }
