@@ -6,7 +6,7 @@ import { unsuitable } from "@/lib/tarot/unsuitable";
 import { drawSpread, seedFrom } from "@/lib/tarot/draw";
 import { tierOf } from "@/lib/tarot/tier";
 import { spreadOf, SPREADS } from "@/lib/tarot/spreads";
-import { taipeiDateString } from "@/lib/tarot/daily";
+import { taipeiDateString, nextStreak } from "@/lib/tarot/daily";
 import { KEY_CARDS } from "@/lib/tarot/deck";
 
 // 抽牌(規格 §2):前端只送切牌手勢,洗牌/正逆位/tier 全在這裡算。
@@ -96,10 +96,24 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // streak:昨天有抽 → 連續 +1,斷簽歸 1;每連滿 7 天送一點加深額度
+  let streakInfo: { streak: number; rewarded: boolean } | null = null;
   if (level === "daily") {
-    await prisma.dailyDraw.create({
-      data: { userId: user.id, date: today, readingId: reading.id },
-    });
+    const s = nextStreak(user.lastDailyDate, today, user.streak);
+    streakInfo = s;
+    await prisma.$transaction([
+      prisma.dailyDraw.create({
+        data: { userId: user.id, date: today, readingId: reading.id },
+      }),
+      prisma.tarotUser.update({
+        where: { id: user.id },
+        data: {
+          streak: s.streak,
+          lastDailyDate: today,
+          ...(s.rewarded ? { deepenCredits: { increment: 1 } } : {}),
+        },
+      }),
+    ]);
   }
 
   // 圖鑑:第一次抽到的牌點亮(skipDuplicates 讓重複牌零成本)
@@ -113,6 +127,8 @@ export async function POST(req: NextRequest) {
     readingId: reading.id,
     spreadId: spread.id,
     tier,
+    streak: streakInfo?.streak ?? null,
+    streakReward: streakInfo?.rewarded ?? false,
     cards: cards.map((c) => ({
       n: c.n,
       name: c.name,
