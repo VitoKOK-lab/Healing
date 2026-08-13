@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
-import "./globals.css";
-import { brand } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: {
-    default: `${brand.fullName}|線上療癒課程`,
-    template: `%s|${brand.name}`,
-  },
-  description: brand.description,
+  title: "TAHIR ZAINAB TAROT|喵喵占卜",
+  description: "Jessica 解憂商店的塔羅占卜",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-Hant">
-      <body className="min-h-screen flex flex-col">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -44,16 +44,16 @@ assets/
 - `GET  /api/tarot/share/<token>` — 取回結果圖
 - `GET  /r/<token>` — 客人掃 QR 之後看到的那一頁
 
-## 還留在課程站的東西
+## 加購
 
-`../checkout/tarot.html`(加購 3 次)還在課程站,因為它共用課程站的
-付款表單與樣式。它會載入這裡的 `assets/tarot-data.js` 來加額度——
-額度存在 localStorage,同網域讀寫,兩邊看到的是同一份。
+課程站(含 `checkout/tarot.html` 加購頁)已於 2026-08 整站下線,
+現在額度用完只會顯示「請找店主加購」。正式的購買流程改由
+LINE 官方帳號版重新設計,做好之前先以現場人工加值(店主操作)頂著。
 
 ## 舊網址
 
-`/tarot.html` 與 `/tarot-desktop.html` 留著當轉址頁,先前印出去、
-傳出去的連結不會死掉。
+`/tarot.html` 與 `/tarot-desktop.html` 兩個轉址頁已隨課程站移除;
+根網址 `/` 會直接轉到 `/tarot/index.html`(見 `next.config.mjs`)。
 
 ## 直式影片
 
