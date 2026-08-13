@@ -1,0 +1,104 @@
+/* 特效分級(規格 §6.2):全 CSS+SVG,不引外部動畫庫。
+ * L1 大牌:金邊光暈 + 星塵粒子
+ * L2 關鍵好牌(太陽/世界/星星/命運之輪/戀人):全螢幕光爆 + 貓咪撲上來
+ * T1 大吉:輕撒花
+ * 原則:特效只用來慶祝,逆位與沉重牌不做嚇人效果。 */
+
+/* ── L1 大牌:金暈 ── */
+.fx-major {
+  animation: fx-major-glow 2.4s ease-in-out 2;
+}
+@keyframes fx-major-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(232, 176, 75, 0); }
+  50% { box-shadow: 0 0 34px 6px rgba(255, 214, 140, 0.75); }
+}
+
+/* 星塵粒子(L1、L2 共用,JS 動態生成) */
+.fx-dust {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  pointer-events: none;
+  background: radial-gradient(circle, #ffe9b8, #e8b04b 70%, transparent);
+  border-radius: 50%;
+  animation: fx-dust-float var(--dur, 1.6s) ease-out forwards;
+  opacity: 0;
+  z-index: 40;
+}
+@keyframes fx-dust-float {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -80px)) scale(1); opacity: 0; }
+}
+
+/* ── L2 關鍵好牌:全螢幕光爆 ── */
+.fx-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 46%, rgba(255, 236, 190, 0.95), rgba(232, 176, 75, 0.35) 34%, transparent 68%);
+  animation: fx-burst-flash 1.15s ease-out forwards;
+}
+@keyframes fx-burst-flash {
+  0% { opacity: 0; transform: scale(0.65); }
+  18% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.28); }
+}
+
+/* 光爆時的放射線(SVG 由 JS 塞入 .fx-burst) */
+.fx-burst svg { width: 100%; height: 100%; }
+.fx-burst line {
+  stroke: rgba(255, 226, 160, 0.8);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transform-origin: center;
+  animation: fx-ray 1.1s ease-out forwards;
+}
+@keyframes fx-ray {
+  from { stroke-dashoffset: 60; opacity: 0.9; }
+  to { stroke-dashoffset: -140; opacity: 0; }
+}
+
+/* 貓咪撲上來(沿用手繪貓 SVG 樣式,JS 塞 catFace 同款 markup) */
+.fx-cat-pounce {
+  position: fixed;
+  left: 50%;
+  bottom: -30vh;
+  width: 150px;
+  transform: translateX(-50%);
+  z-index: 61;
+  pointer-events: none;
+  animation: fx-pounce 1.2s cubic-bezier(0.25, 0.9, 0.3, 1) forwards;
+  color: #f3eefc; /* cat-art 用 currentColor */
+}
+@keyframes fx-pounce {
+  0% { bottom: -30vh; transform: translateX(-50%) scale(0.7) rotate(-8deg); }
+  55% { bottom: 34vh; transform: translateX(-50%) scale(1.15) rotate(4deg); }
+  75% { bottom: 30vh; transform: translateX(-50%) scale(1) rotate(0deg); }
+  100% { bottom: -34vh; transform: translateX(-50%) scale(0.9) rotate(6deg); }
+}
+
+/* ── T1 大吉:輕撒花 ── */
+.fx-confetti {
+  position: fixed;
+  top: -12px;
+  width: 8px;
+  height: 12px;
+  z-index: 59;
+  pointer-events: none;
+  border-radius: 2px;
+  animation: fx-confetti-fall var(--dur, 2.6s) linear forwards;
+}
+@keyframes fx-confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(var(--spin, 540deg)); opacity: 0.4; }
+}
+
+/* 減少動態偏好:全部收斂成無動畫 */
+@media (prefers-reduced-motion: reduce) {
+  .fx-major, .fx-dust, .fx-burst, .fx-burst line, .fx-cat-pounce, .fx-confetti {
+    animation: none !important;
+  }
+  .fx-burst, .fx-dust, .fx-cat-pounce, .fx-confetti { display: none !important; }
+}
