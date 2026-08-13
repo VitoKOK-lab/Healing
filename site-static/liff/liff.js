@@ -72,12 +72,16 @@
     });
   }
 
-  // ── 特效分級(規格 §6.2;P6 再加華麗版,這裡是基本盤)──
+  // ── 特效分級(規格 §6.2):L2 光爆貓撲震動 > L1 金暈星塵;T1 撒花 ──
   function celebrate(card, tier) {
-    var front = $("cardFront");
-    if (card.keyCard) front.classList.add("fx-key");
-    else if (card.major) front.classList.add("fx-major");
-    if (tier === "T1") document.body.classList.add("fx-t1");
+    if (window.LiffFX) {
+      LiffFX.celebrate({
+        el: $("cardFront"),
+        major: card.major,
+        keyCard: card.keyCard,
+        tier: tier,
+      });
+    }
   }
 
   // ── 圖鑑 ─────────────────────────────────────────────
