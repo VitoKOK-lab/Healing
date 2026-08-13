@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>模擬付款(開發用)</title>
+<link rel="stylesheet" href="../tarot/assets/base.css" />
+<style>
+  body { display: flex; min-height: 100dvh; align-items: center; justify-content: center; background: #17131f; }
+  .pay-card { width: min(90vw, 360px); background: rgba(255,255,255,0.06); border-radius: 16px; padding: 28px 24px; text-align: center; color: #f3eefc; font-family: "Noto Sans TC", sans-serif; }
+  .pay-amount { font-size: 40px; font-weight: 700; color: #ffd98c; margin: 12px 0 4px; }
+  .pay-note { font-size: 12px; color: #8e83a6; margin-top: 4px; }
+  button { width: 100%; border: 0; border-radius: 12px; padding: 13px 0; font-size: 16px; margin-top: 12px; }
+  .ok { background: #e8b04b; color: #1c1428; font-weight: 700; }
+  .no { background: transparent; color: #b7aecb; border: 1px solid rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+<div class="pay-card">
+  <div>模擬付款頁(開發用)</div>
+  <div class="pay-amount">NT$<span id="amount">--</span></div>
+  <div class="pay-note">正式版由 LINE Pay 處理,這一頁只存在於測試環境</div>
+  <button class="ok" id="payOk">模擬付款成功</button>
+  <button class="no" id="payNo">模擬付款失敗</button>
+</div>
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var purchaseId = qs.get("purchaseId");
+  var stub = qs.get("stub");
+  document.getElementById("amount").textContent = qs.get("amount") || "--";
+
+  function confirm(result) {
+    fetch("/api/v2/payments/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: "stub:" + (stub || "test"),
+        purchaseId: purchaseId,
+        result: result,
+      }),
+    }).then(function () {
+      location.href = "/liff/" + (stub ? "?stub=" + stub : "");
+    });
+  }
+  document.getElementById("payOk").onclick = function () { confirm("success"); };
+  document.getElementById("payNo").onclick = function () { confirm("fail"); };
+})();
+</script>
+</body>
+</html>
