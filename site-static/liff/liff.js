@@ -234,11 +234,30 @@
     $("deepenNote").textContent =
       credits > 0
         ? "你有 " + credits + " 點加深額度,這次免費用一點"
-        : "NT$20 把這張牌展開成完整解讀(付款功能即將開放)";
-    $("deepenBtn").disabled = credits <= 0; // P8 金流接上前,只有額度能用
+        : "NT$20 把這張牌展開成完整解讀";
+    $("deepenBtn").disabled = false;
+  }
+
+  // 沒額度時先走付款(mock/LINE Pay),成功回來額度 +1 再加深
+  function buyDeepen() {
+    api("/api/v2/payments/request", {
+      body: { accessToken: state.token, kind: "deepen" },
+    }).then(function (res) {
+      if (!res.ok) {
+        $("deepenNote").textContent =
+          res.error === "payment_not_available"
+            ? "付款功能即將開放,先每天回來抽,連七天送一次免費加深喵"
+            : "建立付款失敗,稍後再試喵。";
+        return;
+      }
+      var stub = qs.get("stub");
+      location.href = res.paymentUrl + (stub ? "&stub=" + encodeURIComponent(stub) : "");
+    });
   }
 
   function deepen() {
+    var credits = state.credits ? state.credits.deepenCredits : 0;
+    if (credits <= 0) return buyDeepen();
     $("deepenBtn").disabled = true;
     $("deepenBtn").textContent = "本喵深呼吸中⋯";
     fetchReadingText(state.reading.readingId, "deepen").then(function (r) {
