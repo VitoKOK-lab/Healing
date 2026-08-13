@@ -23,3 +23,82 @@ model TarotShare {
 
   @@index([expiresAt])
 }
+
+// ── LINE OA v1(規格 §7)────────────────────────────────
+
+// LIFF 進站的客人,以 LINE userId 為身分。額度與 streak 都掛在這裡。
+model TarotUser {
+  id            String   @id @default(cuid())
+  lineUserId    String   @unique
+  displayName   String?
+  birthday      DateTime?
+  deepenCredits Int      @default(0) // 加深解讀額度(streak 連七獎勵也發這個)
+  streak        Int      @default(0)
+  lastDailyDate String?  // YYYY-MM-DD(台北時區),日抽換日與斷簽判定用
+  createdAt     DateTime @default(now())
+
+  readings  Reading[]
+  purchases Purchase[]
+  dailyDraws DailyDraw[]
+  cardsSeen CardSeen[]
+}
+
+// 一次占卜:抽牌當下建立(status=drawn),生成後補文本。
+// 牌面與 tier 在抽牌時就定死——同一副牌永遠同一個方向。
+model Reading {
+  id        String   @id @default(cuid())
+  userId    String
+  user      TarotUser @relation(fields: [userId], references: [id])
+  level     String   // daily | deepen | deep
+  spreadId  String
+  topic     String?
+  question  String?
+  cardsJson String   // Drawn[] 序列化
+  tier      String   // T1..T5
+  seedNonce String   // 伺服器 nonce,同筆占卜可回溯重算
+  status    String   @default("drawn") // drawn | generated | fallback
+  text      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// LINE Pay 訂單。providerTxId 唯一 → webhook 重送天然冪等。
+model Purchase {
+  id           String    @id @default(cuid())
+  userId       String
+  user         TarotUser @relation(fields: [userId], references: [id])
+  kind         String    // deepen | deep
+  amount       Int       // TWD
+  provider     String    // linepay | mock
+  providerTxId String?   @unique
+  status       String    @default("pending") // pending | paid | failed | refunded
+  readingId    String?
+  createdAt    DateTime  @default(now())
+  paidAt       DateTime?
+
+  @@index([userId, createdAt])
+}
+
+// 免費日抽:一人一天一筆(台北時區)。
+model DailyDraw {
+  id        String   @id @default(cuid())
+  userId    String
+  user      TarotUser @relation(fields: [userId], references: [id])
+  date      String   // YYYY-MM-DD(台北)
+  readingId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+// 78 張牌收集圖鑑:第一次抽到才寫入。
+model CardSeen {
+  id          String   @id @default(cuid())
+  userId      String
+  user        TarotUser @relation(fields: [userId], references: [id])
+  cardN       Int
+  firstSeenAt DateTime @default(now())
+
+  @@unique([userId, cardN])
+}
