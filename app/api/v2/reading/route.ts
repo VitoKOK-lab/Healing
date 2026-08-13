@@ -77,13 +77,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (reading.status !== "drawn") {
-    // 已生成過:直接回存好的文本(冪等)
+    // 已生成過:直接回存好的文本與牌面(冪等;前端重進頁面時要重現牌)
     return NextResponse.json({
       ok: true,
       readingId: reading.id,
       level: reading.level,
       tier: reading.tier,
       text: reading.text,
+      cards: JSON.parse(reading.cardsJson),
       fallback: reading.status === "fallback",
     });
   }

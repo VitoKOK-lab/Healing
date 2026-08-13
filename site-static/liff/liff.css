@@ -1,0 +1,167 @@
+/* LIFF 版面:沿用 base.css 的設計代幣與 tarot.css 元件,這裡只管排版與新元件。 */
+
+.liff-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg, #17131f);
+}
+
+.liff-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+}
+.liff-brand { font-family: "Huninn", "Noto Sans TC", sans-serif; font-size: 18px; color: var(--ink, #f3eefc); }
+.liff-stats { display: flex; gap: 10px; }
+.liff-stat {
+  font-size: 13px;
+  color: var(--inkdim, #b7aecb);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.liff-main { flex: 1; padding: 8px 18px 84px; }
+.liff-view { max-width: 480px; margin: 0 auto; text-align: center; }
+.liff-title { font-family: "Huninn", "Noto Sans TC", sans-serif; font-size: 24px; margin-top: 18px; }
+.liff-sub { color: var(--inkdim, #b7aecb); font-size: 14px; margin-top: 6px; }
+.liff-hint { color: var(--inkdim, #b7aecb); font-size: 13px; margin-top: 12px; }
+
+/* 牌堆與切牌 */
+.liff-deck { margin-top: 28px; }
+.liff-deck-stack { position: relative; height: 210px; }
+.liff-card-back {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 128px;
+  height: 200px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 214, 140, 0.25), transparent 60%),
+    linear-gradient(160deg, #3a2c55, #241a3a);
+  border: 1px solid rgba(255, 214, 140, 0.35);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+.liff-deck-stack .liff-card-back:nth-child(1) { transform: translateX(-58%) rotate(-4deg); }
+.liff-deck-stack .liff-card-back:nth-child(3) { transform: translateX(-42%) rotate(4deg); }
+.liff-cut { width: 100%; margin-top: 20px; accent-color: #e8b04b; }
+
+/* 翻牌 */
+.liff-flip { perspective: 900px; margin: 26px auto 0; width: 168px; height: 262px; }
+.liff-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.liff-flip.is-flipped .liff-flip-inner { transform: rotateY(180deg); }
+.liff-flip-back,
+.liff-flip-front {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.liff-flip-back { width: 100%; height: 100%; transform: none; left: 0; }
+.liff-flip-front { transform: rotateY(180deg); background: #120e1c; }
+.liff-flip-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.liff-flip-front.is-reversed img { transform: rotate(180deg); }
+.liff-card-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 6px;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+}
+
+.liff-newcard {
+  margin-top: 14px;
+  color: #ffd98c;
+  font-size: 14px;
+  animation: liff-pop 0.5s ease;
+}
+@keyframes liff-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* 解讀 */
+.liff-reading {
+  margin-top: 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.9;
+}
+.liff-deep-reading {
+  margin-top: 14px;
+  text-align: left;
+  background: rgba(232, 176, 75, 0.08);
+  border: 1px solid rgba(232, 176, 75, 0.35);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 15px;
+  line-height: 2;
+  white-space: pre-wrap;
+}
+.liff-reading strong, .liff-deep-reading strong { color: #ffd98c; }
+
+/* 加深 CTA */
+.liff-upsell { margin-top: 18px; }
+.liff-btn { width: 100%; }
+.liff-upsell-note { color: var(--inkdim, #b7aecb); font-size: 12px; margin-top: 8px; }
+
+/* 圖鑑 */
+.liff-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.liff-grid-card {
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #221a33;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.liff-grid-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.liff-grid-card.is-locked img { filter: brightness(0.18) saturate(0.3); }
+
+/* 底部導覽 */
+.liff-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: rgba(18, 14, 28, 0.92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  gap: 8px;
+}
+.liff-nav-btn {
+  flex: 1;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--inkdim, #b7aecb);
+  background: transparent;
+}
+.liff-nav-btn.is-active { color: #1c1428; background: #e8b04b; font-weight: 700; }
+
+/* 等待的貓(沿用 tarot.css 的 cat-art 樣式,由 JS 塞 SVG) */
+.liff-cat-wait { width: 120px; margin: 48px auto 0; opacity: 0.9; }
