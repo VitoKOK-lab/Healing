@@ -33,8 +33,14 @@ describe("付費層審核:每條規則的反例", () => {
     return p.join("\n\n");
   };
 
-  it("罐頭句:僅供參考/緣分自有安排/相信自己", () => {
-    for (const bad of ["以上僅供參考。", "緣分自有安排,不必強求。", "最重要的是相信自己。"]) {
+  it("罐頭句:僅供參考/緣分自有安排/相信自己/明天起床", () => {
+    for (const bad of [
+      "以上僅供參考。",
+      "緣分自有安排,不必強求。",
+      "最重要的是相信自己。",
+      "明天起床,你可以先做一件小事。",
+      "明天一早就把訊息傳出去。",
+    ]) {
       const t = GOOD_PAID + "\n\n" + bad;
       expect(check(t, "paid").some((v) => v.rule === "filler" || v.rule === "structure")).toBe(true);
     }
