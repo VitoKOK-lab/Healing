@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
+// Gemini 解讀含重試可能超過 Vercel 預設 10 秒逾時(desk 現場版仍在用這支)
+export const maxDuration = 60;
+
 // 喵喵占卜:接收前端(靜態站)抽好的 3 張牌,請 Gemini 綜合寫一段解讀。
 // 純無狀態代理——不落地任何個資,允許跨網域呼叫(靜態站與本站不同網域)。
 

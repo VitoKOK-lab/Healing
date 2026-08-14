@@ -36,11 +36,21 @@ npm run dev            # http://localhost:3000
 `site-static/` 複製進 `public/`。本機看頁面可直接
 `python3 -m http.server -d site-static`。
 
-## 部署
+## 部署(Vercel + Supabase)
 
 Vercel(專案 `healingasmr`,production 網域 `healingasmr.vercel.app`),
 push 到 `main` 自動部署。build 流程:`prisma generate && prisma migrate deploy
 && cp -r site-static/. public/ && next build`。
+
+資料庫用 Supabase(就是 Postgres,Prisma 直接連,程式不需任何改動):
+
+1. supabase.com 建專案(區域選 Singapore/Tokyo,離台灣近)
+2. 專案首頁 **Connect** → 選 **ORMs / Prisma**,會給兩條連線字串:
+   - Transaction pooler(port 6543)→ 填進 Vercel 的 `DATABASE_URL`
+     (結尾記得帶 `?pgbouncer=true`,serverless 必須走連線池)
+   - Direct connection(port 5432)→ 填進 `DIRECT_URL`(migrate 專用)
+3. Redeploy——build 裡的 `prisma migrate deploy` 會自動把所有表建好,
+   不用手動跑任何 SQL
 
 ## 下一步(LINE OA 版)
 

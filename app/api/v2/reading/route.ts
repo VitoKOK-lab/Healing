@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
+
+// 付費四段式最壞情況 = 生成 3 次 + 方向二次分類,30~60 秒;
+// Vercel 函式預設 10 秒會砍頭,這裡放寬到 60。
+export const maxDuration = 60;
 import { prisma } from "@/lib/prisma";
 import { verifyLineToken } from "@/lib/line/verify";
 import { generateReading } from "@/lib/tarot/generate";
