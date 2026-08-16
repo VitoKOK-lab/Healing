@@ -73,13 +73,14 @@ async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
       Authorization: `Bearer ${env.KIMI_API_KEY}`,
     },
     body: JSON.stringify({
-      // K2.6 只接受 temperature: 1(非 1 直接 400),文風變化跟 Claude 一樣靠角度輪替。
       // 關閉思考模式:預設開啟會佔用大量 max_tokens、耗時常常超過 60 秒,
       // 在 Vercel 的 maxDuration 限制下容易整批逾時失敗;拿掉之後靠 guards
-      // 機械審核 + 重試機制頂,而不是靠模型自我檢查。
+      // 機械審核 + 重試機制頂,而不是靠模型自我檢查。文風變化跟 Claude
+      // 一樣靠角度輪替。K2.6 每個模式只接受固定 temperature,非該值直接
+      // 400——思考模式開啟要 1,關閉後變成只接受 0.6,兩個模式不共用。
       model: env.KIMI_MODEL,
       max_tokens: maxTokens,
-      temperature: 1,
+      temperature: 0.6,
       thinking: { type: "disabled" },
       messages: [{ role: "user", content: prompt }],
     }),
