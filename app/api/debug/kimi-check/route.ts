@@ -30,6 +30,8 @@ export async function POST(req: Request) {
   const spreadId = body.spreadId ?? "flow";
   const angleIndex = body.angleIndex ?? 0;
   const disableThinking = body.disableThinking !== false; // 預設帶上,跟正式路徑一致
+  const model = body.model ?? env.KIMI_MODEL; // 測其他版本(例如 kimi-k2.5)不用改 env、不用重新部署
+  const temperatureOverride = body.temperature; // K2.5 可能不吃 0.6/1 這套限制,允許覆寫
 
   const cards = level === "daily" ? findCards("flow", "T1").slice(0, 1) : findCards(spreadId, tier);
   const prompt =
@@ -43,10 +45,11 @@ export async function POST(req: Request) {
   // 直接打原始 API,看完整回應(含 finish_reason、可能的 reasoning 欄位),
   // 不透過 kimiCaller,才能診斷空字串/逾時是不是思考模式造成的。
   const requestBody: Record<string, unknown> = {
-    model: env.KIMI_MODEL,
+    model,
     max_tokens: level === "daily" ? 3000 : 16000,
-    // 思考模式開啟只接受 temperature:1,關閉後只接受 0.6,兩者不共用。
-    temperature: disableThinking ? 0.6 : 1,
+    // 思考模式開啟只接受 temperature:1,關閉後只接受 0.6,兩者不共用(K2.6 實測值);
+    // 其他版本可能不受此限制,body.temperature 可覆寫。
+    temperature: temperatureOverride ?? (disableThinking ? 0.6 : 1),
     messages: [{ role: "user", content: prompt }],
   };
   if (disableThinking) requestBody.thinking = { type: "disabled" };
