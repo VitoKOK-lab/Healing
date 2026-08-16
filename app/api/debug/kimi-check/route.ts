@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { drawSpread, seedFrom, type Drawn } from "@/lib/tarot/draw";
 import { tierOf, type Tier } from "@/lib/tarot/tier";
-import { buildPrompt, kimiCaller } from "@/lib/tarot/generate";
+import { buildPrompt } from "@/lib/tarot/generate";
 import { check } from "@/lib/tarot/guards";
 
 // 臨時診斷端點:直接看 Kimi 針對付費層 prompt 的原始輸出跟被哪條 guards 規則擋下,
@@ -32,13 +32,30 @@ export async function POST(req: Request) {
     angleIndex
   );
 
-  let text: string;
+  // 直接打原始 API,看完整回應(含 finish_reason、可能的 reasoning 欄位),
+  // 不透過 kimiCaller,才能診斷空字串是不是被 thinking mode 吃光 token。
+  let raw: unknown;
   try {
-    text = await kimiCaller(prompt, { paid: true });
+    const res = await fetch(`${env.KIMI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.KIMI_API_KEY}` },
+      body: JSON.stringify({
+        model: env.KIMI_MODEL,
+        max_tokens: 8192,
+        temperature: 1,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!res.ok) {
+      return NextResponse.json({ ok: false, error: `kimi ${res.status}: ${await res.text()}` }, { status: 500 });
+    }
+    raw = await res.json();
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 
+  const text =
+    (raw as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? "";
   const violations = check(text, "paid");
-  return NextResponse.json({ ok: true, tier, spreadId, cardCount: cards.length, text, violations });
+  return NextResponse.json({ ok: true, tier, spreadId, cardCount: cards.length, text, violations, raw });
 }
