@@ -73,9 +73,10 @@ async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
       Authorization: `Bearer ${env.KIMI_API_KEY}`,
     },
     body: JSON.stringify({
+      // K2.6 只接受 temperature: 1(非 1 直接 400),文風變化跟 Claude 一樣靠角度輪替
       model: env.KIMI_MODEL,
       max_tokens: maxTokens,
-      temperature: 0.8,
+      temperature: 1,
       messages: [{ role: "user", content: prompt }],
     }),
   });
