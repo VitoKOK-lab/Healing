@@ -85,8 +85,10 @@ async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
   return (data.choices?.[0]?.message?.content ?? "").trim();
 }
 
-export const kimiCaller: ModelCaller = (prompt, { paid }) => kimiChat(prompt, paid ? 4096 : 1024);
-export const kimiClassifier: ClassifyCaller = (prompt) => kimiChat(prompt, 16);
+// K2.6 有思考模式,思考過程也算進 max_tokens——4096 常常被思考吃光,
+// 導致正文變空字串(表面上像是 guards 沒過,其實是額度不夠)。
+export const kimiCaller: ModelCaller = (prompt, { paid }) => kimiChat(prompt, paid ? 16000 : 3000);
+export const kimiClassifier: ClassifyCaller = (prompt) => kimiChat(prompt, 500);
 
 function providerReady(): boolean {
   return env.MODEL_PROVIDER === "kimi" ? Boolean(env.KIMI_API_KEY) : Boolean(env.ANTHROPIC_API_KEY);
