@@ -11,7 +11,10 @@ const envSchema = z.object({
   GEMINI_MODEL: z.string().optional().default("gemini-flash-lite-latest"),
 
   // ── LINE OA v1(規格 §4、§5)──────────────────────────
-  // 生成模型供應商:claude(正式建議)| kimi(測試/備援;Moonshot API)
+  // 免費日抽的生成供應商:claude | kimi(Moonshot API,省成本)。
+  // 只管免費層——付費層(deepen/deep)在 generate.ts 寫死用 Claude,
+  // 不受這個變數影響(Kimi 關閉思考模式後複雜牌陣格式遵守率不到五成,
+  // 不適合收錢場合)。
   MODEL_PROVIDER: z.enum(["claude", "kimi"]).default("claude"),
   // Claude API 金鑰(console.anthropic.com);留空則解讀走本地降級文案
   ANTHROPIC_API_KEY: z.string().optional().default(""),

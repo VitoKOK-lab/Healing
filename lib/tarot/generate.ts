@@ -95,11 +95,16 @@ async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
 export const kimiCaller: ModelCaller = (prompt, { paid }) => kimiChat(prompt, paid ? 16000 : 3000);
 export const kimiClassifier: ClassifyCaller = (prompt) => kimiChat(prompt, 500);
 
-function providerReady(): boolean {
+// 付費層固定用 Claude:實測 Kimi 關閉思考模式後,複雜牌陣的四段式格式
+// 遵守率不到五成,不適合收錢的場合。免費日抽風險低、格式簡單,兩個
+// Kimi 版本都測過沒問題,繼續交給 MODEL_PROVIDER 控制(省成本)。
+function providerReady(paid: boolean): boolean {
+  if (paid) return Boolean(env.ANTHROPIC_API_KEY);
   return env.MODEL_PROVIDER === "kimi" ? Boolean(env.KIMI_API_KEY) : Boolean(env.ANTHROPIC_API_KEY);
 }
 
-function defaultCaller(): ModelCaller {
+function defaultCaller(paid: boolean): ModelCaller {
+  if (paid) return claudeCaller;
   return env.MODEL_PROVIDER === "kimi" ? kimiCaller : claudeCaller;
 }
 
@@ -149,14 +154,14 @@ export async function generateReading(
   input: GenerateInput,
   deps: { call?: ModelCaller; classify?: ClassifyCaller; seedAngle?: number } = {}
 ): Promise<GenerateResult> {
-  const call = deps.call ?? defaultCaller();
-  const classify = deps.classify ?? defaultClassifier();
   const paid = input.level !== "daily";
+  const call = deps.call ?? defaultCaller(paid);
+  const classify = deps.classify ?? defaultClassifier();
   const guardLevel = paid ? "paid" : "free";
   // 角度輪替(不用 Math.random:可測、可回溯;正式呼叫端以 readingId 雜湊當 seed)
   const seedAngle = deps.seedAngle ?? 0;
 
-  if (!deps.call && !providerReady()) {
+  if (!deps.call && !providerReady(paid)) {
     return { text: fallbackText(input), fallback: true, attempts: 0 };
   }
 
