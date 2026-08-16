@@ -115,15 +115,19 @@ export function buildPrompt(input: GenerateInput, angleIndex: number): string {
 }
 
 // 本地降級文案:模型全滅時至少讓客人拿到東西(移植自舊前端 localReading)。
+// tone 依 tier 決定,不能只看正逆位比例——否則 T4/T5 的降級文案會把
+// 明確不利的牌面講成中性,違反規格 §4.1 的中性化禁令(這裡是最後一道防線)。
+const FALLBACK_TONE: Record<Tier, string> = {
+  T1: "整體能量是【順的】,想做的事可以往前推",
+  T2: "整體偏順,只有一處要留意",
+  T3: "牌面中性、有變數,關鍵要看接下來怎麼選",
+  T4: "這一輪確實有阻力,得先面對卡住的地方",
+  T5: "老實說,這一輪明確不利,現在不是順風的時候",
+};
+
 export function fallbackText(input: GenerateInput): string {
   const spread = spreadOf(input.spreadId);
-  const reversed = input.cards.filter((c) => c.orientation === "reversed").length;
-  const tone =
-    reversed === 0
-      ? "整體能量是【順的】,想做的事可以往前推"
-      : reversed >= input.cards.length - reversed
-        ? "牌面偏向【先向內看】,急著推進反而卡手"
-        : "大方向還算順,只是有一處【需要調整】";
+  const tone = FALLBACK_TONE[input.tier];
   const body = input.cards
     .map(
       (c) =>

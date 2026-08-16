@@ -17,9 +17,9 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional().default(""),
   ANTHROPIC_MODEL_FREE: z.string().optional().default("claude-haiku-4-5"),
   ANTHROPIC_MODEL_PAID: z.string().optional().default("claude-sonnet-5"),
-  // Kimi/Moonshot(platform.moonshot.ai);模型 ID 依帳號實際可用的填(例 K2.6 系列)
+  // Kimi/Moonshot(platform.kimi.ai);免費/付費層共用同一顆模型
   KIMI_API_KEY: z.string().optional().default(""),
-  KIMI_MODEL: z.string().optional().default("kimi-latest"),
+  KIMI_MODEL: z.string().optional().default("kimi-k2.6"),
   KIMI_BASE_URL: z.string().url().default("https://api.moonshot.ai/v1"),
   // 深度占卜定價(TWD)。NT$20 加深與免費日抽不在此;見規格 §1
   PRICE_DEEP: z.coerce.number().int().positive().default(149),
