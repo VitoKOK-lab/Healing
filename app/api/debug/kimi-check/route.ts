@@ -45,7 +45,8 @@ export async function POST(req: Request) {
   const requestBody: Record<string, unknown> = {
     model: env.KIMI_MODEL,
     max_tokens: level === "daily" ? 3000 : 16000,
-    temperature: 1,
+    // 思考模式開啟只接受 temperature:1,關閉後只接受 0.6,兩者不共用。
+    temperature: disableThinking ? 0.6 : 1,
     messages: [{ role: "user", content: prompt }],
   };
   if (disableThinking) requestBody.thinking = { type: "disabled" };
