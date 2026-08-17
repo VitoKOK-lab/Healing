@@ -195,9 +195,15 @@
 
   function fetchDailyText() {
     $("dailyReading").hidden = false;
-    $("dailyText").textContent = "本喵看牌中⋯";
+    // 日抽約 3 秒,兩句就夠;節奏放快一點免得只看到第一句
+    var stop = startWaiting($("dailyText"), state.reading && state.reading.cards, 1600);
     fetchReadingText(state.reading.readingId).then(function (r) {
+      stop();
       renderDailyText(r.text);
+    }, function (e) {
+      stop();
+      $("dailyText").textContent = "本喵這輪讀不出來,稍後再試喵。";
+      throw e;
     });
   }
 
@@ -205,6 +211,48 @@
     var body = { accessToken: state.token, readingId: readingId };
     if (upgrade) body.upgrade = upgrade;
     return api(API.reading, { body: body });
+  }
+
+  // ── 等待儀式 ─────────────────────────────────────────
+  // 付費深度解讀要寫 350~550 字,實測約 19 秒——那是產文字的固有時間,
+  // 換模型省不掉(Kimi 與 Claude 實測同級)。與其讓客人盯著不動的一行字
+  // 懷疑當機,不如讓等待本身像「本喵真的在讀牌」:訊息分段推進,而且
+  // 唸出他這次抽到的牌名,一看就知道是為他這副牌在忙,不是罐頭轉圈圈。
+  function waitingLines(cards) {
+    var named = [];
+    for (var i = 0; i < (cards || []).length && named.length < 3; i++) {
+      if (cards[i] && cards[i].name) named.push(cards[i].name);
+    }
+    var multi = (cards || []).length > 1;
+    var lines = [multi ? "本喵把牌一張一張排開⋯" : "本喵把牌翻過來看⋯"];
+    if (named[0]) lines.push("先看「" + named[0] + "」在說什麼⋯");
+    if (named[1]) lines.push("再對照「" + named[1] + "」那一張⋯");
+    if (named[2]) lines.push("「" + named[2] + "」擺在這裡有意思⋯");
+    // 單張牌不能說「幾張牌湊起來」——日抽只抽一張,講出來就穿幫了
+    lines.push(multi ? "幾張牌湊起來,線索出來了⋯" : "這張牌想說的,本喵抓到了⋯");
+    lines.push("本喵想想怎麼跟你說⋯");
+    lines.push("最後一段,快好了⋯");
+    return lines;
+  }
+
+  // 回傳 stop();呼叫端拿到結果或失敗都要呼叫,否則計時器會繼續跑。
+  function startWaiting(el, cards, stepMs) {
+    if (!el) return function () {};
+    var lines = waitingLines(cards);
+    var i = 0;
+    el.textContent = lines[0];
+    el.classList.add("is-waiting");
+    var timer = setInterval(function () {
+      i += 1;
+      // 跑完最後一句就停在那裡:真的超時的話,停在「快好了」比循環回
+      // 開頭更不焦慮(循環會讓人以為卡住重來)。
+      if (i >= lines.length) return clearInterval(timer);
+      el.textContent = lines[i];
+    }, stepMs || 3200);
+    return function stop() {
+      clearInterval(timer);
+      el.classList.remove("is-waiting");
+    };
   }
 
   // 【】重點放大:轉成 <strong>(先 escape 再替換,不吃任何 HTML)
@@ -260,17 +308,29 @@
     if (credits <= 0) return buyDeepen();
     $("deepenBtn").disabled = true;
     $("deepenBtn").textContent = "本喵深呼吸中⋯";
+    // 深度解讀約 19 秒:先把解讀區開出來跑等待儀式,不要讓客人對著
+    // 一顆卡住的按鈕乾等(付了錢還以為當機是最傷的體驗)。
+    var box = $("deepReading");
+    box.hidden = false;
+    box.textContent = "";
+    var stop = startWaiting(box, state.reading && state.reading.cards);
     fetchReadingText(state.reading.readingId, "deepen").then(function (r) {
+      stop();
       if (!r.ok) {
+        box.hidden = true;
         $("deepenBtn").textContent = "加深失敗,再試一次";
         $("deepenBtn").disabled = false;
         return;
       }
       $("upsell").hidden = true;
-      var box = $("deepReading");
-      box.hidden = false;
       box.innerHTML = decorate(r.text);
       refreshCredits();
+    }, function (e) {
+      stop();
+      box.hidden = true;
+      $("deepenBtn").textContent = "加深失敗,再試一次";
+      $("deepenBtn").disabled = false;
+      throw e;
     });
   }
 

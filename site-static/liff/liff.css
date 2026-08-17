@@ -177,3 +177,18 @@
 
 /* 等待的貓(沿用 tarot.css 的 cat-art 樣式,由 JS 塞 SVG) */
 .liff-cat-wait { width: 120px; margin: 48px auto 0; opacity: 0.9; }
+
+/* 等待儀式:深度解讀要跑約 19 秒,靠呼吸感讓文字看起來是活的,
+   而不是一整段時間畫面完全靜止、被當成當機。 */
+.is-waiting {
+  color: rgba(240, 227, 255, 0.66);
+  font-style: italic;
+  animation: liff-breathe 2.4s ease-in-out infinite;
+}
+@keyframes liff-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-waiting { animation: none; opacity: 0.85; }
+}
