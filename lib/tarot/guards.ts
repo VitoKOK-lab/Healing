@@ -52,8 +52,14 @@ const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
 // Markdown 符號開頭(禁條列、標題、粗體)
 const MARKDOWN = /^[#*\-•]|\n[#*\-•]|\d+\.\s|\*\*/;
 
-// 常見簡體字抽查(繁體文本裡出現任一即失敗)
-const SIMPLIFIED_CORE = /[们说对时问题过还这为发现经体后让爱开业动战无点见议乐观极风头脑虑虽听]/;
+// 常見簡體字抽查(繁體文本裡出現任一即失敗)。
+// 「后」刻意不放進來:它在繁體是正字,而且牌庫有五張牌用到——
+// 皇后、權杖/聖杯/寶劍/錢幣王后。放進來等於「抽到王后就整篇退回」,
+// 賽爾特十字約半數會誤殺(2026-08-17 實測揪出,是通過率卡在五成的主因)。
+const SIMPLIFIED_CORE = /[们说对时问题过还这为发现经体让爱开业动战无点见议乐观极风头脑虑虽听]/;
+
+// 「后」當簡體用(=後)才攔,詞組比對避開皇后/王后
+const SIMPLIFIED_HOU = /(以后|然后|最后|之后|随后|背后|前后|后来|后面|后续|日后|事后|今后)/;
 
 // 大陸用語攔截(Kimi 增補篇 §2):跑大陸模型時必備;對 Claude 也順便當保險。
 // 只收「在台灣塔羅文案裡幾乎不可能正當出現」的高信度詞——
@@ -114,7 +120,9 @@ export function check(text: string, level: Level): Violation[] {
   if (CURLY_QUOTES.test(t)) v.push({ rule: "quotes", detail: "使用彎引號而非「」" });
   if (EMOJI.test(t)) v.push({ rule: "emoji", detail: "出現表情符號" });
   if (MARKDOWN.test(t)) v.push({ rule: "markdown", detail: "出現條列/標題/粗體符號" });
-  if (SIMPLIFIED_CORE.test(t)) v.push({ rule: "simplified", detail: "出現簡體字" });
+  if (SIMPLIFIED_CORE.test(t) || SIMPLIFIED_HOU.test(t)) {
+    v.push({ rule: "simplified", detail: "出現簡體字" });
+  }
   for (const [name, re] of CN_TERMS) {
     if (re.test(t)) v.push({ rule: "cn-term", detail: name });
   }

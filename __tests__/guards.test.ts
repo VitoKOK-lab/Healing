@@ -76,6 +76,23 @@ describe("付費層審核:每條規則的反例", () => {
     expect(check(t, "paid").some((v) => v.rule === "simplified")).toBe(true);
   });
 
+  it("「后」當簡體用(以后/然后/最后)照樣攔", () => {
+    for (const bad of ["以后你就懂了", "然后再看一次", "最后會回到原點"]) {
+      const t = GOOD_PAID.replace("直接動手做完它。", "直接動手做完它。" + bad + "。");
+      expect(check(t, "paid").some((v) => v.rule === "simplified")).toBe(true);
+    }
+  });
+
+  // 2026-08-17 實測揪出的誤殺:「后」曾在簡體字元黑名單裡,
+  // 導致抽到皇后/王后(牌庫共 5 張)的解讀無論寫得多好都被退回,
+  // 賽爾特十字約半數中招——通過率卡在五成的主因。
+  it("牌名的「后」不得誤判成簡體字", () => {
+    for (const cardName of ["皇后", "權杖王后", "聖杯王后", "寶劍王后", "錢幣王后"]) {
+      const t = GOOD_PAID.replace("〔寶劍八逆位〕", `〔${cardName}正位〕`);
+      expect(check(t, "paid").some((v) => v.rule === "simplified")).toBe(false);
+    }
+  });
+
   it("大陸用語:靠譜/拉黑/微信/處對象/挺好", () => {
     for (const bad of [
       "他這個人其實蠻靠譜的",
