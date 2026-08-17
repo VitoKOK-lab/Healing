@@ -102,16 +102,16 @@ async function kimiChat(prompt: string, maxTokens: number): Promise<string> {
 export const kimiCaller: ModelCaller = (prompt, { paid }) => kimiChat(prompt, paid ? 16000 : 3000);
 export const kimiClassifier: ClassifyCaller = (prompt) => kimiChat(prompt, 500);
 
-// 付費層固定用 Claude:實測 Kimi 關閉思考模式後,複雜牌陣的四段式格式
-// 遵守率不到五成,不適合收錢的場合。免費日抽風險低、格式簡單,兩個
-// Kimi 版本都測過沒問題,繼續交給 MODEL_PROVIDER 控制(省成本)。
-function providerReady(paid: boolean): boolean {
-  if (paid) return Boolean(env.ANTHROPIC_API_KEY);
+// 2026-08-17:付費層取消寫死 Claude,改回一律聽 MODEL_PROVIDER。
+// 先前鎖 Claude 的理由(「Kimi 格式遵守率不到五成」)是錯的——那是
+// guards 把「后」誤判成簡體字造成的:皇后與四張王后一抽到就整篇退回。
+// 修掉誤判後同牌陣公平比較,兩者單次通過率都是 5/6,速度也同級
+// (Kimi 14~22s / Claude 15~20s),沒有理由為付費層多付這筆錢。
+function providerReady(): boolean {
   return env.MODEL_PROVIDER === "kimi" ? Boolean(env.KIMI_API_KEY) : Boolean(env.ANTHROPIC_API_KEY);
 }
 
-function defaultCaller(paid: boolean): ModelCaller {
-  if (paid) return claudeCaller;
+function defaultCaller(): ModelCaller {
   return env.MODEL_PROVIDER === "kimi" ? kimiCaller : claudeCaller;
 }
 
@@ -162,13 +162,13 @@ export async function generateReading(
   deps: { call?: ModelCaller; classify?: ClassifyCaller; seedAngle?: number } = {}
 ): Promise<GenerateResult> {
   const paid = input.level !== "daily";
-  const call = deps.call ?? defaultCaller(paid);
+  const call = deps.call ?? defaultCaller();
   const classify = deps.classify ?? defaultClassifier();
   const guardLevel = paid ? "paid" : "free";
   // 角度輪替(不用 Math.random:可測、可回溯;正式呼叫端以 readingId 雜湊當 seed)
   const seedAngle = deps.seedAngle ?? 0;
 
-  if (!deps.call && !providerReady(paid)) {
+  if (!deps.call && !providerReady()) {
     return { text: fallbackText(input), fallback: true, attempts: 0 };
   }
 
