@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { drawSpread, seedFrom, type Drawn } from "@/lib/tarot/draw";
 import { tierOf, type Tier } from "@/lib/tarot/tier";
-import { buildPrompt } from "@/lib/tarot/generate";
+import { buildPrompt, claudeCaller } from "@/lib/tarot/generate";
 import { dailyPrompt } from "@/lib/tarot/prompts";
 import { check } from "@/lib/tarot/guards";
 
@@ -41,6 +41,36 @@ export async function POST(req: Request) {
           { level: "deep", cards, spreadId, tier, topic: "感情", question: "這段關係接下來會怎麼發展" },
           angleIndex
         );
+
+  // provider=claude:走正式的 claudeCaller,量真實秒數並列出被哪條 guards 擋下。
+  // 正式管線會重試 3 次然後降級,只回一個 fallback:true,看不到失敗原因;
+  // 這裡跑單次,把違規細節攤開。
+  if (body.provider === "claude") {
+    const startedAt = Date.now();
+    try {
+      const text = await claudeCaller(prompt, { paid: level !== "daily" });
+      const elapsedMs = Date.now() - startedAt;
+      return NextResponse.json({
+        ok: true,
+        provider: "claude",
+        level,
+        tier,
+        spreadId,
+        cardCount: cards.length,
+        angleIndex,
+        elapsedMs,
+        chars: text.length,
+        paragraphs: text.split(/\n\s*\n/).filter((p) => p.trim()).length,
+        violations: check(text, level === "daily" ? "free" : "paid"),
+        text,
+      });
+    } catch (e) {
+      return NextResponse.json(
+        { ok: false, provider: "claude", elapsedMs: Date.now() - startedAt, error: String(e) },
+        { status: 500 }
+      );
+    }
+  }
 
   // 直接打原始 API,看完整回應(含 finish_reason、可能的 reasoning 欄位),
   // 不透過 kimiCaller,才能診斷空字串/逾時是不是思考模式造成的。
