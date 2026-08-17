@@ -41,7 +41,14 @@ function client(): Anthropic {
 export const claudeCaller: ModelCaller = async (prompt, { paid }) => {
   const res = await client().messages.create({
     model: paid ? env.ANTHROPIC_MODEL_PAID : env.ANTHROPIC_MODEL_FREE,
-    max_tokens: paid ? 16000 : 1024,
+    // 350~550 字的解讀,1024 token 綽綽有餘;開到 16000 只是給思考留空間,
+    // 而我們不要思考(見下)——留 4000 當安全邊際即可。
+    max_tokens: paid ? 4000 : 1024,
+    // 關閉思考模式。Sonnet 5 起,省略 thinking 參數 = 預設開啟 adaptive thinking,
+    // 複雜牌陣(賽爾特十字 10 張)實測會跑超過 60 秒 → Vercel 504。
+    // 這跟 Kimi K2.6 踩到的是同一個坑,只是預設值藏得更深。
+    // 品質由 guards 機械審核 + 換角度重試 + T4/T5 方向二次分類承接,不靠模型自審。
+    ...(paid ? { thinking: { type: "disabled" as const } } : {}),
     messages: [{ role: "user", content: prompt }],
   });
   return res.content
