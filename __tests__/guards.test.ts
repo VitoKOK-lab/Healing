@@ -96,29 +96,45 @@ describe("付費層審核:每條規則的反例", () => {
     }
   });
 
-  it("段數不對", () => {
-    const t = splitParagraphs(GOOD_PAID).slice(0, 3).join("\n\n");
-    expect(check(t, "paid").some((v) => v.rule === "structure")).toBe(true);
-  });
-
-  it("第二段沒用問句收束", () => {
-    const t = swap(1, "你其實是在等一個保證不會失敗的信號,〔錢幣七正位〕說時候未到,再等等就好。");
-    expect(check(t, "paid").some((v) => v.rule === "adler-question")).toBe(true);
-  });
-
-  it("第三段缺時間尺度", () => {
-    const t = swap(2, "務實面的槓桿在於把事情拆小,〔權杖八正位〕顯示動起來之後流速會自己加快,方向是【先動再修】。");
-    expect(check(t, "paid").some((v) => v.rule === "timescale")).toBe(true);
-  });
-
-  it("一件事塞了多個動作", () => {
-    const t = swap(3, "明天挑一個小塊動手做完它,並且把整份計畫重寫一遍,然後再跟主管約時間報告。");
+  it("收尾段塞了多個動作", () => {
+    const t = swap(3, "挑一個小塊動手做完它,並且把整份計畫重寫一遍,然後再跟主管約時間報告。");
     expect(check(t, "paid").some((v) => v.rule === "one-thing")).toBe(true);
   });
 
   it("Markdown 條列", () => {
     const t = swap(3, "明天做這件事:\n- 挑一個小塊\n- 動手做完");
     expect(check(t, "paid").some((v) => v.rule === "markdown")).toBe(true);
+  });
+});
+
+// 2026-08-16 店主決定放寬:段數、第二段問句收束、第三段時間尺度三條拿掉。
+// 那是形式偏好不是誠信底線;寫死反而綁住表達、逼模型湊格式。
+// 方向誠實(T4/T5 不得中性化)不在此列,仍由 direction.ts 把關。
+describe("已放寬的形式規則不再攔截", () => {
+  const swap = (para: number, replacement: string) => {
+    const p = splitParagraphs(GOOD_PAID);
+    p[para] = replacement;
+    return p.join("\n\n");
+  };
+
+  it("三段也放行(不再要求剛好四段)", () => {
+    const t = splitParagraphs(GOOD_PAID).slice(0, 3).join("\n\n");
+    expect(check(t, "paid")).toEqual([]);
+  });
+
+  it("五段也放行", () => {
+    const t = GOOD_PAID + "\n\n〔權杖八正位〕的流速,是你動起來之後才會出現的。";
+    expect(check(t, "paid")).toEqual([]);
+  });
+
+  it("向內看段沒用問句收束也放行", () => {
+    const t = swap(1, "你其實是在等一個保證不會失敗的信號,〔錢幣七正位〕說時候未到,再等等就好。");
+    expect(check(t, "paid")).toEqual([]);
+  });
+
+  it("務實段沒有時間尺度也放行", () => {
+    const t = swap(2, "務實面的槓桿在於把事情拆小,〔權杖八正位〕顯示動起來之後流速會自己加快,方向是【先動再修】。");
+    expect(check(t, "paid")).toEqual([]);
   });
 });
 

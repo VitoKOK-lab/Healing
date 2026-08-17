@@ -122,22 +122,14 @@ export function check(text: string, level: Level): Violation[] {
   if (level === "paid") {
     if (TAIL_PARTICLES.test(t)) v.push({ rule: "tail-particle", detail: "付費層出現語尾助詞" });
 
+    // 段數、第二段問句收束、第三段時間尺度三條已於 2026-08-16 拿掉:
+    // 那是「像不像人在講話」的形式偏好,不是誠信底線,寫死反而綁住表達,
+    // 也讓模型為了湊格式而失焦。方向誠實(T4/T5 不得中性化)仍由
+    // direction.ts 的二次分類把關,那條是承諾,不放寬。
     const paras = splitParagraphs(t);
-    if (paras.length !== 4) {
-      v.push({ rule: "structure", detail: `四段式應為 4 段,實得 ${paras.length} 段` });
-    } else {
-      const oneThing = paras[3];
-      if (MULTI_ACTION.test(oneThing)) {
-        v.push({ rule: "one-thing", detail: "「一件事」段出現多個動作" });
-      }
-      // 心理視角段以問句收束
-      if (!/[?？]["』」]?\s*$/.test(paras[1])) {
-        v.push({ rule: "adler-question", detail: "第二段未以問句收束" });
-      }
-      // 務實建議段要有具體時間尺度
-      if (!/(今天|明天|這週|本週|這個月|本月|三個月|一個月|兩週|下週|[一二三四五六七八九十\d]+\s*(天|週|个?月)|週[一二三四五六日末])/.test(paras[2])) {
-        v.push({ rule: "timescale", detail: "第三段缺具體時間尺度" });
-      }
+    const closing = paras[paras.length - 1] ?? "";
+    if (MULTI_ACTION.test(closing)) {
+      v.push({ rule: "one-thing", detail: "收尾段出現多個動作" });
     }
   }
 
