@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import { unsuitable } from "@/lib/tarot/unsuitable";
 
 // 開牌之前先確認「本喵真的聽懂了嗎」。
 // 客人常會用只有自己懂的說法(公司名、職稱、圈內用語、代稱「他」),
@@ -59,6 +60,13 @@ export async function POST(req: NextRequest) {
 
   const q = typeof question === "string" ? question.trim().slice(0, 200) : "";
   if (!q) {
+    return NextResponse.json({ ok: true, question: null }, { headers: CORS_HEADERS });
+  }
+
+  // 不適合的題目不追問——追問只會把客人往下帶。
+  // 這裡回 null(不追問)而不是報錯:真正的攔截與 1925 專線由 /api/tarot/reading 負責,
+  // 追問這支的責任只是「不要參與」。
+  if (unsuitable([q, typeof scenario === "string" ? scenario : ""].join(" "))) {
     return NextResponse.json({ ok: true, question: null }, { headers: CORS_HEADERS });
   }
 
