@@ -360,31 +360,23 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.type = "button";
       btn.className = "scenario-item";
       btn.dataset.id = s.id;
-      var tag = s.spread === "auto"
-        ? "本喵幫你決定"
-        : Tarot.SPREADS[s.spread].positions.length + " 張・" + Tarot.SPREADS[s.spread].name;
-      btn.innerHTML = '<span class="scenario-label">' + s.label + "</span>" +
-        '<span class="scenario-spread">' + tag + "</span>";
+      // 2026-08-18:全部處境都走三張牌,牌陣標籤每一顆都一樣就是雜訊,拿掉。
+      btn.innerHTML = '<span class="scenario-label">' + s.label + "</span>";
       btn.addEventListener("click", function () {
         scenarioList.querySelectorAll(".scenario-item").forEach(function (x) { x.classList.remove("active"); });
         btn.classList.add("active");
         // 每次重選處境都從乾淨狀態開始(auto 會在抽牌前改寫 spread)
         scenario = { id: s.id, label: s.label, spread: s.spread };
         questionPanel.style.display = "none";
-        // 二擇一只留兩個選項欄,問題欄收起來——三個格子會讓人不知道該填哪個
-        var isChoice = s.spread === "choice";
-        optionPanel.style.display = isChoice ? "grid" : "none";
-        questionField.style.display = isChoice ? "none" : "block";
+        // 一律三張牌:沒有二擇一那條分支了,永遠只有一個問題欄。
+        optionPanel.style.display = "none";
+        questionField.style.display = "block";
         speak([
-          SPREAD_REPLY[s.spread],
-          isChoice
-            ? "把你在猶豫的兩條路各寫一句給本喵看。"
-            : s.spread === "auto"
-              ? "想問什麼都可以,寫下來給本喵看。"
-              : "那麼,把你想問的事寫下來給本喵看吧。"
+          SPREAD_REPLY.flow,
+          "那麼,把你想問的事寫下來給本喵看吧。"
         ], function () {
           showStage(questionPanel);
-          (isChoice ? optionA : questionInput).focus();
+          questionInput.focus();
         });
       });
       scenarioList.appendChild(btn);

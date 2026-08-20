@@ -317,41 +317,43 @@
     }
   };
 
-  // 主題 → 具體處境 → 牌陣。每個處境都誠實對應到上面真的做出來的三個陣。
+  // 主題 → 具體處境。2026-08-18 起一律走 flow(過去/現在/未來三張):
+  // 客人不必挑牌陣,問什麼都用同一個陣,流程一致、解讀也好比較。
+  // SPREADS 裡其他幾個陣先留著(牌陣定義本身沒問題),只是目前沒有處境指向它們。
   var SCENARIOS = {
     love: [
       { id: "love-single", label: "想看看有沒有新的緣分", spread: "flow" },
       { id: "love-now", label: "這段關係接下來會怎麼走", spread: "flow" },
-      { id: "love-two", label: "想知道對方怎麼想", spread: "relation" },
-      { id: "love-trouble", label: "我們之間出了問題", spread: "relation" },
-      { id: "love-stay", label: "要不要繼續走下去", spread: "choice" },
-      { id: "love-free", label: "以上都不是,我自己說", spread: "auto" }
+      { id: "love-two", label: "想知道對方怎麼想", spread: "flow" },
+      { id: "love-trouble", label: "我們之間出了問題", spread: "flow" },
+      { id: "love-stay", label: "要不要繼續走下去", spread: "flow" },
+      { id: "love-free", label: "以上都不是,我自己說", spread: "flow" }
     ],
     career: [
-      { id: "career-switch", label: "現在這份工作該不該換", spread: "choice" },
+      { id: "career-switch", label: "現在這份工作該不該換", spread: "flow" },
       { id: "career-new", label: "新的計畫值不值得投入", spread: "flow" },
       { id: "career-stuck", label: "職場上卡住了", spread: "flow" },
-      { id: "career-rise", label: "想升遷或突破,要全面看一次", spread: "celtic" },
-      { id: "career-free", label: "以上都不是,我自己說", spread: "auto" }
+      { id: "career-rise", label: "想升遷或突破,要全面看一次", spread: "flow" },
+      { id: "career-free", label: "以上都不是,我自己說", spread: "flow" }
     ],
     money: [
       { id: "money-trend", label: "最近的財務走向", spread: "flow" },
-      { id: "money-invest", label: "這筆錢要不要投下去", spread: "choice" },
-      { id: "money-today", label: "今天的金錢指引", spread: "single" },
-      { id: "money-free", label: "以上都不是,我自己說", spread: "auto" }
+      { id: "money-invest", label: "這筆錢要不要投下去", spread: "flow" },
+      { id: "money-today", label: "今天的金錢指引", spread: "flow" },
+      { id: "money-free", label: "以上都不是,我自己說", spread: "flow" }
     ],
     decision: [
-      { id: "decision-two", label: "有兩個選項在猶豫", spread: "choice" },
+      { id: "decision-two", label: "有兩個選項在猶豫", spread: "flow" },
       { id: "decision-flow", label: "想知道事情會怎麼發展", spread: "flow" },
-      { id: "decision-deep", label: "這件事很重要,要看得徹底一點", spread: "celtic" },
-      { id: "decision-free", label: "以上都不是,我自己說", spread: "auto" }
+      { id: "decision-deep", label: "這件事很重要,要看得徹底一點", spread: "flow" },
+      { id: "decision-free", label: "以上都不是,我自己說", spread: "flow" }
     ],
     other: [
-      { id: "other-today", label: "給我今天的一句話", spread: "single" },
+      { id: "other-today", label: "給我今天的一句話", spread: "flow" },
       { id: "other-flow", label: "看看最近的整體走向", spread: "flow" },
-      { id: "other-people", label: "跟某個人之間的關係", spread: "relation" },
-      { id: "other-self", label: "想好好認識自己一次", spread: "tree" },
-      { id: "other-free", label: "以上都不是,我自己說", spread: "auto" }
+      { id: "other-people", label: "跟某個人之間的關係", spread: "flow" },
+      { id: "other-self", label: "想好好認識自己一次", spread: "flow" },
+      { id: "other-free", label: "以上都不是,我自己說", spread: "flow" }
     ]
   };
 
