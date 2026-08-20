@@ -517,9 +517,17 @@ document.addEventListener("DOMContentLoaded", function () {
     // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
     drawSrcMp4.src = videoUrl(v.mp4);
     drawVideo.poster = "./assets/videos/" + v.poster;
-    // 不在這裡 load():preload="none" 加上不呼叫 load(),瀏覽器就不會
-    // 主動去抓,背景那支 prefetch 才不會跟它撞成同一支下載兩次。
-    // 真的要播的時候 playDraw() 會 play(),那時檔案已經在快取裡了。
+    // 一定要 load():<source> 的 src 是 JS 事後填的,而瀏覽器只在解析頁面
+    // 的當下跑一次「挑來源」,事後改 <source> 不會讓它重挑。不叫 load()
+    // 的話 networkState 會一直停在 NO_SOURCE,play() 直接被拒絕,
+    // playShuffle() 的 p.catch(finish) 立刻把滿版影片收掉——畫面上看起來
+    // 就是「影片閃半秒就沒了」。
+    // (2026-08-18 實測:currentSrc 是空字串、networkState=3。進場與等待
+    //  那兩支影片沒事,因為它們的網址直接寫在 HTML 的 <source> 上。)
+    //
+    // load() 不會造成重複下載:preload="none" 之下它只跑挑來源,不抓內容;
+    // 真的要播時檔案已經在 HTTP 快取裡(startPrefetch 抓過)。
+    drawVideo.load();
   }
   window.addEventListener("resize", pickVideo);
 
@@ -981,6 +989,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.body.classList.add("no-scroll");
     drawOverlay.style.display = "block";
+    // 保險:萬一來源還是沒選上(pickVideo 因為 overlay 開著而提早 return 過),
+    // 這裡補一次,不要讓客人再看到閃一下就消失的影片。
+    if (!drawVideo.currentSrc) drawVideo.load();
     drawVideo.currentTime = 0;
     drawVideo.muted = !Tarot.Sound.isOn();
     var p = drawVideo.play();
