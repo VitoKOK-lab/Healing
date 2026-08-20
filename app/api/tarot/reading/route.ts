@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import { unsuitable } from "@/lib/tarot/unsuitable";
 
 // Gemini 解讀含重試可能超過 Vercel 預設 10 秒逾時(desk 現場版仍在用這支)
 export const maxDuration = 60;
@@ -347,6 +348,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "bad request" },
       { status: 400, headers: CORS_HEADERS }
+    );
+  }
+
+  // 不適合用塔羅問的題目(自傷/醫療/明牌…):在呼叫模型之前就攔下。
+  // v1 的前端有同一份檢查,但前端擋不住直接打這支 API 的人——
+  // crisis 類要回 1925 專線,不能讓模型自由發揮。
+  const blocked = unsuitable(
+    [question, scenario, optionA, optionB]
+      .filter((v): v is string => typeof v === "string")
+      .join(" ")
+  );
+  if (blocked) {
+    return NextResponse.json(
+      { ok: false, error: "unsuitable", kind: blocked.kind, lines: blocked.lines },
+      { status: 422, headers: CORS_HEADERS }
     );
   }
 
