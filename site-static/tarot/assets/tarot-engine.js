@@ -23,9 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var MODE = document.body.dataset.mode === "desk" ? "desk" : "phone";
   var IS_DESK = MODE === "desk";
 
-  var creditsText = document.getElementById("creditsText");
-  var creditsBadge = document.getElementById("creditsBadge");
-  var lockedPanel = document.getElementById("lockedPanel");
   var tarotFlow = document.getElementById("tarotFlow");
   var catDialogue = document.getElementById("catDialogue");
   var dialogueAvatar = document.getElementById("dialogueAvatar");
@@ -95,7 +92,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // 記下這一輪的兩個選項,「請本喵再看一次」重送時才不會漏掉
   var lastOptions = null;
   var lastReading = "";
-  var refunded = false;
   var usedFallback = false;
   // 客人自己滑出來的種子:洗牌軌跡長度 + 切牌位置,決定抽到哪幾張牌
   var swipeDistance = 0;
@@ -247,25 +243,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // 桌機版是店主拿著螢幕在現場一位接一位玩的工具,不計次、不需儲值。
   // 手機版是客人自己玩的,照原本的付費規則走:抽完免費次數要加購。
   // 額度那一套邏輯完整留在 tarot-data.js,這裡只決定要不要走它。
-  function updateCredits() {
-    if (IS_DESK) {
-      creditsBadge.style.display = "none";   // 不計次就不該顯示「剩餘 N 次」
-      return;
-    }
-    creditsText.textContent = "剩餘 " + Tarot.getCredits() + " 次";
-  }
-
-  // 擋在「要開始新的一輪」之前:沒次數就直接顯示購買頁,
-  // 不讓客人白花力氣選主題、打字、看完動畫才被擋下來。
+  // 2026-08-21:占卜次數整組拿掉(店主決定網頁版一律無限、也不顯示)。
+  // canStartRound() 留著是因為流程有三處在呼叫它,而且它還負責把
+  // #tarotFlow 顯示出來;現在它永遠回 true。
   function canStartRound() {
-    updateCredits();
-    var ok = IS_DESK || Tarot.getCredits() > 0;
-    lockedPanel.style.display = ok ? "none" : "block";
-    // 2026-08-21:版面交給 CSS 依螢幕寬度決定(寬 = grid 兩欄、窄 = 單欄),
-    // 這裡只管「顯示或不顯示」。先前寫成 IS_DESK ? "grid" : "block",
-    // 等於把版面綁在模式上——店面模式用平板直放就會被硬塞成兩欄。
-    tarotFlow.style.display = ok ? "" : "none";
-    return ok;
+    tarotFlow.style.display = "";
+    return true;
   }
 
   // ── 音效開關 ───────────────────────────────────────
@@ -657,10 +640,6 @@ document.addEventListener("DOMContentLoaded", function () {
     hideStages();
     var opening = ["要在心中默念你的心意喔,本喵要開始了。"];
     speak(opening, function () {
-      // 次數扣在這裡,而不是按下按鈕的當下:前面還有「這個問題不適合占卜」
-      // 與追問兩道關卡會把人擋回去,扣早了客人會白白少一次。
-      if (!IS_DESK) Tarot.useCredit();
-      updateCredits();
       startSwipeShuffle();
     });
   }
@@ -1027,7 +1006,6 @@ document.addEventListener("DOMContentLoaded", function () {
     lastOptions = chosenOptions();
     var cards = Tarot.drawSpread(lastSpread, seed, cutPoint, lastOptions);
     lastCards = cards;
-    refunded = false;
     usedFallback = false;
     var cardEls = buildDeck(cards);
     var layout = (Tarot.SPREADS[lastSpread] || {}).layout;
@@ -1155,11 +1133,6 @@ document.addEventListener("DOMContentLoaded", function () {
     errorNote.style.display = "block";
     // 店面版不給「再看一次」:店主在旁邊排隊,重試不如直接換下一位
     if (!IS_DESK) retryBtn.style.display = "inline-flex";
-    if (!refunded) {
-      refunded = true;
-      Tarot.addCredits(1);
-      updateCredits();
-    }
     if (!usedFallback && lastCards) {
       usedFallback = true;
       resultPanel.classList.add("is-fallback");
@@ -1381,7 +1354,6 @@ document.addEventListener("DOMContentLoaded", function () {
     clarifyRounds = [];
     resultPanel.classList.remove("is-fallback");
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
-    if (!canStartRound()) return;   // 次數用完就直接看到加購頁,不再走一次流程
     startIntro();
     catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   });

@@ -144,22 +144,11 @@
 
 <main class="tarot-shell">
   <div class="tarot-bar">
-    <span class="tarot-credits" id="creditsBadge">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-      <span id="creditsText">剩餘 3 次</span>
     </span>
     <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
       <span id="soundLabel">呼嚕聲</span>
     </button>
-  </div>
-
-  <!-- 額度用完:導向購買 -->
-  <div class="card tarot-locked" id="lockedPanel" style="display:none">
-    <div class="dot" style="margin-inline:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></div>
-    <h2 class="display" style="font-size:19px;margin-top:14px">占卜次數已用完</h2>
-    <!-- 加購頁已隨課程站一起下線;LINE 官方帳號版的購買流程做好之前,先請客人找店主 -->
-    <p style="margin-top:8px;font-size:13px;color:var(--inkdim)">想再抽的話,請直接找店主加購喵</p>
   </div>
 
   <div id="tarotFlow">

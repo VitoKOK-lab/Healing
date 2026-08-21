@@ -520,29 +520,10 @@
   }
 
 
-  var CREDIT_KEY = "tarotCredits";
-
-  function getCredits() {
-    var v = parseInt(localStorage.getItem(CREDIT_KEY), 10);
-    if (isNaN(v)) {
-      // 預設已付款 3 次,方便直接試玩;正式使用者則靠結帳頁加值。
-      v = 3;
-      localStorage.setItem(CREDIT_KEY, String(v));
-    }
-    return v;
-  }
-
-  function useCredit() {
-    var v = Math.max(0, getCredits() - 1);
-    localStorage.setItem(CREDIT_KEY, String(v));
-    return v;
-  }
-
-  function addCredits(n) {
-    var v = getCredits() + n;
-    localStorage.setItem(CREDIT_KEY, String(v));
-    return v;
-  }
+  // 2026-08-21:占卜次數整組拿掉。原本是存在瀏覽器 localStorage 的
+  // 計數器,換個瀏覽器或清一下資料就重來,擋不住任何人——它是提醒,
+  // 不是收費。真正的額度在 LINE 版,存在資料庫裡。店主決定網頁版
+  // 一律無限、也不顯示次數。
 
   // 牌面圖:檔名就是牌的編號。WebP 為主,不支援的瀏覽器退回 JPEG。
   var supportsWebp = (function () {
@@ -566,9 +547,6 @@
     artUrl: artUrl,
     catFace: catFace,
     Sound: Sound,
-    getCredits: getCredits,
-    useCredit: useCredit,
-    addCredits: addCredits,
     // 站台同時部署在 Vercel(與 API 同網域)與 GitHub Pages(需跨網域呼叫)
     API_URL: /\.vercel\.app$/.test(location.hostname)
       ? "/api/tarot/reading"
