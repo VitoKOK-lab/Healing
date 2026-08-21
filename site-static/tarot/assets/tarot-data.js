@@ -341,22 +341,6 @@
     ]
   };
 
-  // 固定清單不可能涵蓋所有事。選「我自己說」的人直接打字,由這裡從問題本身
-  // 判斷該用哪個牌陣——判斷不出來就用時間之流,那是最通用的。
-  function guessSpread(text) {
-    var q = String(text || "");
-    if (/還是|或是|二選一|兩個(選擇|選項)|要不要換|該不該(換|走|離|分|留)|A 還是 B/.test(q)) {
-      return "choice";
-    }
-    if (/我是誰|認識(我)?自己|我這個人|人生方向|自我探索|整個人生|我到底/.test(q)) return "tree";
-    if (/全面|徹底|通盤|從頭到尾|裡裡外外|完整地?看|所有面向|深入了解/.test(q)) return "celtic";
-    if (/對方|他|她|男友|女友|老公|老婆|前任|曖昧|同事|主管|上司|婆婆|家人|朋友|我們之間|兩個人/.test(q)) {
-      return "relation";
-    }
-    if (/今天|今日|這一天|一句話|給我一個(方向|指引)/.test(q)) return "single";
-    return "flow";
-  }
-
   // ── 不適合用塔羅問的題目 ──────────────────────────────
   // 在扣點數之前就攔下來:這些問題塔羅給不出負責任的答案,
   // 收了錢再給一段模稜兩可的話,對客人沒有好處。
@@ -576,7 +560,6 @@
     SPREADS: SPREADS,
     SCENARIOS: SCENARIOS,
     scenarioById: scenarioById,
-    guessSpread: guessSpread,
     unsuitable: unsuitable,
     drawSpread: drawSpread,
     localReading: localReading,
