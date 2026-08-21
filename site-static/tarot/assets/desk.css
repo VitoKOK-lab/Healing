@@ -477,3 +477,15 @@ body.tarot-desktop-page ::-webkit-scrollbar-thumb:hover {
 body.tarot-desktop-page ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ── 算完之後的岔路:我自己看 / 直接告訴我 ─────────────────────
+   兩顆一樣大、並排,店主跟客人都能一眼看懂要按哪顆。 */
+.privacy-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.privacy-pick button { width: 100%; padding: 16px 0; font-size: 17px; }
+@media (max-width: 560px) {
+  .privacy-pick { grid-template-columns: 1fr; }
+}
