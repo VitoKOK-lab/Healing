@@ -545,7 +545,14 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   inset: 0;
   z-index: 280;               /* 在影片遮罩(300)之下,其餘之上 */
   display: grid;
-  place-items: center;
+  /* safe center:內容比視窗高時改成靠上對齊,不會把頂端切到畫面外。
+     搭配 overflow-y:auto——手機扣掉網址列之後可用高度常常只剩 650~700px,
+     卡片放不下時一定要捲得到底部那顆 LINE 與關閉鈕。
+     2026-08-21:加了「在這支手機打開」與 LINE 兩顆之後,卡片變成 750~790px,
+     在真手機上會超出視窗,而原本 overflow 是 visible——捲不到,等於不存在。 */
+  place-items: safe center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px;
   background: rgba(10, 4, 18, .72);
   backdrop-filter: blur(10px);
@@ -807,3 +814,36 @@ body.no-scroll { overflow: hidden; touch-action: none; }
   color: #ffd98c; border: 1px solid rgba(255, 214, 140, .45); border-radius: 12px;
 }
 .qr-share-line:hover { background: rgba(255, 214, 140, .08); }
+
+
+/* 矮螢幕(手機扣掉網址列、桌機視窗被拉小)把 QR 卡片壓縮一點,
+   盡量不用捲就能看到底部的 LINE 與按鈕列。 */
+@media (max-height: 760px) {
+  .qr-share { padding: 16px; }
+  .qr-share-card { padding: 22px 22px 20px; border-radius: 22px; }
+  .qr-share-card h2 { font-size: 19px; }
+  .qr-share-code { width: 210px; height: 210px; margin-top: 14px; padding: 10px; }
+  .qr-share-note, .qr-share-keep { margin-top: 8px; }
+  .qr-share-open { margin-top: 10px; }
+  .qr-share-line { margin-top: 8px; padding: 10px 0; }
+}
+@media (max-height: 620px) {
+  .qr-share-code { width: 168px; height: 168px; }
+  .qr-share-note { display: none; }   /* 空間真的不夠時,說明讓位給按鈕 */
+}
+
+/* 結果最下面那條 LINE:網頁版通往 LINE 版最主要的出口。
+   做得比「再抽一次」低調一點,但不能低調到看不見。 */
+.tarot-line-cta {
+  display: block;
+  margin-top: 18px;
+  padding: 13px 16px;
+  text-align: center;
+  font-size: 14.5px;
+  text-decoration: none;
+  color: #1c1428;
+  background: linear-gradient(120deg, #f5cd82, #e8b04b);
+  border-radius: 12px;
+  font-weight: 700;
+}
+.tarot-line-cta:hover { filter: brightness(1.06); }

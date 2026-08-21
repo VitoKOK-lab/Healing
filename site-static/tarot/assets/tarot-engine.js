@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var summaryList = document.getElementById("summaryList");
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
+  var resultLineBtn = document.getElementById("resultLineBtn");
   var reportBtn = document.getElementById("reportBtn");
   var qrBtn = document.getElementById("qrBtn");
   var gemPick = document.getElementById("gemPick");
@@ -1105,6 +1106,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // 結果頁只留「傳給客人・QR」跟「再抽一次」兩顆:按鈕愈少愈快。
       // 「存成圖片」拿掉——要帶走就走 QR,一個出口就夠。
       qrBtn.style.display = "inline-flex";
+      if (resultLineBtn) resultLineBtn.style.display = "block";
       showGemPick();
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
@@ -1378,28 +1380,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // 進場那道門由 gateDone 鎖住只會跑一次,與其在這裡拆一堆狀態,
     // 整頁重載最乾淨,也保證上一輪的任何殘留都不會留下來。
     // (影片與牌圖都在瀏覽器快取裡,重載很快。)
+    //
+    // 2026-08-21:原本 return 底下還留著一整段手動重設(清欄位、收按鈕、
+    // 回到 startIntro),那是「再抽一次不重載」時代的東西,現在永遠執行不到。
+    // 留著會誤導以後讀這段的人以為那些狀態有被清,所以刪掉。
     location.reload();
-    return;
-    clearTimeout(typeTimer);
-    readingSummary.style.display = "none";
-    againBtn.style.display = "none";
-    reportBtn.style.display = "none";
-    qrBtn.style.display = "none";
-    if (gemPick) gemPick.style.display = "none";
-    lastGem = null;
-    retryBtn.style.display = "none";
-    errorNote.style.display = "none";
-    questionInput.value = "";
-    optionA.value = "";
-    optionB.value = "";
-    topic = null;
-    scenario = null;
-    lastOptions = null;
-    clarifyRounds = [];
-    resultPanel.classList.remove("is-fallback");
-    document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
-    startIntro();
-    catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   pickVideo();
