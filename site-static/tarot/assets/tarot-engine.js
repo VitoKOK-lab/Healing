@@ -94,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var swipeDistance = 0;
   var cutPoint = 0.5;
   // 自由發問時本喵挑好牌陣要說的那句話,抽牌前才講
-  var autoPickedLine = null;
 
   var TOPIC_REPLY = {
     love: "感情的事啊⋯⋯本喵最懂了。",
@@ -114,15 +113,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // 自由發問判斷完牌陣後,本喵再說一次要怎麼看——客人才知道發生了什麼事
-  var AUTO_PICKED = {
-    single: "這件事本喵抽【一張】就夠了,直接給你重點。",
-    flow: "聽起來要看的是【來龍去脈】,本喵用三張排一條時間線。",
-    choice: "你這是在【兩條路之間】猶豫吧?那把兩條路都寫給本喵看看。",
-    relation: "這牽扯到【另一個人】,本喵把你的心跟對方的心一起排出來。",
-    celtic: "這件事不簡單,本喵用【十張牌】從裡到外幫你排一遍。",
-    tree: "想看清自己啊⋯⋯那本喵排【整棵生命之樹】,十一張。"
-  };
-
   // ── 兩種標記 ────────────────────────────────────────
   // 【】= 對客人有意義的重點,放大變色
   // 〔〕= 牌名出處(例如〔寶劍八逆位〕),做成小標籤,讓人一眼看出這句話的根據
@@ -553,26 +543,6 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (e) {}
   }
 
-  // 自由發問:先看懂客人問什麼,才決定用哪個牌陣。判斷成二擇一時要回頭
-  // 跟客人要那兩條路,不能自己編。
-  function resolveAutoSpread() {
-    if (!scenario || scenario.spread !== "auto") return true;
-    var picked = Tarot.guessSpread(questionInput.value);
-    scenario.spread = picked;
-    autoPickedLine = AUTO_PICKED[picked] || null;
-    if (picked === "choice") {
-      autoPickedLine = null;   // 這句下面就會講,不要等到抽牌前再講一次
-      optionPanel.style.display = "grid";
-      questionField.style.display = "none";
-      speak([AUTO_PICKED.choice], function () {
-        showStage(questionPanel);
-        optionA.focus();
-      });
-      return false;   // 這一輪先不抽,等客人補完兩條路
-    }
-    return true;
-  }
-
   // ── 不適合用塔羅問的題目 ─────────────────────────────
   // 一定要擋在扣點數之前:這種問題塔羅給不出負責任的答案,
   // 收了錢再給一段模稜兩可的話,對客人沒有好處。
@@ -591,7 +561,6 @@ document.addEventListener("DOMContentLoaded", function () {
       topic = null;
       scenario = null;
       lastOptions = null;
-      autoPickedLine = null;
       document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
       startIntro();
       catDialogue.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -674,11 +643,6 @@ document.addEventListener("DOMContentLoaded", function () {
     unlockVideo();
     hideStages();
     var opening = ["要在心中默念你的心意喔,本喵要開始了。"];
-    // 自由發問的人不知道本喵挑了哪個牌陣,先講一句再開始
-    if (autoPickedLine) {
-      opening.unshift(autoPickedLine);
-      autoPickedLine = null;
-    }
     speak(opening, function () {
       // 次數扣在這裡,而不是按下按鈕的當下:前面還有「這個問題不適合占卜」
       // 與追問兩道關卡會把人擋回去,扣早了客人會白白少一次。
@@ -1361,7 +1325,6 @@ document.addEventListener("DOMContentLoaded", function () {
     topic = null;
     scenario = null;
     lastOptions = null;
-    autoPickedLine = null;
     clarifyRounds = [];
     resultPanel.classList.remove("is-fallback");
     document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
