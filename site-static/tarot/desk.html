@@ -194,6 +194,17 @@
     </div>
 
     <!-- 洗牌:手指在牌面上來回滑,滑滿才算洗透 -->
+    <!-- 解讀生成完、還沒顯示之前的岔路(只有店面版有):
+         有些客人不想讓旁邊的人看到內容,那就不要把字放上大螢幕,
+         直接出 QR 讓他自己用手機看。 -->
+    <div class="step-panel" id="privacyPanel" style="display:none">
+      <div class="privacy-pick">
+        <button type="button" class="btn-primary" id="privacyTellBtn">直接告訴我</button>
+        <button type="button" class="btn-secondary" id="privacySelfBtn">我自己看</button>
+      </div>
+      <p class="stage-hint" id="privacyHint">選「我自己看」的話,螢幕上不會出現任何內容,直接給你 QR</p>
+    </div>
+
     <div class="step-panel" id="shufflePanel" style="display:none">
       <div class="swipe-stage" id="swipeStage" role="button" tabindex="0"
            aria-label="洗牌區。用滑鼠或手指來回滑動,或連按方向鍵,直到洗透為止。"

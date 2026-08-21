@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var topicPanel = document.getElementById("topicPanel");
   var scenarioPanel = document.getElementById("scenarioPanel");
   var scenarioList = document.getElementById("scenarioList");
+  var privacyPanel = document.getElementById("privacyPanel");
+  var privacySelfBtn = document.getElementById("privacySelfBtn");
+  var privacyTellBtn = document.getElementById("privacyTellBtn");
   var shufflePanel = document.getElementById("shufflePanel");
   var swipeStage = document.getElementById("swipeStage");
   var swipeTrail = document.getElementById("swipeTrail");
@@ -299,6 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
     questionPanel.style.display = "none";
     clarifyPanel.style.display = "none";
     thinkingPanel.style.display = "none";
+    if (privacyPanel) privacyPanel.style.display = "none";
     shufflePanel.style.display = "none";
     cutPanel.style.display = "none";
   }
@@ -1072,6 +1076,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 300 + cards.length * step + 250);
   }
 
+  // ── 解讀到手之後的岔路(只有店面版)────────────────────────
+  // 店面那台螢幕旁邊常常站著別人。有些客人不想被看到內容,那就一個字
+  // 都不要放上螢幕,直接出 QR 讓他自己用手機看;想聽的人照舊。
+  // 這一步一定要卡在「顯示內文之前」——晚一步就已經被看光了。
+  function deliverReading(text) {
+    lastReading = text;
+    if (!IS_DESK || !privacyPanel) { speakReading(text); return; }
+    hideStages();
+    speak(["本喵看完了。要本喵直接告訴你,還是你自己看就好?"], function () {
+      showStage(privacyPanel);
+    });
+  }
+
+  if (privacySelfBtn) {
+    privacySelfBtn.addEventListener("click", function () {
+      // 螢幕上什麼都不出:不講解讀、不列總表、不推石頭,直接 QR。
+      hideStages();
+      // 客人如果把 QR 關掉,底下不能是一片空白——留一顆「再抽一次」當出口。
+      againBtn.style.display = "inline-flex";
+      shareQr();
+    });
+  }
+  if (privacyTellBtn) {
+    privacyTellBtn.addEventListener("click", function () {
+      hideStages();
+      speakReading(lastReading);
+    });
+  }
+
   // ── 第六步:本喵一句一句說解讀,說完列成總表 ────────────────
   function speakReading(text) {
     lastReading = text;
@@ -1121,7 +1154,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!usedFallback && lastCards) {
       usedFallback = true;
       resultPanel.classList.add("is-fallback");
-      speakReading(Tarot.localReading(lastSpread || "flow", lastCards));
+      deliverReading(Tarot.localReading(lastSpread || "flow", lastCards));
     } else {
       againBtn.style.display = "inline-flex";
     }
@@ -1157,7 +1190,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function (data) {
         if (timer) clearTimeout(timer);
         loadingNote.style.display = "none";
-        if (data && data.ok) speakReading(data.reading);
+        if (data && data.ok) deliverReading(data.reading);
         else failReading((data && data.error) || "本喵現在有點累,請稍後再試");
       })
       .catch(function () {
@@ -1256,7 +1289,9 @@ document.addEventListener("DOMContentLoaded", function () {
     qrShareError.style.display = "";
   }
 
-  qrBtn.addEventListener("click", function () {
+  // 產生分享圖 → 上傳 → 顯示 QR。兩個入口共用:結果頁的「傳給客人・QR」,
+  // 以及客人選「我自己看」時的直接跳轉。
+  function shareQr() {
     if (!lastCards || !lastReading) return;
     openQrPanel();
 
@@ -1293,7 +1328,9 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error("[qr] 產生失敗", e);
       qrFailed("QR 產生失敗了喵,先用「存成圖片」把結果存下來吧。");
     });
-  });
+  }
+
+  qrBtn.addEventListener("click", shareQr);
 
   qrCloseBtn.addEventListener("click", closeQrPanel);
 
