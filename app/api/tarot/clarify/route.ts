@@ -40,7 +40,7 @@ export function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   // 沒設金鑰時直接放行:追問是加分項,不能因此擋住付費流程
-  if (!env.GEMINI_API_KEY) {
+  if (!env.KIMI_API_KEY) {
     return NextResponse.json({ ok: true, question: null }, { headers: CORS_HEADERS });
   }
 
@@ -125,27 +125,24 @@ ${history}
 ${asked.length >= 1 ? "- 你已經問過一次了。除非真的完全看不懂,否則直接輸出 OK。" : ""}`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
-        }),
-      }
-    );
-    if (!res.ok) throw new Error(`Gemini ${res.status}`);
+    const res = await fetch(`${env.KIMI_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.KIMI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: env.KIMI_MODEL,
+        max_tokens: 400,
+        temperature: 0.6,
+        thinking: { type: "disabled" },
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error(`kimi ${res.status}`);
 
-    const data = await res.json();
-    const parts: Array<{ text?: string; thought?: boolean }> =
-      data?.candidates?.[0]?.content?.parts ?? [];
-    const out = parts
-      .filter((p) => !p.thought && typeof p.text === "string")
-      .map((p) => p.text)
-      .join("")
-      .trim();
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const out = (data.choices?.[0]?.message?.content ?? "").trim();
 
     // 夠清楚就開牌。回傳的東西不像一句追問時也直接放行,不要卡住客人。
     const clear = !out || /^ok\b/i.test(out) || out.length > 40 || !/[?？]/.test(out);

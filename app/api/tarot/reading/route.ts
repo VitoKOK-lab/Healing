@@ -216,40 +216,43 @@ export function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
-class GeminiError extends Error {
+class ModelError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
   }
 }
 
-async function askGemini(prompt: string): Promise<string> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        // 思考型模型的內部推理也吃這個上限(實測可到 ~2000 tokens),
-        // 留得不夠寬正文就會以 MAX_TOKENS 被腰斬。
-        generationConfig: { temperature: 0.9, maxOutputTokens: 4096 },
-      }),
-    }
-  );
+// 2026-08-21:網頁版改用 Kimi,跟 LINE 版共用同一把金鑰與同一顆模型。
+// 原本走 Gemini,但那把金鑰在換 Supabase 那次清環境變數時被一起刪掉,
+// 線上一直回 503「本喵占卜師還沒準備好」,前端只能退回本地罐頭文案——
+// 店主看到的「解盤很短、很隨便、沒有白話文」就是那段罐頭,不是模型寫的。
+// 兩套引擎共用一個供應商之後,以後只要顧一把金鑰。
+//
+// K2.6 的坑(與 lib/tarot/generate.ts 同一份經驗):思考模式關閉時
+// temperature 只接受 0.6,開啟時只接受 1,填錯直接 400。這裡關閉思考,
+// 因為思考過程也吃 max_tokens,而且會把單次生成拖過 Vercel 的時限。
+async function askModel(prompt: string): Promise<string> {
+  const res = await fetch(`${env.KIMI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.KIMI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: env.KIMI_MODEL,
+      max_tokens: 3000,
+      temperature: 0.6,
+      thinking: { type: "disabled" },
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
 
   if (!res.ok) {
-    throw new GeminiError(`Gemini ${res.status}: ${await res.text()}`, res.status);
+    throw new ModelError(`kimi ${res.status}: ${await res.text()}`, res.status);
   }
 
-  const data = await res.json();
-  // 回應可能含多個 part;標記 thought 的是推理內容,不要放進正文。
-  const parts: Array<{ text?: string; thought?: boolean }> =
-    data?.candidates?.[0]?.content?.parts ?? [];
-  return parts
-    .filter((p) => !p.thought && typeof p.text === "string")
-    .map((p) => p.text)
-    .join("")
-    .trim();
+  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  return (data.choices?.[0]?.message?.content ?? "").trim();
 }
 
 // 逐張報牌的說法。三張牌要讀成一個故事,出現這些就是在輪流背牌義。
@@ -307,7 +310,7 @@ function looksLikeReading(text: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  if (!env.GEMINI_API_KEY) {
+  if (!env.KIMI_API_KEY) {
     return NextResponse.json(
       { ok: false, error: "本喵占卜師還沒準備好" },
       { status: 503, headers: CORS_HEADERS }
@@ -537,7 +540,7 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
 - 直接輸出解讀本文,不要任何前言、說明或自我檢查`;
 
   try {
-    let reading = await askGemini(prompt);
+    let reading = await askModel(prompt);
     // 兩種要重來的情況:
     // (a) 思考型模型把自我檢查(逐字編號、英文檢查清單)當答案吐出來,或被截斷;
     // (b) 內容是罐頭廢話——溫暖但什麼都沒說,客人看完還是不知道要幹嘛。
@@ -551,7 +554,7 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
         prompt.replace(ANGLES[angleIndex], ANGLES[(angleIndex + 3) % ANGLES.length]) +
         "\n\n(重要:上一次的產出是空泛的場面話。這次務必給出從牌面長出來的具體判斷與可執行的行動," +
         "不要出現「相信自己」「答案在你心裡」「沒有絕對的好壞」這類對誰都成立的句子。)";
-      const second = await askGemini(retryPrompt);
+      const second = await askModel(retryPrompt);
       // 第二次若仍不合格,取兩者中比較好的那個,而不是直接失敗
       if (looksLikeReading(second)) reading = second;
     }
@@ -568,7 +571,7 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
   } catch (err) {
     console.error("Gemini request failed", err);
     // 免費方案有每日呼叫上限,講清楚比「暫時無法使用」有用
-    if (err instanceof GeminiError && err.status === 429) {
+    if (err instanceof ModelError && err.status === 429) {
       return NextResponse.json(
         { ok: false, error: "今天的占卜次數已達上限,請明天再來" },
         { status: 429, headers: CORS_HEADERS }
