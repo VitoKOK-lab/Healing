@@ -1483,19 +1483,36 @@ document.addEventListener("DOMContentLoaded", function () {
           lastTime = t;
           stillTicks = 0;
           progressed = true;
-        } else if (++stillTicks >= 3) {     // 連續三次 = 1.2 秒沒動
+        } else if (++stillTicks >= 6) {     // 連續六次 = 2.4 秒沒動
+          // 原本是 1.2 秒。網路慢的時候影片會邊播邊緩衝,停一秒是常態,
+          // 那樣的門檻會把好好的影片砍掉。真的卡死等 2.4 秒也不算久。
           openGate();
         }
       }, 400);
 
-      // 總保險:影片長度 + 2 秒,最多不超過 10 秒。拿不到長度就用 4 秒。
-      later(function () {
-        var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 4;
-        // 上限原本是 10 秒。2026-08-21 換上的直式進場影片本身就有 10 秒,
-        // 卡在 10 秒等於在最後一格把它切掉——放寬到 14 秒。
-        var left = Math.min((dur + 2) * 1000, 14000);
-        later(openGate, left);
-      }, 0);
+      // 主要收尾:播到「剩最後 1 秒」就放人進來(店主要求:讓它播完,
+      // 只剪掉最後一秒——那一秒通常是收尾定格,等它沒有意義)。
+      //
+      // 一定要等 loadedmetadata 才讀 duration。2026-08-21 這裡出過事:
+      // 原本在 later(..., 0) 裡立刻讀 enterVideo.duration,但那時候
+      // preload="none" 的影片還沒載 metadata,duration 是 NaN,程式退回
+      // 預設值 4 秒,於是 4+2=6 秒就強制收掉——店主那支 10 秒的進場影片
+      // 固定在第 6 秒被砍。看起來像「影片被剪短了」,其實是這道保險誤觸。
+      var cutTimer = null, insureTimer = null;
+      function armEnterGuards() {
+        var dur = enterVideo.duration;
+        if (!isFinite(dur) || dur <= 0) return;
+        clearTimeout(cutTimer);
+        clearTimeout(insureTimer);
+        var now = isFinite(enterVideo.currentTime) ? enterVideo.currentTime : 0;
+        cutTimer = later(openGate, Math.max(0, (dur - 1 - now)) * 1000);
+        // 總保險:影片本身有多長就等多長再加 3 秒(緩衝的餘裕)
+        insureTimer = later(openGate, Math.max(1000, (dur + 3 - now) * 1000));
+      }
+      enterVideo.addEventListener("loadedmetadata", armEnterGuards);
+      enterVideo.addEventListener("playing", armEnterGuards);
+      // metadata 一直沒來(檔案壞了、網路斷了)時的最後一道,給得寬鬆一點
+      later(openGate, 15000);
 
       // 點畫面任何地方都能跳過
       enterOverlay.addEventListener("click", openGate);
@@ -1503,8 +1520,9 @@ document.addEventListener("DOMContentLoaded", function () {
       var p = enterVideo.play();
       if (p && p.catch) p.catch(openGate);
 
-      // 第 3 道:play() 之後 1.2 秒還沒有任何進度,就當它起不來
-      later(function () { if (!progressed) openGate(); }, 1200);
+      // 第 3 道:play() 之後還沒有任何進度,就當它起不來。
+      // 原本 1.2 秒,對 preload="none" 的影片太緊(要先抓才播得動),放寬到 3 秒。
+      later(function () { if (!progressed) openGate(); }, 3000);
 
       // openGate 收尾時要把這些計時器都清掉
       gateCleanup = clearGateTimers;
