@@ -10,9 +10,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./assets/base.css" />
 <link rel="stylesheet" href="./assets/tarot.css" />
+<!-- 版面兩份:mobile.css 管窄螢幕、desk.css 管寬螢幕,
+     各自包在自己的 @media 裡,同一份 HTML 兩邊都合身。 -->
 <link rel="stylesheet" href="./assets/mobile.css" />
+<link rel="stylesheet" href="./assets/desk.css" />
 </head>
-<body class="tarot-page tarot-phone-page" data-mode="phone">
+<body class="tarot-page">
+<script>
+  // 版面看螢幕寬度(CSS 處理),模式看網址——兩件事分開。
+  //   /tarot/         → 客人模式(有次數)
+  //   /tarot/?m=desk  → 店面模式(無限、有 QR、有「我自己看」岔路)
+  // 不能用螢幕寬度判斷模式:客人拿筆電開也是寬螢幕,那樣就變成免費無限用。
+  document.body.dataset.mode =
+    /(^|[?&])m=desk(&|$)/.test(location.search) ? "desk" : "phone";
+</script>
 
 <!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
 <div class="draw-overlay" id="drawOverlay" style="display:none">
@@ -46,7 +57,7 @@
        直接 copy 的,沒有重壓,畫質不變)。 -->
   <video id="waitVideo" class="draw-overlay-video" playsinline preload="auto" autoplay loop muted
          poster="./assets/videos/tarot-wait-portrait-poster.jpg">
-    <source src="./assets/videos/tarot-wait-portrait.mp4" type="video/mp4" />
+    <source id="waitSrc" src="./assets/videos/tarot-wait-portrait.mp4" type="video/mp4" />
   </video>
   <p class="tarot-gate-hint">點一下,本喵就開始</p>
 </div>
@@ -65,12 +76,36 @@
        整支影片,把它放進瀏覽器快取(見 tarot-engine.js 的 startPrefetch)。
        留 preload="auto" 的話瀏覽器會再抓一次,同一支影片下載兩遍,
        手機頻寬白白多花一倍。實測確認過。 -->
-  <video id="enterVideo" class="draw-overlay-video" playsinline preload="none"
-         poster="./assets/videos/tarot-enter-portrait-poster.jpg">
-    <source src="./assets/videos/tarot-enter-portrait.mp4" type="video/mp4" />
+  <!-- 2026-08-21:直式進場影片換成店主新給的那支(720x1280,10 秒)。
+       poster 拿掉——舊的那張是前一支影片的畫面,對不上新片的第一格,
+       閃一下反而突兀。影片在等待畫面播著的時候就被 startPrefetch 抓進
+       快取,點下去幾乎立刻就有畫面。 -->
+  <video id="enterVideo" class="draw-overlay-video" playsinline preload="none">
+    <source id="enterSrc" src="./assets/videos/tarot-enter-portrait.mp4" type="video/mp4" />
   </video>
   <p class="tarot-skip-hint">點一下跳過</p>
 </div>
+
+<script>
+  // 寬螢幕(電腦、iPad 橫放)換成橫式的等待與進場影片。
+  // 直式寫死在標記裡當預設,手機不跑這段、零成本。
+  (function () {
+    if (!window.matchMedia("(min-aspect-ratio: 1/1)").matches) return;
+    var swap = [
+      ["waitSrc",  "tarot-wait.mp4",  "waitVideo",  "tarot-draw-wide-poster.jpg"],
+      ["enterSrc", "tarot-enter.mp4", "enterVideo", "tarot-draw-wide-poster.jpg"]
+    ];
+    swap.forEach(function (x) {
+      var src = document.getElementById(x[0]), vid = document.getElementById(x[2]);
+      if (!src || !vid) return;
+      src.src = "./assets/videos/" + x[1];
+      vid.poster = "./assets/videos/" + x[3];
+      // 改 <source> 的 src 之後一定要 load(),否則瀏覽器不會重新挑來源
+      vid.load();
+    });
+  })();
+</script>
+
 
 <!-- 給客人掃的 QR。這是覆蓋在畫面上的一層,不是換頁——
      店主的占卜畫面原封不動留在後面,收掉就能直接接下一位。
@@ -97,17 +132,17 @@
   </div>
 </div>
 
-<header class="tarot-phone-header rise">
+<header class="tarot-topbar rise">
   <!-- 點標題 = 整場重來:回到最開頭的等待畫面,一切歸零。
        現場換下一位客人時最常用到,所以放在最順手的位置。 -->
-  <a class="tarot-phone-brand" href="./index.html" id="brandHome" aria-label="TAHIR ZAINAB TAROT,回到開頭重新開始">
-    <span class="tarot-phone-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
+  <a class="tarot-brand" href="./" id="brandHome" aria-label="TAHIR ZAINAB TAROT,回到開頭重新開始">
+    <span class="tarot-brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg></span>
     <span><b>TAHIR ZAINAB TAROT</b><small>Jessica 解憂商店</small></span>
   </a>
   <p>給自己一段安靜的時間，讓牌替心裡的聲音排好位置。</p>
 </header>
 
-<main class="tarot-phone-shell">
+<main class="tarot-shell">
   <div class="tarot-bar">
     <span class="tarot-credits" id="creditsBadge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
@@ -202,6 +237,17 @@
     </div>
 
     <!-- 洗牌:手指在牌面上來回滑,滑滿才算洗透 -->
+    <!-- 解讀生成完、還沒顯示之前的岔路(只有店面模式會走到):
+         有些客人不想讓旁邊的人看到內容,那就不要把字放上大螢幕,
+         直接出 QR 讓他自己用手機看。 -->
+    <div class="step-panel" id="privacyPanel" style="display:none">
+      <div class="privacy-pick">
+        <button type="button" class="btn-primary" id="privacyTellBtn">直接告訴我</button>
+        <button type="button" class="btn-secondary" id="privacySelfBtn">我自己看</button>
+      </div>
+      <p class="stage-hint" id="privacyHint">選「我自己看」的話,螢幕上不會出現任何內容,直接給你 QR</p>
+    </div>
+
     <div class="step-panel" id="shufflePanel" style="display:none">
       <div class="swipe-stage" id="swipeStage" role="button" tabindex="0"
            aria-label="洗牌區。用滑鼠或手指來回滑動,或連按方向鍵,直到洗透為止。"
@@ -236,7 +282,7 @@
       <p class="stage-hint" id="cutHint">上下滑動,決定從第幾張切開這副牌</p>
     </div>
 
-    <section class="tarot-phone-stage" aria-label="牌桌與占卜結果">
+    <section class="tarot-stage" aria-label="牌桌與占卜結果">
       <!-- 三張卡片由 JS 建立 -->
       <div class="tarot-deck" id="tarotDeck" style="display:none"></div>
 

@@ -15,8 +15,12 @@
    ──────────────────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", function () {
-  // desk = 店主現場用的桌機版;phone = 客人自己玩的手機版
-  var MODE = document.body.dataset.mode === "phone" ? "phone" : "desk";
+  // desk = 店主現場用的模式(無限次、有 QR、有「我自己看」岔路)
+  // phone = 客人自己玩的模式(有次數)
+  // 版面已經改成依螢幕寬度自動切換,模式則由 index.html 開頭那段
+  // inline script 依網址參數(?m=desk)寫進 data-mode。預設是客人模式——
+  // 判斷不出來時給比較保守的那一邊,不要讓人白玩。
+  var MODE = document.body.dataset.mode === "desk" ? "desk" : "phone";
   var IS_DESK = MODE === "desk";
 
   var creditsText = document.getElementById("creditsText");
@@ -257,8 +261,10 @@ document.addEventListener("DOMContentLoaded", function () {
     updateCredits();
     var ok = IS_DESK || Tarot.getCredits() > 0;
     lockedPanel.style.display = ok ? "none" : "block";
-    // 桌機版的 #tarotFlow 是 grid(左牌桌右解讀),手機版是單欄
-    tarotFlow.style.display = ok ? (IS_DESK ? "grid" : "block") : "none";
+    // 2026-08-21:版面交給 CSS 依螢幕寬度決定(寬 = grid 兩欄、窄 = 單欄),
+    // 這裡只管「顯示或不顯示」。先前寫成 IS_DESK ? "grid" : "block",
+    // 等於把版面綁在模式上——店面模式用平板直放就會被硬塞成兩欄。
+    tarotFlow.style.display = ok ? "" : "none";
     return ok;
   }
 
@@ -1481,7 +1487,9 @@ document.addEventListener("DOMContentLoaded", function () {
       // 總保險:影片長度 + 2 秒,最多不超過 10 秒。拿不到長度就用 4 秒。
       later(function () {
         var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 4;
-        var left = Math.min((dur + 2) * 1000, 10000);
+        // 上限原本是 10 秒。2026-08-21 換上的直式進場影片本身就有 10 秒,
+        // 卡在 10 秒等於在最後一格把它切掉——放寬到 14 秒。
+        var left = Math.min((dur + 2) * 1000, 14000);
         later(openGate, left);
       }, 0);
 

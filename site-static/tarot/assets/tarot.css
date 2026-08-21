@@ -206,7 +206,12 @@ body.tarot-page::after {
   /* 2026-08-21:店主反映太陰暗,壓暗層一路調亮:.78→.20、.6→.15、.66→.17、.9→.25
      (約原本的四分之一)。店面版在 desk.css 另外覆寫過同一層,這裡管的是
      手機版 /tarot/。面板都有自己的暗色玻璃底,字不受影響。 */
-  background: linear-gradient(180deg, rgba(20,7,32,.20) 0%, rgba(20,7,32,.15) 26%, rgba(18,6,28,.17) 58%, rgba(14,5,24,.25) 100%);
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.55) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(245,205,130,.45) 0 1px, transparent 1.5px),
+    linear-gradient(180deg, rgba(20,7,32,.20) 0%, rgba(20,7,32,.15) 26%, rgba(18,6,28,.17) 58%, rgba(14,5,24,.25) 100%);
+  background-position: 0 0, 33px 47px, 0 0;
+  background-size: 69px 69px, 103px 103px, auto;
 }
 body.tarot-page { background: #16081f; color: #f6eeff; }
 body.tarot-page main { position: relative; z-index: 1; }
@@ -763,4 +768,16 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .cut-counts {
   gap: 34px;
   margin-top: 26px;
+}
+
+/* ── 算完之後的岔路:我自己看 / 直接告訴我 ─────────────────────
+   兩顆一樣大、並排,店主跟客人都能一眼看懂要按哪顆。 */
+.privacy-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.privacy-pick button { width: 100%; padding: 16px 0; font-size: 17px; }
+@media (max-width: 560px) {
+  .privacy-pick { grid-template-columns: 1fr; }
 }
