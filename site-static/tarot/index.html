@@ -16,14 +16,6 @@
 <link rel="stylesheet" href="./assets/desk.css" />
 </head>
 <body class="tarot-page">
-<script>
-  // 版面看螢幕寬度(CSS 處理),模式看網址——兩件事分開。
-  //   /tarot/         → 客人模式(有次數)
-  //   /tarot/?m=desk  → 店面模式(無限、有 QR、有「我自己看」岔路)
-  // 不能用螢幕寬度判斷模式:客人拿筆電開也是寬螢幕,那樣就變成免費無限用。
-  document.body.dataset.mode =
-    /(^|[?&])m=desk(&|$)/.test(location.search) ? "desk" : "phone";
-</script>
 
 <!-- 洗牌動畫:滿版覆蓋、鎖住捲動,播完才淡出露出牌面 -->
 <div class="draw-overlay" id="drawOverlay" style="display:none">

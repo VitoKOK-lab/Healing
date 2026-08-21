@@ -1,28 +1,20 @@
 /* TAHIR ZAINAB TAROT — 占卜引擎(桌機版與手機版共用)
    ────────────────────────────────────────────────────────────
-   這支檔案原本是 tarot-desktop.html 裡的 inline script。切成獨立站
-   之後,桌機版(desk.html)與手機版(index.html)共用同一份流程:
-   選主題 → 追問情境 → 打問題 → 洗牌 → 切牌 → 翻牌 → 解讀 → 推寶石。
+   這支檔案原本是 tarot-desktop.html 裡的 inline script。
 
-   兩個版面的差別只有三件事,全部集中在下面的 MODE 分支,不要散到別處:
-     1. 額度 —— desk 是店主現場用的工具,不計次;phone 是客人自己玩的,
-        照原本的付費規則走(抽完三次要加購)。
-     2. QR —— 「傳給客人」只有店主端需要,手機版藏起來。
-     3. 品牌連結 —— 點標題重新開始,兩邊各自回自己那一頁。
+   2026-08-21:手機版與電腦版合併成同一份 index.html,而且不再分模式。
+   先前有 desk / phone 兩種模式,差在額度、QR、品牌連結——次數整組拿掉
+   之後,那個分支只剩下「要不要出現 QR 跟岔路」,卻害店主開錯網址就看不到
+   自己剛做好的功能。現在一律相同:
 
-   兩個版面的 HTML 刻意保持同一套 id,這樣引擎不必到處做 null 判斷。
-   版面差異一律交給 CSS(desk.css / mobile.css)處理。
+     選主題 → 選處境 → 在心裡默念 → 洗牌 → 切牌 → 翻牌
+       → 問「我自己看 / 直接告訴我」→ 解讀或 QR → 推寶石
+
+   版面差異(單欄/兩欄、直式/橫式影片)一律交給 CSS 與螢幕寬度處理,
+   程式這一層不再有任何「哪一版」的判斷。
    ──────────────────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", function () {
-  // desk = 店主現場用的模式(無限次、有 QR、有「我自己看」岔路)
-  // phone = 客人自己玩的模式(有次數)
-  // 版面已經改成依螢幕寬度自動切換,模式則由 index.html 開頭那段
-  // inline script 依網址參數(?m=desk)寫進 data-mode。預設是客人模式——
-  // 判斷不出來時給比較保守的那一邊,不要讓人白玩。
-  var MODE = document.body.dataset.mode === "desk" ? "desk" : "phone";
-  var IS_DESK = MODE === "desk";
-
   var tarotFlow = document.getElementById("tarotFlow");
   var catDialogue = document.getElementById("catDialogue");
   var dialogueAvatar = document.getElementById("dialogueAvatar");
@@ -1069,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 這一步一定要卡在「顯示內文之前」——晚一步就已經被看光了。
   function deliverReading(text) {
     lastReading = text;
-    if (!IS_DESK || !privacyPanel) { speakReading(text); return; }
+    if (!privacyPanel) { speakReading(text); return; }
     hideStages();
     speak(["本喵看完了。要本喵直接告訴你,還是你自己看就好?"], function () {
       showStage(privacyPanel);
@@ -1107,10 +1099,9 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.style.display = "none";
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
-      // 店面版只留「傳給客人・QR」跟「再抽一次」兩顆:排隊時按鈕愈少愈快,
-      // 而且「存成圖片」是存到店裡那台機器,對客人沒有意義——要留念走 QR。
-      if (IS_DESK) qrBtn.style.display = "inline-flex";
-      else reportBtn.style.display = "inline-flex";
+      // 結果頁只留「傳給客人・QR」跟「再抽一次」兩顆:按鈕愈少愈快。
+      // 「存成圖片」拿掉——要帶走就走 QR,一個出口就夠。
+      qrBtn.style.display = "inline-flex";
       showGemPick();
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
@@ -1131,8 +1122,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadingNote.style.display = "none";
     errorNote.textContent = msg;
     errorNote.style.display = "block";
-    // 店面版不給「再看一次」:店主在旁邊排隊,重試不如直接換下一位
-    if (!IS_DESK) retryBtn.style.display = "inline-flex";
+    // 不給「再看一次」:直接換下一輪比較快,而且降級文案照樣看得到。
     if (!usedFallback && lastCards) {
       usedFallback = true;
       resultPanel.classList.add("is-fallback");
@@ -1331,11 +1321,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   againBtn.addEventListener("click", function () {
-    // 店面版每一輪都是新的客人,要從最前面的等待影片與進場動畫重新開始。
-    // 進場那道門由 gateDone 鎖住,只會跑一次——與其在這裡拆一堆狀態,
-    // 整頁重載最乾淨,也保證上一位客人的任何殘留都不會留給下一位。
+    // 每一輪都當成新的一位客人,從最前面的等待影片與進場動畫重新開始。
+    // 進場那道門由 gateDone 鎖住只會跑一次,與其在這裡拆一堆狀態,
+    // 整頁重載最乾淨,也保證上一輪的任何殘留都不會留下來。
     // (影片與牌圖都在瀏覽器快取裡,重載很快。)
-    if (IS_DESK) { location.reload(); return; }
+    location.reload();
+    return;
     clearTimeout(typeTimer);
     readingSummary.style.display = "none";
     againBtn.style.display = "none";
