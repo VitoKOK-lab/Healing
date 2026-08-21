@@ -417,7 +417,23 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .tarot-reading-text { margin-top: 20px; font-size: 16px; line-height: 2; color: var(--ink); }
 .tarot-loading {
   margin-top: 20px; font-size: 13px; color: var(--inkdim);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.tarot-loading-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+/* 進度條:解讀要十幾二十秒,沒有東西在動的話客人會以為當機。
+   寬度由 JS 依經過時間推,永遠往前、不會倒退,也不會提早衝到 100%。 */
+.tarot-progress {
+  width: min(280px, 80%); height: 5px; border-radius: 99px; overflow: hidden;
+  background: rgba(255, 255, 255, .12);
+}
+.tarot-progress > i {
+  display: block; height: 100%; width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #b98cf0, #f5cd82);
+  transition: width .28s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tarot-progress > i { transition: none; }
 }
 .thinking-cat { width: 30px; flex-shrink: 0; display: block; animation: catThink 1.8s ease-in-out infinite; }
 .thinking-cat .cat-art { width: 100%; color: var(--lavender); }
@@ -781,3 +797,13 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 @media (max-width: 560px) {
   .privacy-pick { grid-template-columns: 1fr; }
 }
+
+/* QR 面板:自己拿手機玩的人掃不到自己的螢幕,所以要有直接打開的入口;
+   LINE 那條是回訪的唯一出口——結果 24 小時後就沒了。 */
+.qr-share-open { display: block; width: 100%; margin-top: 14px; text-align: center; text-decoration: none; }
+.qr-share-line {
+  display: block; margin-top: 10px; padding: 12px 0;
+  text-align: center; font-size: 14px; text-decoration: none;
+  color: #ffd98c; border: 1px solid rgba(255, 214, 140, .45); border-radius: 12px;
+}
+.qr-share-line:hover { background: rgba(255, 214, 140, .08); }

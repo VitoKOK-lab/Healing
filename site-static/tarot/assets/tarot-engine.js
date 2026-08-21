@@ -63,6 +63,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var resultPanel = document.getElementById("resultPanel");
   var cardSummary = document.getElementById("cardSummary");
   var loadingNote = document.getElementById("loadingNote");
+  var loadingText = document.getElementById("loadingText");
+  var loadingBar = document.getElementById("loadingBar");
+  var loadingFill = document.getElementById("loadingFill");
   var errorNote = document.getElementById("errorNote");
   var readingSummary = document.getElementById("readingSummary");
   var summaryList = document.getElementById("summaryList");
@@ -1132,6 +1135,49 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // ── 等待儀式 ──────────────────────────────────────
+  // 解讀要跑十幾二十秒。這段時間畫面如果完全靜止,客人會以為當機。
+  // 兩層處理:
+  //   1. 進度條——依經過時間漸進,永遠往前、不會倒退。用指數收斂
+  //      (24 秒約到 92%),所以不管實際多久都不會提早衝到 100% 再乾等。
+  //   2. 旁白——照著這一輪真正抽到的牌名走,客人知道本喵在看哪一張,
+  //      而不是看一句跟自己無關的罐頭。
+  function waitingLines(cards) {
+    var names = (cards || []).slice(0, 3).map(function (c) { return c.name; });
+    var lines = ["本喵把牌一張一張排開⋯"];
+    if (names[0]) lines.push("先看「" + names[0] + "」在說什麼⋯");
+    if (names[1]) lines.push("再對照「" + names[1] + "」那一張⋯");
+    if (names[2]) lines.push("「" + names[2] + "」擺在這裡有意思⋯");
+    lines.push("幾張牌湊起來,線索出來了⋯");
+    lines.push("本喵想想怎麼跟你說⋯");
+    lines.push("最後一段,快好了⋯");
+    return lines;
+  }
+
+  function startWaiting(cards) {
+    var lines = waitingLines(cards);
+    var t0 = Date.now();
+    var i = 0;
+    if (loadingText) loadingText.textContent = lines[0];
+    if (loadingFill) loadingFill.style.width = "0%";
+
+    var tick = setInterval(function () {
+      var ms = Date.now() - t0;
+      // 92 * (1 - e^(-t/9s)):9 秒約 58%、18 秒約 79%、27 秒約 87%
+      var pct = 92 * (1 - Math.exp(-ms / 9000));
+      if (loadingFill) loadingFill.style.width = pct.toFixed(1) + "%";
+      if (loadingBar) loadingBar.setAttribute("aria-valuenow", Math.round(pct));
+      var want = Math.min(lines.length - 1, Math.floor(ms / 3200));
+      if (want !== i) { i = want; if (loadingText) loadingText.textContent = lines[i]; }
+    }, 220);
+
+    return function stop() {
+      clearInterval(tick);
+      if (loadingFill) loadingFill.style.width = "100%";
+      if (loadingBar) loadingBar.setAttribute("aria-valuenow", 100);
+    };
+  }
+
   function requestReading(cards) {
     loadingNote.style.display = "block";
     errorNote.style.display = "none";
@@ -1140,6 +1186,7 @@ document.addEventListener("DOMContentLoaded", function () {
     readingSummary.style.display = "none";
     catDialogue.style.display = "none";
 
+    var stopWaiting = startWaiting(cards);
     var controller = "AbortController" in window ? new AbortController() : null;
     var timer = controller ? setTimeout(function () { controller.abort(); }, 25000) : null;
 
@@ -1161,12 +1208,14 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (timer) clearTimeout(timer);
+        stopWaiting();
         loadingNote.style.display = "none";
         if (data && data.ok) deliverReading(data.reading);
         else failReading((data && data.error) || "本喵現在有點累,請稍後再試");
       })
       .catch(function () {
         if (timer) clearTimeout(timer);
+        stopWaiting();          // 失敗也要收,不然計時器會一直跑下去
         failReading("連線逾時,請確認網路後再試一次");
       });
   }
@@ -1239,9 +1288,11 @@ document.addEventListener("DOMContentLoaded", function () {
   var qrShareImg = document.getElementById("qrShareImg");
   var qrShareLoading = document.getElementById("qrShareLoading");
   var qrShareExpiry = document.getElementById("qrShareExpiry");
+  var qrOpenBtn = document.getElementById("qrOpenBtn");
   var qrShareError = document.getElementById("qrShareError");
 
   function openQrPanel() {
+    if (qrOpenBtn) { qrOpenBtn.style.display = "none"; qrOpenBtn.removeAttribute("href"); }
     qrShareImg.style.display = "none";
     qrShareImg.removeAttribute("src");
     qrShareLoading.style.display = "";
@@ -1294,6 +1345,8 @@ document.addEventListener("DOMContentLoaded", function () {
       qrShareImg.src = d.qr;
       qrShareImg.style.display = "";
       qrShareLoading.style.display = "none";
+      // 同一個結果頁的網址:掃不到自己螢幕的人直接點這顆
+      if (qrOpenBtn && d.url) { qrOpenBtn.href = d.url; qrOpenBtn.style.display = "block"; }
       var hrs = Math.max(1, Math.round((new Date(d.expiresAt) - Date.now()) / 3600000));
       qrShareExpiry.textContent = "這個連結 " + hrs + " 小時後自動刪除,請客人現在就截圖存起來";
     }).catch(function (e) {

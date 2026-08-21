@@ -105,9 +105,9 @@
 <div class="qr-share" id="qrShare" style="display:none" role="dialog" aria-modal="true" aria-labelledby="qrShareTitle">
   <div class="qr-share-card">
     <p class="eyebrow">Scan</p>
-    <h2 class="display" id="qrShareTitle">請客人用手機掃這個</h2>
-    <p class="qr-share-note">掃到的是這次的占卜結果圖,可以直接存到手機或轉傳 LINE。</p>
-    <p class="qr-share-keep">只保留 24 小時,請客人自行截圖</p>
+    <h2 class="display" id="qrShareTitle">把這次的結果帶走</h2>
+    <p class="qr-share-note">用另一支手機掃,或直接在這支手機打開。</p>
+    <p class="qr-share-keep">只保留 24 小時,記得截圖存起來</p>
 
     <div class="qr-share-code" id="qrShareCode">
       <div class="qr-share-loading" id="qrShareLoading">本喵畫圖中⋯</div>
@@ -117,9 +117,18 @@
     <p class="qr-share-expiry" id="qrShareExpiry"></p>
     <p class="qr-share-error" id="qrShareError" style="display:none"></p>
 
+    <!-- 自己拿手機玩的人掃不到自己的螢幕,所以一定要有一個「直接打開」。
+         下面那顆 LINE 是回訪的唯一出口:結果 24 小時後就沒了,
+         想再算、想留著,都得先加到本喵。 -->
+    <a class="btn-primary qr-share-open" id="qrOpenBtn" href="#" target="_blank" rel="noopener"
+       style="display:none">在這支手機打開</a>
+    <a class="qr-share-line" id="qrLineBtn" href="https://lin.ee/pUaTWJg" target="_blank" rel="noopener">
+      加本喵的 LINE,下次直接在 LINE 裡算
+    </a>
+
     <div class="qr-share-actions">
       <button type="button" class="btn-secondary" id="qrCloseBtn">關閉</button>
-      <button type="button" class="btn-primary" id="qrNextBtn">下一位客人</button>
+      <button type="button" class="btn-primary" id="qrNextBtn">重新開始</button>
     </div>
   </div>
 </div>
@@ -271,9 +280,16 @@
       <p class="eyebrow">Reading</p>
       <h2 class="display" style="font-size:18px;margin-top:6px">牌面解讀</h2>
       <ul class="reading-list" id="cardSummary"></ul>
+      <!-- 解讀要跑十幾二十秒。只有一顆轉圈的貓會讓人以為當機,所以這裡
+           有兩層:進度條(一直在前進,不會停在原地)＋跟著牌名走的旁白
+           (讓人知道本喵在看哪一張)。 -->
       <div class="tarot-loading" id="loadingNote" style="display:none">
-        <span class="thinking-cat" id="thinkingCat"></span>
-        <span>喵喵占卜師思考中<span class="dots"><i>.</i><i>.</i><i>.</i></span></span>
+        <div class="tarot-loading-row">
+          <span class="thinking-cat" id="thinkingCat"></span>
+          <span id="loadingText">喵喵占卜師思考中<span class="dots"><i>.</i><i>.</i><i>.</i></span></span>
+        </div>
+        <div class="tarot-progress" role="progressbar" aria-label="占卜進度"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loadingBar"><i id="loadingFill"></i></div>
       </div>
       <div class="tarot-error" id="errorNote" style="display:none"></div>
 
