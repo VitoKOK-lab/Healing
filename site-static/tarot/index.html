@@ -145,8 +145,6 @@
         <button type="button" class="topic-chip" data-topic="love">感情</button>
         <button type="button" class="topic-chip" data-topic="career">工作</button>
         <button type="button" class="topic-chip" data-topic="money">金錢</button>
-        <button type="button" class="topic-chip" data-topic="decision">抉擇</button>
-        <button type="button" class="topic-chip" data-topic="other">其他</button>
       </div>
     </div>
 
@@ -155,7 +153,9 @@
       <div class="scenario-list" id="scenarioList"></div>
     </div>
 
-    <!-- 選好處境才出現 -->
+    <!-- 選好處境才出現。2026-08-20 起客人不打字:questionField 與
+         option-pair 都由 JS 收起來,這一層只剩「交給本喵」那顆鈕。
+         兩個輸入欄的標記先留著(其他流程還參照得到這些 id)。 -->
     <div class="step-panel" id="questionPanel" style="display:none">
       <!-- autocomplete/autofill 全關:這是公用裝置也會用的頁面,
            瀏覽器不能把前一位客人打過的心事當建議跳出來。 -->
@@ -182,7 +182,7 @@
         </label>
         <p class="field-hint" id="optionHint">兩條路都寫下來,本喵就知道要比什麼了</p>
       </div>
-      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
+      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">想好了,交給本喵</button>
     </div>
 
     <!-- 本喵沒聽懂時的追問:先問清楚再開牌,不會扣點數 -->
