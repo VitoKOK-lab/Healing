@@ -99,9 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var TOPIC_REPLY = {
     love: "感情的事啊⋯⋯本喵最懂了。",
     career: "工作上的煩惱嗎?讓本喵看看。",
-    money: "金錢的來去,牌面看得很清楚。",
-    decision: "在猶豫對不對?那就讓牌推你一把。",
-    other: "嗯,說來聽聽吧。"
+    money: "金錢的來去,牌面看得很清楚。"
   };
 
   // 選好處境後,本喵順口說明這次會怎麼看牌——客人不必知道「牌陣」這個詞
@@ -355,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── 第三步:選處境,由它決定用哪個牌陣 ───────────────────────
   function buildScenarios(t) {
     scenarioList.innerHTML = "";
-    (Tarot.SCENARIOS[t] || Tarot.SCENARIOS.other).forEach(function (s) {
+    (Tarot.SCENARIOS[t] || Tarot.SCENARIOS.love).forEach(function (s) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "scenario-item";
@@ -368,15 +366,16 @@ document.addEventListener("DOMContentLoaded", function () {
         // 每次重選處境都從乾淨狀態開始(auto 會在抽牌前改寫 spread)
         scenario = { id: s.id, label: s.label, spread: s.spread };
         questionPanel.style.display = "none";
-        // 一律三張牌:沒有二擇一那條分支了,永遠只有一個問題欄。
+        // 2026-08-20:客人不再打字,想問的事在心裡默念就好。
+        // 問題欄與二擇一兩欄都收起來,questionPanel 只剩「交給本喵」那顆鈕。
         optionPanel.style.display = "none";
-        questionField.style.display = "block";
+        questionField.style.display = "none";
         speak([
           SPREAD_REPLY.flow,
-          "那麼,把你想問的事寫下來給本喵看吧。"
+          "把你想問的事在心裡想清楚,想好了就跟本喵說一聲。"
         ], function () {
           showStage(questionPanel);
-          questionInput.focus();
+          drawBtn.focus();
         });
       });
       scenarioList.appendChild(btn);
@@ -385,8 +384,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第三步:至少五個字,不夠本喵會提醒 ─────────────────────
   function questionIsReady() {
-    // 二擇一沒有問題欄,問題由兩個選項組成,這條規則不適用
-    if (scenario && scenario.spread === "choice") return true;
+    // 2026-08-20 起客人不打字(在心裡默念),沒有東西可以驗——永遠放行。
+    // 順帶一提:少了自由輸入,客人也不可能從這裡送出不適合占卜的題目。
+    return true;
+  }
+
+  function questionIsReadyLegacy() {
     var q = questionInput.value.trim();
     if (q.length >= 5) {
       questionHint.textContent = "至少寫五個字。本喵只看得到最近三個月喔";
@@ -416,10 +419,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 二擇一沒有問題欄,問題直接用兩個選項組出來送給本喵
   function questionText() {
-    if (lastOptions) {
-      return "我在「" + lastOptions.a + "」和「" + lastOptions.b + "」之間猶豫,該怎麼選?";
-    }
-    return questionInput.value;
+    // 客人不打字了,問題欄永遠是空的;解讀改由「主題 + 處境 + 牌面」決定。
+    return "";
   }
 
   function optionsAreReady() {
@@ -688,15 +689,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   drawBtn.addEventListener("click", function () {
-    if (!questionIsReady()) return;
-    if (handleUnsuitable()) return;
-    if (!resolveAutoSpread()) return;
-    if (!optionsAreReady()) return;
     if (!canStartRound()) return;
-    unlockVideo();          // 追問會插在中間,先趁這個手勢把影片解鎖
+    unlockVideo();
     hideStages();
+    // 2026-08-20:客人不打字了,追問(askClarify)沒有題目可以追,
+    // 留著只會多一次網路來回與一閃而過的「本喵想想」畫面——直接跳過。
     clarifyRounds = [];
-    askClarify(beginRound);
+    beginRound();
   });
 
   // ── 第四步:手指洗牌 ────────────────────────────────────
