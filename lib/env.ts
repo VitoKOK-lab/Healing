@@ -7,8 +7,6 @@ const envSchema = z.object({
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
   // ── 舊塔羅站(site-static/tarot)仍在用的 Gemini,LIFF 版穩定後退場 ──
-  GEMINI_API_KEY: z.string().optional().default(""),
-  GEMINI_MODEL: z.string().optional().default("gemini-flash-lite-latest"),
 
   // ── LINE OA v1(規格 §4、§5)──────────────────────────
   // 免費日抽的生成供應商:claude | kimi(Moonshot API,省成本)。

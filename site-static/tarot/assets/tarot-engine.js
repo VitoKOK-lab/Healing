@@ -1087,9 +1087,10 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.style.display = "none";
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
-      reportBtn.style.display = "inline-flex";
-      // 「傳給客人」是店主端的動作,客人自己的手機上不該出現
+      // 店面版只留「傳給客人・QR」跟「再抽一次」兩顆:排隊時按鈕愈少愈快,
+      // 而且「存成圖片」是存到店裡那台機器,對客人沒有意義——要留念走 QR。
       if (IS_DESK) qrBtn.style.display = "inline-flex";
+      else reportBtn.style.display = "inline-flex";
       showGemPick();
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
@@ -1110,7 +1111,8 @@ document.addEventListener("DOMContentLoaded", function () {
     loadingNote.style.display = "none";
     errorNote.textContent = msg;
     errorNote.style.display = "block";
-    retryBtn.style.display = "inline-flex";
+    // 店面版不給「再看一次」:店主在旁邊排隊,重試不如直接換下一位
+    if (!IS_DESK) retryBtn.style.display = "inline-flex";
     if (!refunded) {
       refunded = true;
       Tarot.addCredits(1);
@@ -1310,6 +1312,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   againBtn.addEventListener("click", function () {
+    // 店面版每一輪都是新的客人,要從最前面的等待影片與進場動畫重新開始。
+    // 進場那道門由 gateDone 鎖住,只會跑一次——與其在這裡拆一堆狀態,
+    // 整頁重載最乾淨,也保證上一位客人的任何殘留都不會留給下一位。
+    // (影片與牌圖都在瀏覽器快取裡,重載很快。)
+    if (IS_DESK) { location.reload(); return; }
     clearTimeout(typeTimer);
     readingSummary.style.display = "none";
     againBtn.style.display = "none";
