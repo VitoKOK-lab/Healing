@@ -15,8 +15,12 @@
    ──────────────────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", function () {
-  // desk = 店主現場用的桌機版;phone = 客人自己玩的手機版
-  var MODE = document.body.dataset.mode === "phone" ? "phone" : "desk";
+  // desk = 店主現場用的模式(無限次、有 QR、有「我自己看」岔路)
+  // phone = 客人自己玩的模式(有次數)
+  // 版面已經改成依螢幕寬度自動切換,模式則由 index.html 開頭那段
+  // inline script 依網址參數(?m=desk)寫進 data-mode。預設是客人模式——
+  // 判斷不出來時給比較保守的那一邊,不要讓人白玩。
+  var MODE = document.body.dataset.mode === "desk" ? "desk" : "phone";
   var IS_DESK = MODE === "desk";
 
   var creditsText = document.getElementById("creditsText");
@@ -257,8 +261,10 @@ document.addEventListener("DOMContentLoaded", function () {
     updateCredits();
     var ok = IS_DESK || Tarot.getCredits() > 0;
     lockedPanel.style.display = ok ? "none" : "block";
-    // 桌機版的 #tarotFlow 是 grid(左牌桌右解讀),手機版是單欄
-    tarotFlow.style.display = ok ? (IS_DESK ? "grid" : "block") : "none";
+    // 2026-08-21:版面交給 CSS 依螢幕寬度決定(寬 = grid 兩欄、窄 = 單欄),
+    // 這裡只管「顯示或不顯示」。先前寫成 IS_DESK ? "grid" : "block",
+    // 等於把版面綁在模式上——店面模式用平板直放就會被硬塞成兩欄。
+    tarotFlow.style.display = ok ? "" : "none";
     return ok;
   }
 
@@ -495,7 +501,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var SHUFFLE = {
     wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
-    portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "tarot-shuffle-portrait-poster.jpg" }
+    // 2026-08-21:直式洗牌影片換成店主新給的那支(720x1280,10 秒)。
+    // poster 留空——舊的那張是前一支影片的畫面,對不上新片第一格。
+    portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "" }
   };
 
   function pickVideo() {
@@ -511,7 +519,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // 已經預抓好就用 blob(不碰網路),還沒抓好就先掛原本的網址,
     // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
     drawSrcMp4.src = videoUrl(v.mp4);
-    drawVideo.poster = "./assets/videos/" + v.poster;
+    if (v.poster) drawVideo.poster = "./assets/videos/" + v.poster;
+    else drawVideo.removeAttribute("poster");
     // 一定要 load():<source> 的 src 是 JS 事後填的,而瀏覽器只在解析頁面
     // 的當下跑一次「挑來源」,事後改 <source> 不會讓它重挑。不叫 load()
     // 的話 networkState 會一直停在 NO_SOURCE,play() 直接被拒絕,
@@ -1481,7 +1490,9 @@ document.addEventListener("DOMContentLoaded", function () {
       // 總保險:影片長度 + 2 秒,最多不超過 10 秒。拿不到長度就用 4 秒。
       later(function () {
         var dur = isFinite(enterVideo.duration) && enterVideo.duration > 0 ? enterVideo.duration : 4;
-        var left = Math.min((dur + 2) * 1000, 10000);
+        // 上限原本是 10 秒。2026-08-21 換上的直式進場影片本身就有 10 秒,
+        // 卡在 10 秒等於在最後一格把它切掉——放寬到 14 秒。
+        var left = Math.min((dur + 2) * 1000, 14000);
         later(openGate, left);
       }, 0);
 
