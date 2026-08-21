@@ -501,7 +501,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var SHUFFLE = {
     wide:     { mp4: "tarot-shuffle.mp4", webm: "", poster: "tarot-draw-wide-poster.jpg" },
-    portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "tarot-shuffle-portrait-poster.jpg" }
+    // 2026-08-21:直式洗牌影片換成店主新給的那支(720x1280,10 秒)。
+    // poster 留空——舊的那張是前一支影片的畫面,對不上新片第一格。
+    portrait: { mp4: "tarot-shuffle-portrait.mp4", webm: "", poster: "" }
   };
 
   function pickVideo() {
@@ -517,7 +519,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // 已經預抓好就用 blob(不碰網路),還沒抓好就先掛原本的網址,
     // 抓完之後 startPrefetch() 會再叫一次 pickVideo() 換上來
     drawSrcMp4.src = videoUrl(v.mp4);
-    drawVideo.poster = "./assets/videos/" + v.poster;
+    if (v.poster) drawVideo.poster = "./assets/videos/" + v.poster;
+    else drawVideo.removeAttribute("poster");
     // 一定要 load():<source> 的 src 是 JS 事後填的,而瀏覽器只在解析頁面
     // 的當下跑一次「挑來源」,事後改 <source> 不會讓它重挑。不叫 load()
     // 的話 networkState 會一直停在 NO_SOURCE,play() 直接被拒絕,
