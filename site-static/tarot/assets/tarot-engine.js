@@ -23,6 +23,13 @@ document.addEventListener("DOMContentLoaded", function () {
   var topicPanel = document.getElementById("topicPanel");
   var scenarioPanel = document.getElementById("scenarioPanel");
   var scenarioList = document.getElementById("scenarioList");
+  // 寬螢幕 = 放在桌上、旁邊的人看得到 → 才需要問「要不要讓人看」。
+  // 窄螢幕 = 拿在自己手上,本來就是私密的 → 問了沒有意義,而且選「我自己看」
+  // 只會拿到一個自己掃不到的 QR。每次要用的時候現算,平板轉個方向也對。
+  function isWideScreen() {
+    return window.matchMedia("(min-width: 900px)").matches;
+  }
+
   var privacyPanel = document.getElementById("privacyPanel");
   var privacySelfBtn = document.getElementById("privacySelfBtn");
   var privacyTellBtn = document.getElementById("privacyTellBtn");
@@ -1065,7 +1072,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 這一步一定要卡在「顯示內文之前」——晚一步就已經被看光了。
   function deliverReading(text) {
     lastReading = text;
-    if (!privacyPanel) { speakReading(text); return; }
+    if (!privacyPanel || !isWideScreen()) { speakReading(text); return; }
     hideStages();
     speak(["本喵看完了。要本喵直接告訴你,還是你自己看就好?"], function () {
       showStage(privacyPanel);
@@ -1103,9 +1110,11 @@ document.addEventListener("DOMContentLoaded", function () {
       catDialogue.style.display = "none";
       readingSummary.style.display = "block";
       againBtn.style.display = "inline-flex";
-      // 結果頁只留「傳給客人・QR」跟「再抽一次」兩顆:按鈕愈少愈快。
-      // 「存成圖片」拿掉——要帶走就走 QR,一個出口就夠。
-      qrBtn.style.display = "inline-flex";
+      // 帶走的方式看螢幕:
+      //   寬螢幕(店裡那台)→ QR,客人用自己的手機掃走
+      //   窄螢幕(自己的手機)→ 存成圖片,直接進相簿。給 QR 是要他掃自己,沒道理。
+      if (isWideScreen()) qrBtn.style.display = "inline-flex";
+      else reportBtn.style.display = "inline-flex";
       if (resultLineBtn) resultLineBtn.style.display = "block";
       showGemPick();
       Tarot.Sound.purr(1.6);
