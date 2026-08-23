@@ -86,7 +86,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var qrCloseBtn = document.getElementById("qrCloseBtn");
   var qrNextBtn = document.getElementById("qrNextBtn");
   var soundToggle = document.getElementById("soundToggle");
-  var soundLabel = document.getElementById("soundLabel");
 
   var topic = null;
   var scenario = null;
@@ -259,18 +258,33 @@ document.addEventListener("DOMContentLoaded", function () {
   // 自動播放又完全關不掉對訪客很不友善,而這個開關本來就在畫面上,不必多一顆。
   var bgm = document.getElementById("bgm");
 
+  // 背景音樂。手機一次手勢通常只准放一個媒體,而進場影片跟它會搶——
+  // 影片優先(客人看得到),音樂被擋下就記著,之後任何一次手勢或進場
+  // 動畫結束時再補播。所以「一開始就有音樂」在能放的第一時間就會成立。
   function startBgm() {
     if (!bgm || !Tarot.Sound.isOn()) return;
-    bgm.volume = 0.28;              // 墊底用,不能蓋過本喵講話的音效
+    if (!bgm.paused) return;                     // 已經在播就別重來
+    bgm.volume = 0.28;                           // 墊底用,不能蓋過本喵講話的音效
     var p = bgm.play();
-    if (p && p.catch) p.catch(function () {});   // 被瀏覽器擋下就算了,不影響占卜
+    if (p && p.catch) {
+      p.catch(function () {
+        // 被擋下了。掛一次性的補播:下一個手勢就接上。
+        var retry = function () {
+          document.removeEventListener("pointerdown", retry, true);
+          document.removeEventListener("keydown", retry, true);
+          startBgm();
+        };
+        document.addEventListener("pointerdown", retry, true);
+        document.addEventListener("keydown", retry, true);
+      });
+    }
   }
 
   function paintSound() {
     var on = Tarot.Sound.isOn();
     soundToggle.classList.toggle("off", !on);
     soundToggle.setAttribute("aria-pressed", String(on));
-    soundLabel.textContent = on ? "呼嚕聲" : "已靜音";
+    soundToggle.setAttribute("aria-label", on ? "關閉音樂" : "打開音樂");
     soundToggle.querySelector(".wave").style.display = on ? "" : "none";
     soundToggle.querySelector(".cross").style.display = on ? "none" : "";
     if (bgm) {
@@ -1454,10 +1468,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function enterSite() {
       if (gateDone) return;
-      unlockVideo();                       // 借這個手勢解鎖洗牌／唱歌影片
-      startBgm();                          // 同一下手勢也是背景音樂的起點
+      unlockVideo();                       // 借這個手勢解鎖洗牌影片
       waitOverlay.style.display = "none";
       enterOverlay.style.display = "block";
+      // 背景音樂不在這裡開。手機一次手勢通常只准放一個媒體,先放音樂的話
+      // 進場影片的 play() 會被拒絕,而被拒絕的那支就會被 p.catch 直接收掉——
+      // 店主看到的「開場動畫一秒半就被切掉」就是這樣來的。
+      // 音樂改在影片真的開始播之後才起(見下面的 playing 事件)。
 
       // ── 這一關絕對不能卡住 ────────────────────────────────────
       // 現場已經踩到兩次。原則改成:進場動畫是「附加的」,不是通往
@@ -1529,11 +1546,28 @@ document.addEventListener("DOMContentLoaded", function () {
       // metadata 一直沒來(檔案壞了、網路斷了)時的最後一道,給得寬鬆一點
       later(openGate, 15000);
 
-      // 點畫面任何地方都能跳過
-      enterOverlay.addEventListener("click", openGate);
+      // 點畫面任何地方都能跳過。但要「晚一點」才掛:進場那一層是在客人
+      // 剛剛那一下點擊裡才顯示出來的,手機的 ghost click(touchend 之後
+      // 約 300ms 補送的那一下)會直接打在它身上,動畫還沒開始就被跳過。
+      // 等 800 毫秒再開放跳過,客人真的想跳的時候一定還按得到。
+      later(function () { enterOverlay.addEventListener("click", openGate); }, 800);
 
+      // 影片真的開始播了,才去起背景音樂——這樣兩者不會搶同一下手勢。
+      enterVideo.addEventListener("playing", function () { startBgm(); });
+
+      // play() 被拒絕不可以直接關掉整個動畫。手機常見的拒絕原因是
+      // 「這一下手勢已經被別的媒體用掉了」或「不允許有聲自動播放」,
+      // 那就靜音再播一次——動畫看得到,遠比有沒有聲音重要。
+      // 兩次都失敗才放人進去。
       var p = enterVideo.play();
-      if (p && p.catch) p.catch(openGate);
+      if (p && p.catch) {
+        p.catch(function () {
+          enterVideo.muted = true;
+          var p2 = enterVideo.play();
+          if (p2 && p2.catch) p2.catch(openGate);
+          else startBgm();          // 靜音播成功:音樂改由 bgm 那邊出
+        });
+      }
 
       // 第 3 道:play() 之後還沒有任何進度,就當它起不來。
       // 原本 1.2 秒,對 preload="none" 的影片太緊(要先抓才播得動),放寬到 3 秒。

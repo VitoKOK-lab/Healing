@@ -850,3 +850,26 @@ body.no-scroll { overflow: hidden; touch-action: none; }
 .qr-share-line small { display: block; margin-top: 3px; font-size: 12.5px; opacity: .9; }
 .tarot-line-cta:hover,
 .qr-share-line:hover { filter: brightness(1.06); }
+
+/* 音樂開關:釘在左下角的圓形圖示鈕。
+   原本在頂列寫著「呼嚕聲」,客人看不懂那是什麼;而且它管的是整站的聲音
+   (背景音樂 + 本喵的音效),那個名字也不對。改成只有喇叭圖示,
+   關掉時打叉,一眼就懂。 */
+.sound-fab {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 260;               /* 在 QR 面板(280)之下、其餘之上 */
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 50%;
+  background: rgba(28, 12, 42, .72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #f6eeff;
+  cursor: pointer;
+}
+.sound-fab svg { width: 22px; height: 22px; }
+.sound-fab.off { color: rgba(246, 238, 255, .5); }
+.sound-fab:hover { background: rgba(28, 12, 42, .88); }
