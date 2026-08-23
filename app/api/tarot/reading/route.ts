@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { unsuitable } from "@/lib/tarot/unsuitable";
+import { record } from "@/lib/tarot/events";
 
 // Gemini 解讀含重試可能超過 Vercel 預設 10 秒逾時(desk 現場版仍在用這支)
 export const maxDuration = 60;
@@ -363,6 +364,8 @@ export async function POST(req: NextRequest) {
       .join(" ")
   );
   if (blocked) {
+    // 只記「哪一類」被擋下,不記客人打的字
+    void record({ kind: "unsuitable", topic, detail: blocked.kind });
     return NextResponse.json(
       { ok: false, error: "unsuitable", kind: blocked.kind, lines: blocked.lines },
       { status: 422, headers: CORS_HEADERS }
@@ -589,9 +592,14 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
     }
 
     reading = normalizeMarkers(reading, drawn.map((c) => c.name));
+    // 從後端記「真的送出了一份解讀」——前端那支 event API 是公開的,
+    // 這個數字太重要,不能只靠前端回報。
+    void record({ kind: "reading", topic, scenario: trimmedScenario || null });
     return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
-    console.error("Gemini request failed", err);
+    console.error("model request failed", err);
+    void record({ kind: "fallback", topic, scenario: trimmedScenario || null,
+      detail: err instanceof ModelError ? String(err.status) : "error" });
     // 免費方案有每日呼叫上限,講清楚比「暫時無法使用」有用
     if (err instanceof ModelError && err.status === 429) {
       return NextResponse.json(

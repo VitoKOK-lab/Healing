@@ -28,37 +28,37 @@ model TarotShare {
 
 // LIFF 進站的客人,以 LINE userId 為身分。額度與 streak 都掛在這裡。
 model TarotUser {
-  id            String   @id @default(cuid())
-  lineUserId    String   @unique
+  id            String    @id @default(cuid())
+  lineUserId    String    @unique
   displayName   String?
   birthday      DateTime?
-  deepenCredits Int      @default(0) // 加深解讀額度(streak 連七獎勵也發這個)
-  streak        Int      @default(0)
-  lastDailyDate String?  // YYYY-MM-DD(台北時區),日抽換日與斷簽判定用
-  createdAt     DateTime @default(now())
+  deepenCredits Int       @default(0) // 加深解讀額度(streak 連七獎勵也發這個)
+  streak        Int       @default(0)
+  lastDailyDate String? // YYYY-MM-DD(台北時區),日抽換日與斷簽判定用
+  createdAt     DateTime  @default(now())
 
-  readings  Reading[]
-  purchases Purchase[]
+  readings   Reading[]
+  purchases  Purchase[]
   dailyDraws DailyDraw[]
-  cardsSeen CardSeen[]
+  cardsSeen  CardSeen[]
 }
 
 // 一次占卜:抽牌當下建立(status=drawn),生成後補文本。
 // 牌面與 tier 在抽牌時就定死——同一副牌永遠同一個方向。
 model Reading {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   user      TarotUser @relation(fields: [userId], references: [id])
-  level     String   // daily | deepen | deep
+  level     String // daily | deepen | deep
   spreadId  String
   topic     String?
   question  String?
-  cardsJson String   // Drawn[] 序列化
-  tier      String   // T1..T5
-  seedNonce String   // 伺服器 nonce,同筆占卜可回溯重算
-  status    String   @default("drawn") // drawn | generated | fallback
+  cardsJson String // Drawn[] 序列化
+  tier      String // T1..T5
+  seedNonce String // 伺服器 nonce,同筆占卜可回溯重算
+  status    String    @default("drawn") // drawn | generated | fallback
   text      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
 }
@@ -68,9 +68,9 @@ model Purchase {
   id           String    @id @default(cuid())
   userId       String
   user         TarotUser @relation(fields: [userId], references: [id])
-  kind         String    // deepen | deep
-  amount       Int       // TWD
-  provider     String    // linepay | mock
+  kind         String // deepen | deep
+  amount       Int // TWD
+  provider     String // linepay | mock
   providerTxId String?   @unique
   status       String    @default("pending") // pending | paid | failed | refunded
   readingId    String?
@@ -82,23 +82,46 @@ model Purchase {
 
 // 免費日抽:一人一天一筆(台北時區)。
 model DailyDraw {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   user      TarotUser @relation(fields: [userId], references: [id])
-  date      String   // YYYY-MM-DD(台北)
+  date      String // YYYY-MM-DD(台北)
   readingId String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@unique([userId, date])
 }
 
 // 78 張牌收集圖鑑:第一次抽到才寫入。
 model CardSeen {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   user        TarotUser @relation(fields: [userId], references: [id])
   cardN       Int
-  firstSeenAt DateTime @default(now())
+  firstSeenAt DateTime  @default(now())
 
   @@unique([userId, cardN])
+}
+
+// 使用狀況統計(2026-08-23)。
+//
+// 刻意設計成「結構上就追不回是誰」——店主的指示是「不要記是誰問的」:
+//   ✗ 不存 IP、不存 User-Agent、不存 cookie 或任何 session 識別碼
+//   ✗ 不存客人打的問題內容(那是最敏感的東西:外遇、生病、錢)
+//   ✗ 不給每次造訪編號——漏斗用「各步驟的次數比」算,不是追同一個人走完幾步
+//   ✓ 只存:什麼時候、走到哪一步、選了哪個分類
+//
+// 這樣就算整張表外洩,也拼不出任何一位客人是誰、問過什麼。
+model TarotEvent {
+  id       String   @id @default(cuid())
+  at       DateTime @default(now())
+  kind     String // 白名單見 lib/tarot/events.ts
+  topic    String? // love | career | money
+  scenario String? // 處境的標題文字(固定選項,不是客人自由輸入)
+  tier     String? // T1..T5
+  wide     Boolean? // true=寬螢幕(店面) false=窄螢幕(手機)
+  detail   String? // 每個 kind 自己的小標籤,例:confirm 的 yes / no
+
+  @@index([at])
+  @@index([kind, at])
 }

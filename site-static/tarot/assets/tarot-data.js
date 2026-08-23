@@ -553,6 +553,11 @@
       : "https://healingasmr.vercel.app/api/tarot/reading",
     CLARIFY_URL: /\.vercel\.app$/.test(location.hostname)
       ? "/api/tarot/clarify"
-      : "https://healingasmr.vercel.app/api/tarot/clarify"
+      : "https://healingasmr.vercel.app/api/tarot/clarify",
+    // 使用狀況回報。只送「走到哪一步 + 選了哪個分類」,不送客人打的字、
+    // 不送任何識別碼(伺服器端的白名單也只收得下那幾個欄位)。
+    EVENT_URL: /\.vercel\.app$/.test(location.hostname)
+      ? "/api/tarot/event"
+      : "https://healingasmr.vercel.app/api/tarot/event"
   };
 })(window);
