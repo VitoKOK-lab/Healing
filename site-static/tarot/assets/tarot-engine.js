@@ -54,9 +54,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var optionB = document.getElementById("optionB");
   var optionHint = document.getElementById("optionHint");
   var clarifyPanel = document.getElementById("clarifyPanel");
-  var clarifyInput = document.getElementById("clarifyInput");
   var clarifyHint = document.getElementById("clarifyHint");
-  var clarifyBtn = document.getElementById("clarifyBtn");
+  var clarifyYesBtn = document.getElementById("clarifyYesBtn");
+  var clarifyNoBtn = document.getElementById("clarifyNoBtn");
   var thinkingPanel = document.getElementById("thinkingPanel");
   var questionInput = document.getElementById("questionInput");
   var questionHint = document.getElementById("questionHint");
@@ -352,16 +352,16 @@ document.addEventListener("DOMContentLoaded", function () {
         // 每次重選處境都從乾淨狀態開始(auto 會在抽牌前改寫 spread)
         scenario = { id: s.id, label: s.label, spread: s.spread };
         questionPanel.style.display = "none";
-        // 2026-08-20:客人不再打字,想問的事在心裡默念就好。
-        // 問題欄與二擇一兩欄都收起來,questionPanel 只剩「交給本喵」那顆鈕。
+        // 2026-08-22:輸入框拿回來。客人打完字之後本喵會先複述一次確認,
+        // 聽懂了才開牌(見 askClarify / askBack)。
         optionPanel.style.display = "none";
-        questionField.style.display = "none";
+        questionField.style.display = "block";
         speak([
           SPREAD_REPLY.flow,
-          "把你想問的事在心裡想清楚,想好了就跟本喵說一聲。"
+          "那麼,把你想問的事寫下來給本喵看吧。"
         ], function () {
           showStage(questionPanel);
-          drawBtn.focus();
+          questionInput.focus();
         });
       });
       scenarioList.appendChild(btn);
@@ -370,12 +370,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ── 第三步:至少五個字,不夠本喵會提醒 ─────────────────────
   function questionIsReady() {
-    // 2026-08-20 起客人不打字(在心裡默念),沒有東西可以驗——永遠放行。
-    // 順帶一提:少了自由輸入,客人也不可能從這裡送出不適合占卜的題目。
-    return true;
-  }
-
-  function questionIsReadyLegacy() {
     var q = questionInput.value.trim();
     if (q.length >= 5) {
       questionHint.textContent = "至少寫五個字。本喵只看得到最近三個月喔";
@@ -405,8 +399,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 二擇一沒有問題欄,問題直接用兩個選項組出來送給本喵
   function questionText() {
-    // 客人不打字了,問題欄永遠是空的;解讀改由「主題 + 處境 + 牌面」決定。
-    return "";
+    return questionInput.value.trim();
   }
 
   function optionsAreReady() {
@@ -578,6 +571,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // 就會解錯方向,或掰出根本不存在的東西。真正的占卜師會先問清楚再翻牌。
   // 全程不扣點數;API 掛掉就直接開牌,不能因為追問失敗擋住付費流程。
   var clarifyRounds = [];
+  // 客人改完問題再按一次「交給本喵」時,要接回原本那條路(askBack 存下來的)
+  var pendingAfterQuestion = null;
 
   function askClarify(done) {
     thinkingPanel.style.display = "block";
@@ -609,31 +604,40 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // 複述確認:本喵把「它以為客人在問什麼」講一次,客人只答對/不對。
+  // 比開放式追問好在——客人不用再打一次字,而且看得到本喵到底聽懂沒有。
+  //   對   → 直接開牌
+  //   不是 → 退回問題欄(保留原文讓他改),改完再確認一次,直到對了才算
   function askBack(q, done) {
     hideStages();
-    clarifyInput.value = "";
-    clarifyHint.textContent = "說清楚一點,本喵才不會看錯方向";
-    clarifyHint.classList.remove("is-error");
-    clarifyInput.classList.remove("is-error");
+    clarifyHint.textContent = "本喵要先聽懂,才不會算錯方向";
 
     speak([q], function () {
       showStage(clarifyPanel);
-      clarifyInput.focus();
+      clarifyYesBtn.focus();
     });
 
-    clarifyBtn.onclick = function () {
-      var a = clarifyInput.value.trim();
-      if (a.length < 2) {
-        clarifyHint.textContent = "再多說一點點,本喵聽不懂";
-        clarifyHint.classList.add("is-error");
-        clarifyInput.classList.add("is-error");
-        clarifyInput.focus();
-        return;
-      }
-      clarifyBtn.onclick = null;
-      clarifyRounds.push({ q: q, a: a });
+    clarifyYesBtn.onclick = function () {
+      clarifyYesBtn.onclick = null;
+      clarifyNoBtn.onclick = null;
+      clarifyRounds.push({ q: q, a: "是" });
       clarifyPanel.style.display = "none";
-      askClarify(done);   // 再確認一次,伺服器端最多問兩輪
+      done();                       // 聽懂了,開牌
+    };
+
+    clarifyNoBtn.onclick = function () {
+      clarifyYesBtn.onclick = null;
+      clarifyNoBtn.onclick = null;
+      clarifyRounds.push({ q: q, a: "不是" });
+      clarifyPanel.style.display = "none";
+      // 退回去改。原文留著,客人多半只是要補一句,不必整段重打。
+      speak(["那本喵理解錯了,你再說一次好嗎?"], function () {
+        showStage(questionPanel);
+        questionInput.focus();
+        questionInput.setSelectionRange(questionInput.value.length, questionInput.value.length);
+      });
+      // 下一次按「交給本喵」會再跑一輪 askClarify,帶著這次的紀錄
+      pendingAfterQuestion = done;
     };
   }
 
@@ -648,13 +652,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   drawBtn.addEventListener("click", function () {
+    if (!questionIsReady()) return;
+    if (handleUnsuitable()) return;
     if (!canStartRound()) return;
-    unlockVideo();
+    unlockVideo();          // 複述確認會插在中間,先趁這個手勢把影片解鎖
     hideStages();
-    // 2026-08-20:客人不打字了,追問(askClarify)沒有題目可以追,
-    // 留著只會多一次網路來回與一閃而過的「本喵想想」畫面——直接跳過。
-    clarifyRounds = [];
-    beginRound();
+    var next = pendingAfterQuestion || beginRound;
+    pendingAfterQuestion = null;
+    // clarifyRounds 不清空:第二輪要讓本喵知道上次猜錯了什麼,才不會再猜一樣的
+    askClarify(next);
   });
 
   // ── 第四步:手指洗牌 ────────────────────────────────────

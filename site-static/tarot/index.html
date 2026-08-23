@@ -208,18 +208,19 @@
         </label>
         <p class="field-hint" id="optionHint">兩條路都寫下來,本喵就知道要比什麼了</p>
       </div>
-      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">想好了,交給本喵</button>
+      <button type="button" class="btn-primary" id="drawBtn" style="width:100%">交給本喵</button>
     </div>
 
     <!-- 本喵沒聽懂時的追問:先問清楚再開牌,不會扣點數 -->
+    <!-- 複述確認:本喵把「它以為客人在問什麼」講一次,客人只要答對/不對。
+         比開放式追問好的地方是——客人不必再打一次字,而且看得到本喵
+         到底聽懂了沒有。不對就退回去改,改完再確認一次,直到對了才開牌。 -->
     <div class="step-panel" id="clarifyPanel" style="display:none">
-      <label class="pay-field">
-        <input class="pay-input" id="clarifyInput" placeholder="跟本喵說說⋯" maxlength="120"
-               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-               name="tarot-c" />
-        <p class="field-hint" id="clarifyHint">說清楚一點,本喵才不會看錯方向</p>
-      </label>
-      <button type="button" class="btn-primary" id="clarifyBtn" style="width:100%">回答本喵</button>
+      <div class="privacy-pick">
+        <button type="button" class="btn-primary" id="clarifyYesBtn">對,就是這樣</button>
+        <button type="button" class="btn-secondary" id="clarifyNoBtn">不是,我重寫</button>
+      </div>
+      <p class="stage-hint" id="clarifyHint">本喵要先聽懂,才不會算錯方向</p>
     </div>
 
     <!-- 呼叫追問 API 時的等待狀態 -->
