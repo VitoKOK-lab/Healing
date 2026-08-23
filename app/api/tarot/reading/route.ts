@@ -328,7 +328,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { topic, spread, scenario, question, cards, optionA, optionB, clarify } =
+  const { topic, spread, scenario, question, cards, optionA, optionB, clarify, visitor } =
     (body ?? {}) as {
       topic?: unknown;
       spread?: unknown;
@@ -338,7 +338,10 @@ export async function POST(req: NextRequest) {
       optionA?: unknown;
       optionB?: unknown;
       clarify?: unknown;
+      visitor?: unknown;
     };
+  // 瀏覽器本機亂數,用來看回訪。不是身分,細節見 lib/tarot/events.ts。
+  const who = typeof visitor === "string" ? visitor : null;
 
   const layout =
     typeof spread === "string" && SPREADS[spread] ? SPREADS[spread] : SPREADS.flow;
@@ -364,8 +367,10 @@ export async function POST(req: NextRequest) {
       .join(" ")
   );
   if (blocked) {
-    // 只記「哪一類」被擋下,不記客人打的字
-    void record({ kind: "unsuitable", topic, detail: blocked.kind });
+    // 記哪一類被擋下。這一類特別要看原話——擋錯人(誤殺正常問題)
+    // 只有翻得到原話才查得出來。
+    void record({ kind: "unsuitable", topic, detail: blocked.kind,
+      question: typeof question === "string" ? question : null, visitor: who });
     return NextResponse.json(
       { ok: false, error: "unsuitable", kind: blocked.kind, lines: blocked.lines },
       { status: 422, headers: CORS_HEADERS }
@@ -594,12 +599,14 @@ ${label(layout.how)}${named ? `\n這兩條路是客人自己說的:A 是「${opt
     reading = normalizeMarkers(reading, drawn.map((c) => c.name));
     // 從後端記「真的送出了一份解讀」——前端那支 event API 是公開的,
     // 這個數字太重要,不能只靠前端回報。
-    void record({ kind: "reading", topic, scenario: trimmedScenario || null });
+    void record({ kind: "reading", topic, scenario: trimmedScenario || null,
+      question: trimmedQuestion || null, visitor: who });
     return NextResponse.json({ ok: true, reading }, { headers: CORS_HEADERS });
   } catch (err) {
     console.error("model request failed", err);
     void record({ kind: "fallback", topic, scenario: trimmedScenario || null,
-      detail: err instanceof ModelError ? String(err.status) : "error" });
+      detail: err instanceof ModelError ? String(err.status) : "error",
+      question: trimmedQuestion || null, visitor: who });
     // 免費方案有每日呼叫上限,講清楚比「暫時無法使用」有用
     if (err instanceof ModelError && err.status === 429) {
       return NextResponse.json(
