@@ -299,28 +299,9 @@
       </div>
 
       <!-- 石頭推薦:從這次的主題與牌面推出來的,客人不必多選任何東西 -->
-      <div class="gem-pick" id="gemPick" style="display:none">
-        <p class="eyebrow">For You</p>
-        <div class="gem-pick-row">
-          <span class="gem-pick-orb" id="gemOrb"></span>
-          <img class="gem-pick-photo" id="gemPhoto" alt="" style="display:none" />
-          <div class="gem-pick-text">
-            <b id="gemName"></b>
-            <span id="gemFamily"></span>
-            <p id="gemWhy"></p>
-            <p id="gemLine"></p>
-          </div>
-        </div>
+      <!-- 2026-08-23:店主要換掉,先拿掉「For You 建議寶石」與底下那條
+           加 LINE。gem-data.js 與 showGemPick() 都留著,換好之後接回來很快。 -->
       </div>
-
-      <!-- 大部分客人會選「直接告訴我」,那條路走完原本只有 QR 跟再抽一次,
-           完全碰不到 LINE——等於幾乎沒人看得到店主的官方帳號。這條放在
-           結果最下面,是網頁版通往 LINE 版最主要的出口。 -->
-      <a class="tarot-line-cta" id="resultLineBtn" href="https://lin.ee/pUaTWJg"
-         target="_blank" rel="noopener" style="display:none">
-        <b>想成為線上珠寶商?</b>
-        <small>加 LINE 了解怎麼開始</small>
-      </a>
 
       <div class="tarot-actions">
         <button type="button" class="btn-secondary" id="qrBtn" style="display:none">傳給客人 · QR</button>

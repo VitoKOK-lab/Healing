@@ -78,7 +78,6 @@ document.addEventListener("DOMContentLoaded", function () {
   var summaryList = document.getElementById("summaryList");
   var retryBtn = document.getElementById("retryBtn");
   var againBtn = document.getElementById("againBtn");
-  var resultLineBtn = document.getElementById("resultLineBtn");
   var reportBtn = document.getElementById("reportBtn");
   var qrBtn = document.getElementById("qrBtn");
   var gemPick = document.getElementById("gemPick");
@@ -1135,8 +1134,6 @@ document.addEventListener("DOMContentLoaded", function () {
       //   窄螢幕(自己的手機)→ 存成圖片,直接進相簿。給 QR 是要他掃自己,沒道理。
       if (isWideScreen()) qrBtn.style.display = "inline-flex";
       else reportBtn.style.display = "inline-flex";
-      if (resultLineBtn) resultLineBtn.style.display = "block";
-      showGemPick();
       Tarot.Sound.purr(1.6);
       // 解讀講完了,客人接下來只會做兩件事:存圖或再抽一次。
       // 所以直接把畫面帶到最下面那兩顆按鈕,不要讓人自己往下捲一大段。
@@ -1283,6 +1280,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── 從這次的占卜推薦一顆石頭 ──────────────────────────────
   // 客人不必再選任何東西:他選的主題、抽到的牌、正逆位就夠了。
   // 剛讀完自己的狀態,這時候推最順,也最像「本喵替你想到的」。
+  // 2026-08-23:店主要換掉推薦內容,暫時不呼叫。函式與 gem-data.js 都留著,
+  // 換好之後在 speakReading 的結尾把 showGemPick() 加回去就行。
   function showGemPick() {
     if (!gemPick || !window.Gem || !lastCards) return;
     lastGem = Gem.recommend(topic, lastCards);
