@@ -293,6 +293,25 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
+
+  // ── 使用狀況回報 ──────────────────────────────────────
+  // 只回報「走到哪一步、選了哪個分類」。刻意不送客人打的字、不送任何
+  // 識別碼——伺服器那邊的白名單也只收得下這幾個欄位(見 lib/tarot/events.ts)。
+  // 射後不理:用 keepalive 讓客人關掉分頁時最後一筆也送得出去,
+  // 失敗一律吞掉,統計絕對不可以影響到占卜。
+  function track(kind, extra) {
+    try {
+      var body = { kind: kind, wide: isWideScreen() };
+      if (extra) for (var k in extra) if (extra[k] != null) body[k] = extra[k];
+      fetch(Tarot.EVENT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   // ── 第一步:本喵先開口,說完才給選主題 ────────────────────
   // 收掉這一步的畫面時,本喵那句話也要一起收掉——那句話是講給這一步聽的。
   // 留著它會變成:客人已經切完牌、影片都播完了,上面還寫著「換你切牌」。
@@ -339,6 +358,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.querySelectorAll(".topic-chip").forEach(function (c) { c.classList.remove("active"); });
       chip.classList.add("active");
       topic = chip.dataset.topic;
+      track("topic", { topic: topic });
       scenario = null;
       scenarioPanel.style.display = "none";
       questionPanel.style.display = "none";
@@ -364,6 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.classList.add("active");
         // 每次重選處境都從乾淨狀態開始(auto 會在抽牌前改寫 spread)
         scenario = { id: s.id, label: s.label, spread: s.spread };
+        track("scenario", { topic: topic, scenario: s.label });
         questionPanel.style.display = "none";
         // 2026-08-22:輸入框拿回來。客人打完字之後本喵會先複述一次確認,
         // 聽懂了才開牌(見 askClarify / askBack)。
@@ -634,6 +655,7 @@ document.addEventListener("DOMContentLoaded", function () {
       clarifyYesBtn.onclick = null;
       clarifyNoBtn.onclick = null;
       clarifyRounds.push({ q: q, a: "是" });
+      track("confirm", { topic: topic, detail: "yes" });
       clarifyPanel.style.display = "none";
       done();                       // 聽懂了,開牌
     };
@@ -642,6 +664,7 @@ document.addEventListener("DOMContentLoaded", function () {
       clarifyYesBtn.onclick = null;
       clarifyNoBtn.onclick = null;
       clarifyRounds.push({ q: q, a: "不是" });
+      track("confirm", { topic: topic, detail: "no" });
       clarifyPanel.style.display = "none";
       // 退回去改。原文留著,客人多半只是要補一句,不必整段重打。
       speak(["那本喵理解錯了,你再說一次好嗎?"], function () {
@@ -1101,6 +1124,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (privacySelfBtn) {
     privacySelfBtn.addEventListener("click", function () {
       // 螢幕上什麼都不出:不講解讀、不列總表、不推石頭,直接 QR。
+      track("privacy", { topic: topic, detail: "self" });
       hideStages();
       // 客人如果把 QR 關掉,底下不能是一片空白——留一顆「再抽一次」當出口。
       againBtn.style.display = "inline-flex";
@@ -1109,6 +1133,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   if (privacyTellBtn) {
     privacyTellBtn.addEventListener("click", function () {
+      track("privacy", { topic: topic, detail: "tell" });
       hideStages();
       speakReading(lastReading);
     });
@@ -1251,6 +1276,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── 報告書:把這一輪畫成一張圖,手機可以直接分享到 LINE ──────
   reportBtn.addEventListener("click", function () {
     if (!lastCards || !lastReading) return;
+    track("share", { topic: topic, detail: "image" });
     var label = reportBtn.textContent;
     reportBtn.disabled = true;
     reportBtn.textContent = "本喵畫圖中⋯";
@@ -1385,7 +1411,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  qrBtn.addEventListener("click", shareQr);
+  qrBtn.addEventListener("click", function () { track("share", { topic: topic, detail: "qr" }); shareQr(); });
+
+  var qrLineBtn = document.getElementById("qrLineBtn");
+  if (qrLineBtn) qrLineBtn.addEventListener("click", function () { track("line", { topic: topic }); });
 
   qrCloseBtn.addEventListener("click", closeQrPanel);
 
@@ -1404,6 +1433,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   againBtn.addEventListener("click", function () {
+    track("again", { topic: topic });
     // 每一輪都當成新的一位客人,從最前面的等待影片與進場動畫重新開始。
     // 進場那道門由 gateDone 鎖住只會跑一次,與其在這裡拆一堆狀態,
     // 整頁重載最乾淨,也保證上一輪的任何殘留都不會留下來。
@@ -1454,6 +1484,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function openGate() {
     if (gateDone) return;
     gateDone = true;
+    track("enter");        // 真的進到占卜流程了(漏斗的第一格)
     if (gateCleanup) { gateCleanup(); gateCleanup = null; }
     // 影片還在播就先停,不然它會在關掉的圖層後面繼續跑、繼續出聲
     try { enterVideo.pause(); } catch (e) {}

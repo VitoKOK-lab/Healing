@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { unsuitable } from "@/lib/tarot/unsuitable";
+import { record } from "@/lib/tarot/events";
 
 // 開牌之前先確認「本喵真的聽懂了嗎」。
 // 客人常會用只有自己懂的說法(公司名、職稱、圈內用語、代稱「他」),
@@ -155,6 +156,9 @@ ${asked.length >= 1 ? `- 你已經確認過 ${asked.length} 次了。上面「�
     // 夠清楚就開牌。回傳的東西不像一句複述確認時也直接放行,不要卡住客人。
     // 上限放到 45 字:複述本身會把客人的原話帶進去,比開放式追問長一點。
     const clear = !out || /^ok\b/i.test(out) || out.length > 45 || !/[?？]/.test(out);
+    // 只記「這一次有沒有需要複述確認」,不記複述的內容也不記客人打的字
+    void record({ kind: "ask", topic: String(topic || ""), scenario: scenarioLabel || null,
+      detail: clear ? "clear" : "need-confirm" });
     return NextResponse.json(
       { ok: true, question: clear ? null : out },
       { headers: CORS_HEADERS }
