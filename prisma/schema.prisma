@@ -122,6 +122,21 @@ model TarotEvent {
   wide     Boolean? // true=寬螢幕(店面) false=窄螢幕(手機)
   detail   String? // 每個 kind 自己的小標籤,例:confirm 的 yes / no
 
+  // 2026-08-23 店主追加的兩個欄位。跟上面那些不同,這兩個要小心看待:
+  //
+  // question —— 客人手動打的問題原文。店主要知道大家到底在問什麼。
+  //   這是這張表裡唯一「有可能認得出人」的東西(有人會寫「我跟阿明」
+  //   「我在 XX 公司」),所以:只有 /admin 進得去、資料庫層開 RLS、
+  //   而且 90 天自動刪除(見 lib/tarot/events.ts 的 sweep())。
+  //
+  // visitor —— 瀏覽器本機產生的隨機字串,用來看「有沒有回來算第二次」。
+  //   它不是身分:不含姓名、裝置資訊或任何可推導的東西,清瀏覽器資料就換一個,
+  //   換一台裝置也是新的。它能回答「有多少人算過不只一次」,
+  //   回答不了「這個人是誰」。
+  question String?
+  visitor  String?
+
   @@index([at])
   @@index([kind, at])
+  @@index([visitor])
 }

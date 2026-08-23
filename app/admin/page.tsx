@@ -2,12 +2,18 @@ import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
+import { RETENTION_DAYS } from "@/lib/tarot/events";
 
 // 使用狀況統計頁。密碼登入,沒有帳號系統——只有店主一個人用。
 //
-// 這一頁看得到的所有數字都來自 TarotEvent,而那張表刻意不存 IP、
-// User-Agent、session id 與客人打的字。所以這裡也不可能顯示「誰問了什麼」,
-// 就算想也做不到——那是店主要求的(2026-08-23:「不要記是誰問的」)。
+// 這一頁的數字都來自 TarotEvent。那張表不存 IP、User-Agent、cookie、
+// session id——「不要記是誰問的」是結構性做到的,不是靠這一頁不顯示。
+//
+// 2026-08-23 店主追加要看「客人到底問了什麼」與「有沒有回來算第二次」,
+// 所以多了兩個欄位,配套也一起做硬:
+//   ・問題原文只有登入這一頁才看得到,而且 90 天自動刪除;
+//   ・回訪是靠瀏覽器本機亂數(visitor)算的,它認得出「同一台瀏覽器」,
+//     認不出「這個人是誰」——清瀏覽器資料就換一個。
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +76,51 @@ async function byField(field: "topic" | "scenario" | "detail", kind: string, fro
   return rows.map((r) => ({ label: String(r[field] ?? ""), n: r._count._all }));
 }
 
+// 回訪:同一個瀏覽器代號算過幾次。groupBy 出來的是「每台瀏覽器幾次」,
+// 剩下的加總在記憶體裡做——店面的量級不需要為了這個寫 SQL。
+async function visitors(from: Date) {
+  const rows = await prisma.tarotEvent.groupBy({
+    by: ["visitor"],
+    where: { kind: "reading", at: { gte: from }, NOT: { visitor: null } },
+    _count: { _all: true },
+  });
+  const people = rows.length;
+  const readings = rows.reduce((a, r) => a + r._count._all, 0);
+  const repeat = rows.filter((r) => r._count._all >= 2).length;
+  const most = rows.reduce((a, r) => Math.max(a, r._count._all), 0);
+  return { people, readings, repeat, most };
+}
+
+// 一天當中哪個時段在用。存的是 UTC,店主看的是台灣時間,所以 +8 之後再分桶。
+async function hours(from: Date) {
+  const rows = await prisma.tarotEvent.findMany({
+    where: { kind: "reading", at: { gte: from } },
+    select: { at: true },
+    take: 20000,
+  });
+  const buckets = new Array(24).fill(0) as number[];
+  for (const r of rows) buckets[(r.at.getUTCHours() + 8) % 24] += 1;
+  return buckets;
+}
+
+// 客人打的原話。只給最近的,而且一次不超過 80 筆——這一頁是拿來看語氣與
+// 用詞的,不是拿來當客戶名冊翻的。
+async function recentQuestions(from: Date) {
+  return prisma.tarotEvent.findMany({
+    where: { at: { gte: from }, NOT: { question: null }, kind: { in: ["ask", "reading", "unsuitable"] } },
+    select: { at: true, topic: true, question: true, kind: true, detail: true },
+    orderBy: { at: "desc" },
+    take: 80,
+  });
+}
+
 const TOPIC_LABEL: Record<string, string> = { love: "感情", career: "工作", money: "金錢" };
+
+function when(d: Date): string {
+  const t = new Date(d.getTime() + 8 * 3600_000);   // 台灣時間
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(t.getUTCMonth() + 1)}/${p(t.getUTCDate())} ${p(t.getUTCHours())}:${p(t.getUTCMinutes())}`;
+}
 
 function pct(a: number, b: number): string {
   if (!b) return "—";
@@ -103,13 +153,17 @@ export default async function AdminPage() {
 
   const [d1, d7, d30] = [since(1), since(7), since(30)];
   const [c1, c7, c30] = await Promise.all([counts(d1), counts(d7), counts(d30)]);
-  const [topics, scenarios, confirms, privacy, shares, unsuit] = await Promise.all([
+  const [topics, scenarios, confirms, privacy, shares, unsuit, asks] = await Promise.all([
     byField("topic", "topic", d30),
     byField("scenario", "scenario", d30),
     byField("detail", "confirm", d30),
     byField("detail", "privacy", d30),
     byField("detail", "share", d30),
     byField("detail", "unsuitable", d30),
+    byField("detail", "ask", d30),
+  ]);
+  const [who30, who7, hourly, questions] = await Promise.all([
+    visitors(d30), visitors(d7), hours(d30), recentQuestions(d30),
   ]);
 
   const funnel = [
@@ -156,9 +210,29 @@ export default async function AdminPage() {
         </tbody>
       </table>
       <p style={S.note}>
-        同一位客人重抽會各算一次——為了不留下任何識別碼,這裡不追蹤個別造訪。
-        比例仍然看得出哪一步掉最多。
+        同一位客人重抽會各算一次,所以下面幾格的數字可能比人數大。
+        要看人數請看下一段的「有多少人、回來幾次」。
       </p>
+
+      <h2 style={S.h2}>有多少人、回來幾次</h2>
+      <div style={S.cards}>
+        <Card label="30 天內有多少台裝置算過" n={who30.people} />
+        <Card label="其中回來算第二次以上" n={who30.repeat}
+              sub={`佔 ${pct(who30.repeat, who30.people)}`} />
+        <Card label="平均每人算幾次"
+              n={who30.people ? Math.round((who30.readings / who30.people) * 10) / 10 : 0} />
+        <Card label="最近 7 天有多少台裝置" n={who7.people}
+              sub={`其中回訪 ${who7.repeat} 台`} />
+      </div>
+      <p style={S.note}>
+        算的是「同一台瀏覽器」,不是「同一個人」:同一個人用手機和電腦各算一次會算成兩台,
+        清掉瀏覽器資料也會變成新的一台。所以這個數字會略高於真實人數,趨勢仍然可信。
+        單人最多算過 {who30.most} 次。
+      </p>
+
+      <h2 style={S.h2}>什麼時候在用(台灣時間,最近 30 天)</h2>
+      <Bars rows={hourly.map((n, h) => ({ label: `${String(h).padStart(2, "0")}:00`, n }))
+                        .filter((r) => r.n > 0)} />
 
       <h2 style={S.h2}>問哪一類(最近 30 天)</h2>
       <Bars rows={topics.map((t) => ({ ...t, label: TOPIC_LABEL[t.label] ?? t.label }))} />
@@ -179,17 +253,55 @@ export default async function AdminPage() {
       </div>
       <Bars rows={shares.map((r) => ({ ...r, label: r.label === "qr" ? "傳給客人 QR" : "存成圖片" }))} />
 
+      <h2 style={S.h2}>第一次就講清楚了嗎(最近 30 天)</h2>
+      <Bars rows={asks.map((r) => ({
+        ...r,
+        label: r.label === "clear" ? "一次就聽懂,直接開牌" : "本喵先複述確認",
+      }))} />
+      <p style={S.note}>
+        「本喵先複述確認」的比例如果很高,通常代表前面的處境選項不夠貼近客人真正想問的事。
+      </p>
+
+      <h2 style={S.h2}>客人到底在問什麼(最近 30 天,最新 {questions.length} 筆)</h2>
+      {questions.length === 0 ? (
+        <p style={S.note}>還沒有人打字問問題。</p>
+      ) : (
+        <table style={S.table}>
+          <tbody>
+            {questions.map((q, i) => (
+              <tr key={i}>
+                <td style={{ ...S.td, whiteSpace: "nowrap", opacity: .55, fontSize: 12.5 }}>{when(q.at)}</td>
+                <td style={{ ...S.td, whiteSpace: "nowrap", opacity: .7, fontSize: 12.5 }}>
+                  {TOPIC_LABEL[q.topic ?? ""] ?? q.topic ?? "—"}
+                </td>
+                <td style={S.td}>{q.question}</td>
+                <td style={{ ...S.td, whiteSpace: "nowrap", fontSize: 12, opacity: .7 }}>
+                  {q.kind === "unsuitable" ? "被擋下" : q.detail === "need-confirm" ? "有複述" : ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p style={S.note}>
+        這是整頁唯一可能認得出人的東西(有人會寫到人名或公司名)。
+        所以它 {RETENTION_DAYS} 天到期自動刪除,不需要你記得去清。
+      </p>
+
       {unsuit.length > 0 && (
         <>
           <h2 style={S.h2}>被擋下的題目類別(最近 30 天)</h2>
           <Bars rows={unsuit} />
-          <p style={S.note}>只記類別,不記客人打的字。</p>
+          <p style={S.note}>
+            被擋下的原話也在上面那張表裡(標記「被擋下」)。擋錯人的時候,
+            要翻得到原話才查得出來是規則太寬還是太嚴。
+          </p>
         </>
       )}
 
       <p style={{ ...S.note, marginTop: 40 }}>
-        這一頁的所有數字都來自去識別化的事件紀錄:沒有 IP、沒有瀏覽器資訊、
-        沒有任何識別碼,也沒有客人打的問題內容。就算資料外洩,也拼不出任何一位客人。
+        這一頁不存 IP、不存瀏覽器資訊、不存 cookie,也沒有帳號可以對得起來。
+        唯一可能認得出人的是客人自己打的那句話,而它 {RETENTION_DAYS} 天就會自動消失。
       </p>
     </Shell>
   );

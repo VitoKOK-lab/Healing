@@ -294,14 +294,36 @@ document.addEventListener("DOMContentLoaded", function () {
   soundToggle.addEventListener("click", function () { Tarot.Sound.toggle(); paintSound(); });
 
 
+  // ── 這台瀏覽器的代號 ─────────────────────────────────
+  // 只為了回答一件事:「有沒有人回來算第二次」。它是本機亂數,不是身分——
+  // 不含姓名、不含裝置資訊,清瀏覽器資料就換一個,換一台裝置也是新的。
+  // 所以它算得出回訪率,認不出是誰。localStorage 被鎖(無痕、隱私模式)
+  // 就回空字串,那次就只是統計不到回訪,不會壞掉。
+  var visitorCache = null;
+  function visitorId() {
+    if (visitorCache !== null) return visitorCache;
+    visitorCache = "";
+    try {
+      var v = localStorage.getItem("tarotVisitor");
+      if (!v) {
+        v = "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem("tarotVisitor", v);
+      }
+      visitorCache = v;
+    } catch (e) {}
+    return visitorCache;
+  }
+
   // ── 使用狀況回報 ──────────────────────────────────────
-  // 只回報「走到哪一步、選了哪個分類」。刻意不送客人打的字、不送任何
-  // 識別碼——伺服器那邊的白名單也只收得下這幾個欄位(見 lib/tarot/events.ts)。
+  // 回報「走到哪一步、選了哪個分類」,外加上面那個瀏覽器代號。
+  // 客人打的字只有在送去占卜時會一起存(見伺服器端),而且 90 天自動刪除。
+  // 仍然不送:IP、User-Agent、cookie——伺服器那邊的白名單也收不下
+  // 這幾個欄位以外的東西(見 lib/tarot/events.ts)。
   // 射後不理:用 keepalive 讓客人關掉分頁時最後一筆也送得出去,
   // 失敗一律吞掉,統計絕對不可以影響到占卜。
   function track(kind, extra) {
     try {
-      var body = { kind: kind, wide: isWideScreen() };
+      var body = { kind: kind, wide: isWideScreen(), visitor: visitorId() };
       if (extra) for (var k in extra) if (extra[k] != null) body[k] = extra[k];
       fetch(Tarot.EVENT_URL, {
         method: "POST",
@@ -620,7 +642,8 @@ document.addEventListener("DOMContentLoaded", function () {
         topic: topic || "other",
         scenario: scenario ? scenario.label : "",
         question: questionText(),
-        rounds: clarifyRounds
+        rounds: clarifyRounds,
+        visitor: visitorId()
       }),
       signal: controller ? controller.signal : undefined
     })
@@ -1252,6 +1275,7 @@ document.addEventListener("DOMContentLoaded", function () {
         scenario: scenario ? scenario.label : "",
         question: questionText(),
         clarify: clarifyRounds,
+        visitor: visitorId(),
         optionA: lastOptions ? lastOptions.a : "",
         optionB: lastOptions ? lastOptions.b : "",
         cards: cards.map(function (c) { return { name: c.name, orientation: c.orientation, keyword: c.keyword }; })

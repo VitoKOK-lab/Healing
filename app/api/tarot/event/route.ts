@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  const { kind, topic, scenario, tier, wide, detail } = (body ?? {}) as Record<string, unknown>;
+  const { kind, topic, scenario, tier, wide, detail, question, visitor } =
+    (body ?? {}) as Record<string, unknown>;
   if (!isEventKind(kind)) {
     return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
   }
@@ -41,6 +42,8 @@ export async function POST(req: NextRequest) {
     tier: typeof tier === "string" ? tier : null,
     wide: typeof wide === "boolean" ? wide : null,
     detail: typeof detail === "string" ? detail : null,
+    question: typeof question === "string" ? question : null,
+    visitor: typeof visitor === "string" ? visitor : null,
   });
 
   // 一律回 204:前端不在乎結果,也不要讓外面從回應猜出任何事。

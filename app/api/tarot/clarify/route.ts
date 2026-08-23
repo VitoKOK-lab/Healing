@@ -54,12 +54,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, question: null }, { headers: CORS_HEADERS });
   }
 
-  const { topic, scenario, question, rounds } = (body ?? {}) as {
+  const { topic, scenario, question, rounds, visitor } = (body ?? {}) as {
     topic?: unknown;
     scenario?: unknown;
     question?: unknown;
     rounds?: unknown;
+    visitor?: unknown;
   };
+  const who = typeof visitor === "string" ? visitor : null;
 
   const q = typeof question === "string" ? question.trim().slice(0, 200) : "";
   if (!q) {
@@ -156,9 +158,11 @@ ${asked.length >= 1 ? `- 你已經確認過 ${asked.length} 次了。上面「�
     // 夠清楚就開牌。回傳的東西不像一句複述確認時也直接放行,不要卡住客人。
     // 上限放到 45 字:複述本身會把客人的原話帶進去,比開放式追問長一點。
     const clear = !out || /^ok\b/i.test(out) || out.length > 45 || !/[?？]/.test(out);
-    // 只記「這一次有沒有需要複述確認」,不記複述的內容也不記客人打的字
+    // 記客人打的原話(店主要看大家到底在問什麼)、有沒有需要複述確認、
+    // 以及這是第幾輪。複述的內容本身不記——那是本喵講的,不是客人講的。
+    // question 90 天自動刪(見 lib/tarot/events.ts)。
     void record({ kind: "ask", topic: String(topic || ""), scenario: scenarioLabel || null,
-      detail: clear ? "clear" : "need-confirm" });
+      detail: clear ? "clear" : "need-confirm", question: q, visitor: who });
     return NextResponse.json(
       { ok: true, question: clear ? null : out },
       { headers: CORS_HEADERS }
