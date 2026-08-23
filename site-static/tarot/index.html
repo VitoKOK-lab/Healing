@@ -147,10 +147,7 @@
 <main class="tarot-shell">
   <div class="tarot-bar">
     </span>
-    <button type="button" class="sound-toggle" id="soundToggle" aria-pressed="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/><path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/><path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/></svg>
-      <span id="soundLabel">呼嚕聲</span>
-    </button>
+
   </div>
 
   <div id="tarotFlow">
@@ -335,6 +332,19 @@
     </section>
   </div>
 </main>
+
+<!-- 音樂開關:釘在左下角,只有一個喇叭圖示。
+     原本在頂列寫著「呼嚕聲」——客人看不懂那是什麼,而且它管的其實是
+     整站的聲音(背景音樂 + 本喵的音效),叫「呼嚕聲」名不副實。 -->
+<button type="button" class="sound-fab" id="soundToggle" aria-pressed="true" aria-label="關閉音樂">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6.5 9H3v6h3.5L11 19z"/>
+    <path class="wave" stroke-linecap="round" d="M15.5 9.2a4 4 0 010 5.6M18.4 6.6a8 8 0 010 10.8"/>
+    <path class="cross" stroke-linecap="round" d="M16 10l5 4m0-4l-5 4" style="display:none"/>
+  </svg>
+</button>
+
+
 
 <footer>
   <div class="foot-inner">
