@@ -1239,8 +1239,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var tick = setInterval(function () {
       var ms = Date.now() - t0;
-      // 92 * (1 - e^(-t/9s)):9 秒約 58%、18 秒約 79%、27 秒約 87%
-      var pct = 92 * (1 - Math.exp(-ms / 9000));
+      // 92 * (1 - e^(-t/14s)):14 秒約 58%、28 秒約 79%、42 秒約 87%
+      //
+      // 時間常數從 9 秒放寬到 14 秒:解讀實際要 20 秒上下,用 9 秒的話
+      // 18 秒就爬到 79%、之後幾乎不動,客人會覺得「卡住了」。
+      // 拉長之後這條線在整段等待裡都還在肉眼可見地前進。
+      var pct = 92 * (1 - Math.exp(-ms / 14000));
       if (loadingFill) loadingFill.style.width = pct.toFixed(1) + "%";
       if (loadingBar) loadingBar.setAttribute("aria-valuenow", Math.round(pct));
       var want = Math.min(lines.length - 1, Math.floor(ms / 3200));
@@ -1264,7 +1268,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var stopWaiting = startWaiting(cards);
     var controller = "AbortController" in window ? new AbortController() : null;
-    var timer = controller ? setTimeout(function () { controller.abort(); }, 25000) : null;
+    // 放棄時間要跟伺服器的 maxDuration 一致(60 秒)。
+    //
+    // 這裡原本寫 25 秒,但實測 Kimi 一份解讀要 19–22 秒——只剩兩三秒餘裕,
+    // 尖峰時穩定爆掉。客人看到的是進度條停在 92% 然後沒下文,
+    // 不會知道是「還在跑」還是「壞了」。伺服器都願意等 60 秒了,
+    // 前端沒有理由比它早放棄。
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 60000) : null;
 
     fetch(Tarot.API_URL, {
       method: "POST",
@@ -1293,7 +1303,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(function () {
         if (timer) clearTimeout(timer);
         stopWaiting();          // 失敗也要收,不然計時器會一直跑下去
-        failReading("連線逾時,請確認網路後再試一次");
+        failReading("本喵想太久了,先用手邊的牌義跟你說");
       });
   }
 
