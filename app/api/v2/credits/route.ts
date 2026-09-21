@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { one, all, run, newId, now } from "@/lib/db";
+import { upsertUser } from "@/lib/tarot/users";
 import { verifyLineToken } from "@/lib/line/verify";
 import { taipeiDateString } from "@/lib/tarot/daily";
 
@@ -13,16 +14,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const user = await prisma.tarotUser.upsert({
-    where: { lineUserId: identity.userId },
-    update: {},
-    create: { lineUserId: identity.userId, displayName: identity.displayName },
-  });
+  const user = await upsertUser(identity.userId, identity.displayName);
 
   const today = taipeiDateString();
   const [todayDraw, seen] = await Promise.all([
-    prisma.dailyDraw.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
-    prisma.cardSeen.findMany({ where: { userId: user.id }, select: { cardN: true } }),
+    one<{ readingId: string }>(
+      `SELECT readingId FROM DailyDraw WHERE userId = ? AND date = ?`,
+      user.id,
+      today
+    ),
+    all<{ cardN: number }>(`SELECT cardN FROM CardSeen WHERE userId = ?`, user.id),
   ]);
 
   return NextResponse.json({

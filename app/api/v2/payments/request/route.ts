@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { one, run, newId, now } from "@/lib/db";
+import { findUserByLine } from "@/lib/tarot/users";
 import { env } from "@/lib/env";
 import { verifyLineToken } from "@/lib/line/verify";
 import { amountFor, isPurchaseKind } from "@/lib/payments/pricing";
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (!identity) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  const user = await prisma.tarotUser.findUnique({ where: { lineUserId: identity.userId } });
+  const user = await findUserByLine(identity.userId);
   if (!user) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
@@ -42,7 +43,10 @@ export async function POST(req: NextRequest) {
     if (typeof readingId !== "string") {
       return NextResponse.json({ ok: false, error: "bad request" }, { status: 400 });
     }
-    const reading = await prisma.reading.findUnique({ where: { id: readingId } });
+    const reading = await one<{ id: string; userId: string; level: string }>(
+      `SELECT id, userId, level FROM Reading WHERE id = ?`,
+      readingId
+    );
     if (!reading || reading.userId !== user.id || reading.level !== "deep") {
       return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
     }
@@ -55,15 +59,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "payment_not_available" }, { status: 503 });
   }
 
-  const purchase = await prisma.purchase.create({
-    data: {
-      userId: user.id,
-      kind,
-      amount: amountFor(kind),
-      provider: "mock",
-      readingId: boundReadingId,
-    },
-  });
+  const purchaseId = newId();
+  await run(
+    `INSERT INTO Purchase
+       (id, userId, kind, amount, provider, providerTxId, status, readingId, createdAt)
+     VALUES (?, ?, ?, ?, 'mock', NULL, 'pending', ?, ?)`,
+    purchaseId,
+    user.id,
+    kind,
+    amountFor(kind),
+    boundReadingId,
+    now()
+  );
+  const purchase = { id: purchaseId, amount: amountFor(kind) };
 
   return NextResponse.json({
     ok: true,

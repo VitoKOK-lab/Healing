@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { prisma } from "@/lib/prisma";
+import { one, run, batch, newId, now } from "@/lib/db";
+import { upsertUser } from "@/lib/tarot/users";
 import { verifyLineToken } from "@/lib/line/verify";
 import { unsuitable } from "@/lib/tarot/unsuitable";
 import { drawSpread, seedFrom } from "@/lib/tarot/draw";
@@ -52,11 +53,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = await prisma.tarotUser.upsert({
-    where: { lineUserId: identity.userId },
-    update: identity.displayName ? { displayName: identity.displayName } : {},
-    create: { lineUserId: identity.userId, displayName: identity.displayName },
-  });
+  const user = await upsertUser(identity.userId, identity.displayName);
 
   // 免費日抽固定單張;深度占卜用客人選的牌陣(單張以外)
   const spread = level === "daily" ? SPREADS.single : spreadOf(typeof spreadId === "string" ? spreadId : "flow");
@@ -66,9 +63,11 @@ export async function POST(req: NextRequest) {
 
   const today = taipeiDateString();
   if (level === "daily") {
-    const existing = await prisma.dailyDraw.findUnique({
-      where: { userId_date: { userId: user.id, date: today } },
-      });
+    const existing = await one<{ readingId: string }>(
+      `SELECT readingId FROM DailyDraw WHERE userId = ? AND date = ?`,
+      user.id,
+      today
+    );
     if (existing) {
       return NextResponse.json(
         { ok: false, error: "already_drawn_today", readingId: existing.readingId },
@@ -83,48 +82,64 @@ export async function POST(req: NextRequest) {
   const cards = drawSpread(spread.id, seed, cut);
   const tier = tierOf(cards, spread.id);
 
-  const reading = await prisma.reading.create({
-    data: {
-      userId: user.id,
-      level,
-      spreadId: spread.id,
-      topic: typeof topic === "string" ? topic.slice(0, 40) : null,
-      question: typeof question === "string" ? question.slice(0, 200) : null,
-      cardsJson: JSON.stringify(cards),
-      tier,
-      seedNonce: nonce,
-    },
-  });
+  // id 自己先產好,後面幾句要用到它(不必為了拿 id 多跑一次 RETURNING)
+  const readingId = newId();
+  await run(
+    `INSERT INTO Reading
+       (id, userId, level, spreadId, topic, question, cardsJson, tier, seedNonce, status, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'drawn', ?)`,
+    readingId,
+    user.id,
+    level,
+    spread.id,
+    typeof topic === "string" ? topic.slice(0, 40) : null,
+    typeof question === "string" ? question.slice(0, 200) : null,
+    JSON.stringify(cards),
+    tier,
+    nonce,
+    now()
+  );
 
   // streak:昨天有抽 → 連續 +1,斷簽歸 1;每連滿 7 天送一點加深額度
   let streakInfo: { streak: number; rewarded: boolean } | null = null;
   if (level === "daily") {
     const s = nextStreak(user.lastDailyDate, today, user.streak);
     streakInfo = s;
-    await prisma.$transaction([
-      prisma.dailyDraw.create({
-        data: { userId: user.id, date: today, readingId: reading.id },
-      }),
-      prisma.tarotUser.update({
-        where: { id: user.id },
-        data: {
-          streak: s.streak,
-          lastDailyDate: today,
-          ...(s.rewarded ? { deepenCredits: { increment: 1 } } : {}),
-        },
-      }),
+    // 這兩句要嘛一起成功要嘛一起不算:只寫了日抽紀錄卻沒更新 streak,
+    // 客人明天就會被當成斷簽。D1 的 batch() 會包在同一個交易裡。
+    await batch([
+      {
+        sql: `INSERT INTO DailyDraw (id, userId, date, readingId, createdAt)
+              VALUES (?, ?, ?, ?, ?)`,
+        params: [newId(), user.id, today, readingId, now()],
+      },
+      {
+        sql: `UPDATE TarotUser
+                 SET streak = ?,
+                     lastDailyDate = ?,
+                     deepenCredits = deepenCredits + ?
+               WHERE id = ?`,
+        params: [s.streak, today, s.rewarded ? 1 : 0, user.id],
+      },
     ]);
   }
 
-  // 圖鑑:第一次抽到的牌點亮(skipDuplicates 讓重複牌零成本)
-  await prisma.cardSeen.createMany({
-    data: cards.map((c) => ({ userId: user.id, cardN: c.n })),
-    skipDuplicates: true,
-  });
+  // 圖鑑:第一次抽到的牌點亮。
+  //
+  // INSERT OR IGNORE:已經收集過的牌會撞 UNIQUE(userId, cardN),
+  // 這個寫法讓它安靜跳過而不是整筆失敗。少了它,客人一抽到重複的牌
+  // 就會整個抽牌失敗——而重複幾乎一定會發生。
+  await batch(
+    cards.map((c) => ({
+      sql: `INSERT OR IGNORE INTO CardSeen (id, userId, cardN, firstSeenAt)
+            VALUES (?, ?, ?, ?)`,
+      params: [newId(), user.id, c.n, now()],
+    }))
+  );
 
   return NextResponse.json({
     ok: true,
-    readingId: reading.id,
+    readingId,
     spreadId: spread.id,
     tier,
     streak: streakInfo?.streak ?? null,

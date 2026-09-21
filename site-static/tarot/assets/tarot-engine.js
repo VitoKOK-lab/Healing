@@ -1370,9 +1370,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // QR 指的是圖片檔本身(/api/tarot/share/<token>,回 image/*),
   // 不是站上任何一頁——客人掃到的就是一張圖,沒有導覽也沒有連結,
   // 不會因此多一個回來繼續免費占卜的入口。
-  var SHARE_URL = /\.vercel\.app$/.test(location.hostname)
-    ? "/api/tarot/share"
-    : "https://healingasmr.vercel.app/api/tarot/share";
+  // 同源部署,不用猜網域——理由見 tarot-data.js 裡 API_URL 那段註解
+  var SHARE_URL = "/api/tarot/share";
 
   var qrShare = document.getElementById("qrShare");
   var qrShareImg = document.getElementById("qrShareImg");

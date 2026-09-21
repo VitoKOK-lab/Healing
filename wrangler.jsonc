@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "healingasmr",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-21",
+  // nodejs_compat:程式裡用到 node 的 crypto(HMAC 密碼、亂數 token、
+  // 抽牌的雜湊種子)與 Buffer。沒有這個旗標它們在 Workers 上不存在。
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  // 資料庫。2026-09-21 從 Supabase Postgres 搬過來,舊資料沒搬(店主決定
+  // 從空的開始),Supabase 那邊留著當備份沒有刪。
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "healingasmr",
+      "database_id": "6f63df06-3b88-46fb-a4bb-dc34003f868c",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // 現場占卜結果圖(24 小時後刪)。放 R2 不放 D1——一張 300KB 到 4MB 的
+  // 圖塞進 SQLite 是誤用,細節見 lib/share-store.ts。
+  "r2_buckets": [
+    {
+      "binding": "SHARE_BUCKET",
+      "bucket_name": "healingasmr-share"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}

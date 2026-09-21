@@ -547,17 +547,19 @@
     artUrl: artUrl,
     catFace: catFace,
     Sound: Sound,
-    // 站台同時部署在 Vercel(與 API 同網域)與 GitHub Pages(需跨網域呼叫)
-    API_URL: /\.vercel\.app$/.test(location.hostname)
-      ? "/api/tarot/reading"
-      : "https://healingasmr.vercel.app/api/tarot/reading",
-    CLARIFY_URL: /\.vercel\.app$/.test(location.hostname)
-      ? "/api/tarot/clarify"
-      : "https://healingasmr.vercel.app/api/tarot/clarify",
+    // 2026-09-21:拿掉了跨網域判斷。這段原本是給「Vercel(API)+ GitHub Pages
+    // (純靜態鏡像)」雙部署用的,但 GitHub Pages 那份從來沒有實際上線過
+    // (repo 裡沒有對應的部署工作流程),純粹是死程式碼留著沒清。
+    //
+    // 搬到 Cloudflare 之後這行差點變成真正的地雷:判斷式認的是
+    // `.vercel.app`,一旦網域換掉(不管是換成 workers.dev 還是自訂網域),
+    // 它會判定「不是同網域」,轉而打去一個已經關掉的 Vercel 網址——
+    // 客人在真正的正式站上占卜,请求卻悄悄飛去一個死掉的地方。
+    // 前端跟 API 本來就同源部署,相對路徑永遠是對的,不需要猜網域。
+    API_URL: "/api/tarot/reading",
+    CLARIFY_URL: "/api/tarot/clarify",
     // 使用狀況回報。只送「走到哪一步 + 選了哪個分類」,不送客人打的字、
     // 不送任何識別碼(伺服器端的白名單也只收得下那幾個欄位)。
-    EVENT_URL: /\.vercel\.app$/.test(location.hostname)
-      ? "/api/tarot/event"
-      : "https://healingasmr.vercel.app/api/tarot/event"
+    EVENT_URL: "/api/tarot/event"
   };
 })(window);

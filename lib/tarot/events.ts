@@ -16,7 +16,7 @@
 //
 // 仍然不存的:IP、User-Agent、cookie、任何從裝置或網路推導出來的東西。
 
-import { prisma } from "@/lib/prisma";
+import { run, fromBool, now, daysAgo, newId } from "@/lib/db";
 
 // 只收白名單內的事件。這支 API 是公開的(網頁版沒有登入),
 // 不設白名單等於讓任何人往你的資料庫塞垃圾。
@@ -68,23 +68,30 @@ function clamp(v: unknown, max: number): string | null {
 // 一律吞掉錯誤,不 await 也沒關係。
 export async function record(e: EventInput): Promise<void> {
   try {
-    await prisma.tarotEvent.create({
-      data: {
-        kind: e.kind,
-        topic: clamp(e.topic, LIMITS.topic),
-        scenario: clamp(e.scenario, LIMITS.scenario),
-        tier: clamp(e.tier, LIMITS.tier),
-        wide: typeof e.wide === "boolean" ? e.wide : null,
-        detail: clamp(e.detail, LIMITS.detail),
-        question: clamp(e.question, LIMITS.question),
-        visitor: clamp(e.visitor, LIMITS.visitor),
-      },
-    });
+    await run(
+      `INSERT INTO TarotEvent
+         (id, at, kind, topic, scenario, tier, wide, detail, question, visitor)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      newId(),
+      now(),
+      e.kind,
+      clamp(e.topic, LIMITS.topic),
+      clamp(e.scenario, LIMITS.scenario),
+      clamp(e.tier, LIMITS.tier),
+      fromBool(e.wide),
+      clamp(e.detail, LIMITS.detail),
+      clamp(e.question, LIMITS.question),
+      clamp(e.visitor, LIMITS.visitor)
+    );
     // 順手清過期資料。每 50 次寫入才跑一次——每次都跑太浪費,
     // 而流量再小也一定會跑到,不需要另外排程。
     if (Math.random() < 0.02) void sweep();
-  } catch {
-    // 統計失敗不影響任何人
+  } catch (e) {
+    // 統計失敗不影響任何人——但要留下痕跡。
+    // 原本這裡是空的 catch,結果 2026-09-21 搬家到 D1 時寫入整個壞掉,
+    // 端點照樣回 204、畫面一切正常,查了半天才發現。
+    // 吞掉錯誤是對的,不留紀錄是錯的。
+    console.error("[tarot/events] 寫入失敗", e);
   }
 }
 
@@ -92,10 +99,9 @@ export async function record(e: EventInput): Promise<void> {
 // 這一段就是它的保存期限——寫在程式裡,不是寫在待辦清單裡。
 export async function sweep(): Promise<number> {
   try {
-    const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400_000);
-    const r = await prisma.tarotEvent.deleteMany({ where: { at: { lt: cutoff } } });
-    return r.count;
-  } catch {
+    return await run(`DELETE FROM TarotEvent WHERE at < ?`, daysAgo(RETENTION_DAYS));
+  } catch (e) {
+    console.error("[tarot/events] 清過期失敗", e);
     return 0;
   }
 }
