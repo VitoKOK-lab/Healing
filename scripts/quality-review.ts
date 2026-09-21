@@ -64,13 +64,16 @@ function findCards(spreadId: string, tier: Tier, salt: number): Drawn[] {
 // ── 遠端模式:走部署站的完整 API(含 mock 金流)────────────
 async function remoteSample(base: string, plan: (typeof PLAN)[number], idx: number): Promise<Sample> {
   const token = `stub:qa-${Date.now()}-${idx}`;
-  const post = async (path: string, body: unknown) => {
+  // 這支腳本會依序打 draw / payments / reading 幾支形狀完全不同的端點。
+  // 幫每一支定義回應型別,對一次性的品質抽查沒有價值,只會讓腳本更難改。
+  // 所以這裡刻意放寬——下面每一處都有 ok 檢查,拿到非預期的形狀會當場拋錯。
+  const post = async (path: string, body: unknown): Promise<Record<string, any>> => {
     const res = await fetch(base + path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    return res.json();
+    return (await res.json()) as Record<string, any>;
   };
 
   // 抽到目標 tier 為止(deep 不限次數;只有選中的那副才付錢生成)

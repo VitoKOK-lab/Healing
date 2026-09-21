@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { one } from "@/lib/db";
+import { shareBucket } from "@/lib/share-store";
 
 // 客人掃 QR 後打到的就是這裡。
 //
@@ -10,23 +11,38 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const token = params.token;
+  const { token } = await params;
   // token 是 base64url 的 16 bytes,長度固定;形狀不對就不必查資料庫
   if (!/^[A-Za-z0-9_-]{20,24}$/.test(token)) {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const row = await prisma.tarotShare.findUnique({ where: { token } });
-  if (!row || row.expiresAt.getTime() < Date.now()) {
+  // 先查索引:過期與否由資料庫說了算,不是看 R2 裡還在不在。
+  // 這樣「已過期」跟「根本沒這張」回的是同一句話,外面看不出差別。
+  const row = await one<{ mimeType: string; expiresAt: string }>(
+    `SELECT mimeType, expiresAt FROM TarotShare WHERE token = ?`,
+    token
+  );
+  if (!row || new Date(row.expiresAt).getTime() < Date.now()) {
     return new NextResponse("這張占卜結果已經過期了", {
       status: 404,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
 
-  return new NextResponse(Buffer.from(row.image), {
+  // 索引在但圖不在,代表清理清到一半或上傳時斷掉。
+  // 對客人來說結果一樣(拿不到圖),所以講同一句話。
+  const obj = await shareBucket().get(token);
+  if (!obj) {
+    return new NextResponse("這張占卜結果已經過期了", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  return new NextResponse(obj.body, {
     status: 200,
     headers: {
       "Content-Type": row.mimeType,

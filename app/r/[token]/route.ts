@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { one } from "@/lib/db";
 
 // 客人掃 QR 之後看到的畫面。
 //
@@ -79,15 +79,18 @@ ${body}
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const token = params.token;
+  const { token } = await params;
   const ok = /^[A-Za-z0-9_-]{20,24}$/.test(token);
   const row = ok
-    ? await prisma.tarotShare.findUnique({ where: { token }, select: { expiresAt: true } })
+    ? await one<{ expiresAt: string }>(
+        `SELECT expiresAt FROM TarotShare WHERE token = ?`,
+        token
+      )
     : null;
 
-  if (!row || row.expiresAt.getTime() < Date.now()) {
+  if (!row || new Date(row.expiresAt).getTime() < Date.now()) {
     return new NextResponse(
       page(
         `<p class="gone">這張占卜結果已經過期了喵。<br />連結只保留 24 小時。</p>

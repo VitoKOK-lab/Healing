@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import QRCode from "qrcode";
-import { prisma } from "@/lib/prisma";
+import { run, all, newId, now } from "@/lib/db";
+import { shareBucket } from "@/lib/share-store";
 
 // 收下現場占卜的結果圖,存起來並回傳一組 QR 給螢幕顯示。
 // 客人用自己的手機掃走圖,店主的畫面完全不動,可以直接接下一位。
@@ -27,11 +28,10 @@ const KEEP_HOURS = 24;
 
 // 對外公開的網域。
 //
-// 不能用「請求進來的網域」:preview 部署有 Vercel 的存取保護,
-// 客人掃了會被丟到 Vercel 登入頁。店主在 preview 上試玩時一定會踩到。
-// 所以正式環境一律用固定網域,完全不看請求來源。
-// 之後換自訂網域,設 PUBLIC_SITE_URL 環境變數即可,不必改程式。
-const FALLBACK_SITE = "https://healingasmr.vercel.app";
+// 不能用「請求進來的網域」:預覽部署的網址跟正式站不一樣,客人掃到
+// 預覽網址的 QR,等預覽被清掉就變成死連結。所以正式環境一律用固定網域,
+// 完全不看請求來源。換自訂網域時設 PUBLIC_SITE_URL 環境變數即可,不必改程式。
+const FALLBACK_SITE = "https://healingasmr.vitokok.workers.dev";
 
 function publicBase(req: NextRequest) {
   const env = process.env.PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
@@ -45,10 +45,34 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
+// 把過期的結果圖真的刪掉——R2 的圖與 D1 的索引都要。
+// 一次最多處理 100 筆:這是順手做的清理,不能讓它拖慢客人那一下。
+// 沒清完也沒關係,下一次上傳會接著清。
+async function sweepExpired(): Promise<void> {
+  try {
+    const dead = await all<{ token: string }>(
+      `SELECT token FROM TarotShare WHERE expiresAt < ? LIMIT 100`,
+      now()
+    );
+    if (dead.length === 0) return;
+    const bucket = shareBucket();
+    const tokens = dead.map((r) => r.token);
+    await Promise.all(tokens.map((t) => bucket.delete(t)));
+    // IN (?,?,?…):參數個數跟著筆數走,所以佔位符要動態組
+    await run(
+      `DELETE FROM TarotShare WHERE token IN (${tokens.map(() => "?").join(",")})`,
+      ...tokens
+    );
+  } catch (e) {
+    // 清理失敗不該影響客人剛剛存的那張圖
+    console.error("[tarot/share] 清過期失敗", e);
+  }
+}
+
 export async function POST(req: NextRequest) {
   let dataUrl: string;
   try {
-    const body = await req.json();
+    const body = (await req.json()) as { image?: unknown } | null;
     dataUrl = String(body?.image || "");
   } catch {
     return NextResponse.json({ error: "格式不正確" }, { status: 400, headers: CORS_HEADERS });
@@ -70,10 +94,26 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + KEEP_HOURS * 60 * 60 * 1000);
 
   try {
-    await prisma.tarotShare.create({ data: { token, image, mimeType, expiresAt } });
-    // 順手把過期的實際刪掉,不另外養一支排程。
-    // 過期的在 GET 那邊本來就取不到,這一步是真的把資料清掉。
-    await prisma.tarotShare.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+    // 圖進 R2(key 就是 token),資料庫只留「有這張、什麼格式、什麼時候過期」。
+    // 順序很重要:先把圖放好再寫索引。反過來的話,中間失敗會留下一筆
+    // 指向不存在的圖的紀錄,客人掃了得到 404 卻不知道為什麼。
+    await shareBucket().put(token, image, {
+      httpMetadata: { contentType: mimeType },
+    });
+    await run(
+      `INSERT INTO TarotShare (id, token, mimeType, createdAt, expiresAt)
+       VALUES (?, ?, ?, ?, ?)`,
+      newId(),
+      token,
+      mimeType,
+      now(),
+      expiresAt.toISOString()
+    );
+
+    // 順手把過期的清掉,不另外養一支排程。
+    // 過期的在 GET 那邊本來就取不到,這一步是真的把東西刪掉——
+    // 圖跟索引都要刪,只刪索引的話 R2 會一直長大而且沒人看得到。
+    void sweepExpired();
   } catch (e) {
     console.error("[tarot/share] 存圖失敗", e);
     return NextResponse.json({ error: "存圖失敗" }, { status: 500, headers: CORS_HEADERS });

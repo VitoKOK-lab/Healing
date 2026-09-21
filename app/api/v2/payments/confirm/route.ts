@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { one, run } from "@/lib/db";
+import { findUserByLine } from "@/lib/tarot/users";
 import { env } from "@/lib/env";
 import { verifyLineToken } from "@/lib/line/verify";
 import { fulfillPurchase } from "@/lib/payments/fulfill";
@@ -38,17 +39,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const purchase = await prisma.purchase.findUnique({ where: { id: purchaseId } });
-  const user = await prisma.tarotUser.findUnique({ where: { lineUserId: identity.userId } });
+  const purchase = await one<{ id: string; userId: string }>(
+    `SELECT id, userId FROM Purchase WHERE id = ?`,
+    purchaseId
+  );
+  const user = await findUserByLine(identity.userId);
   if (!purchase || !user || purchase.userId !== user.id) {
     return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
   }
 
   if (result === "fail") {
-    await prisma.purchase.updateMany({
-      where: { id: purchase.id, status: "pending" },
-      data: { status: "failed" },
-    });
+    await run(
+      `UPDATE Purchase SET status = 'failed' WHERE id = ? AND status = 'pending'`,
+      purchase.id
+    );
     return NextResponse.json({ ok: true, status: "failed" });
   }
 

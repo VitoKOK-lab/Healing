@@ -7,3 +7,9 @@ node_modules/
 dev-uploads/
 tsconfig.tsbuildinfo
 next-env.d.ts
+.dev.vars
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
+lib/generated/
+public/

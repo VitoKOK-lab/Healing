@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
-import { prisma } from "@/lib/prisma";
+import { all, num, daysAgo, toDate } from "@/lib/db";
 import { env } from "@/lib/env";
 import { RETENTION_DAYS } from "@/lib/tarot/events";
 
@@ -23,9 +23,9 @@ function token(): string {
   return createHmac("sha256", env.ADMIN_PASSWORD).update("tarot-admin-v1").digest("hex");
 }
 
-function authed(): boolean {
+async function authed(): Promise<boolean> {
   if (!env.ADMIN_PASSWORD) return false;
-  const got = cookies().get(COOKIE)?.value ?? "";
+  const got = (await cookies()).get(COOKIE)?.value ?? "";
   const want = token();
   if (got.length !== want.length) return false;
   return timingSafeEqual(Buffer.from(got), Buffer.from(want));
@@ -35,7 +35,7 @@ async function login(formData: FormData) {
   "use server";
   const pw = String(formData.get("password") ?? "");
   if (env.ADMIN_PASSWORD && pw === env.ADMIN_PASSWORD) {
-    cookies().set(COOKIE, token(), {
+    (await cookies()).set(COOKIE, token(), {
       httpOnly: true,
       sameSite: "lax",
       secure: true,
@@ -47,76 +47,100 @@ async function login(formData: FormData) {
 
 async function logout() {
   "use server";
-  cookies().delete(COOKIE);
+  (await cookies()).delete(COOKIE);
 }
 
-function since(days: number): Date {
-  return new Date(Date.now() - days * 86400_000);
+// 時間在資料庫裡是 ISO 字串(見 lib/db.ts),比較直接用字串比就正確。
+function since(days: number): string {
+  return daysAgo(days);
 }
 
-async function counts(from: Date) {
-  const rows = await prisma.tarotEvent.groupBy({
-    by: ["kind"],
-    where: { at: { gte: from } },
-    _count: { _all: true },
-  });
+async function counts(from: string) {
+  const rows = await all<{ kind: string; n: number }>(
+    `SELECT kind, COUNT(*) AS n FROM TarotEvent WHERE at >= ? GROUP BY kind`,
+    from
+  );
   const m: Record<string, number> = {};
-  for (const r of rows) m[r.kind] = r._count._all;
+  for (const r of rows) m[r.kind] = r.n;
   return m;
 }
 
-async function byField(field: "topic" | "scenario" | "detail", kind: string, from: Date) {
-  const rows = await prisma.tarotEvent.groupBy({
-    by: [field],
-    where: { kind, at: { gte: from }, NOT: { [field]: null } },
-    _count: { _all: true },
-    orderBy: { _count: { [field]: "desc" } },
-    take: 12,
-  });
-  return rows.map((r) => ({ label: String(r[field] ?? ""), n: r._count._all }));
+// 某個 kind 底下,某個欄位的分佈。欄位名不能用參數綁(SQL 不允許),
+// 所以型別限死在這三個值——呼叫端傳不進別的東西,注入不了。
+async function byField(field: "topic" | "scenario" | "detail", kind: string, from: string) {
+  const rows = await all<{ label: string | null; n: number }>(
+    `SELECT ${field} AS label, COUNT(*) AS n
+       FROM TarotEvent
+      WHERE kind = ? AND at >= ? AND ${field} IS NOT NULL
+      GROUP BY ${field}
+      ORDER BY n DESC
+      LIMIT 12`,
+    kind,
+    from
+  );
+  return rows.map((r) => ({ label: String(r.label ?? ""), n: r.n }));
 }
 
-// 回訪:同一個瀏覽器代號算過幾次。groupBy 出來的是「每台瀏覽器幾次」,
-// 剩下的加總在記憶體裡做——店面的量級不需要為了這個寫 SQL。
-async function visitors(from: Date) {
-  const rows = await prisma.tarotEvent.groupBy({
-    by: ["visitor"],
-    where: { kind: "reading", at: { gte: from }, NOT: { visitor: null } },
-    _count: { _all: true },
-  });
+// 回訪:同一個瀏覽器代號算過幾次。
+// 先在資料庫裡把「每台瀏覽器幾次」算好,再把那一小張表加總——
+// 這樣搬回來的資料量是「裝置數」而不是「占卜次數」。
+async function visitors(from: string) {
+  const rows = await all<{ n: number }>(
+    `SELECT COUNT(*) AS n
+       FROM TarotEvent
+      WHERE kind = 'reading' AND at >= ? AND visitor IS NOT NULL
+      GROUP BY visitor`,
+    from
+  );
   const people = rows.length;
-  const readings = rows.reduce((a, r) => a + r._count._all, 0);
-  const repeat = rows.filter((r) => r._count._all >= 2).length;
-  const most = rows.reduce((a, r) => Math.max(a, r._count._all), 0);
+  const readings = rows.reduce((a, r) => a + r.n, 0);
+  const repeat = rows.filter((r) => r.n >= 2).length;
+  const most = rows.reduce((a, r) => Math.max(a, r.n), 0);
   return { people, readings, repeat, most };
 }
 
 // 一天當中哪個時段在用。存的是 UTC,店主看的是台灣時間,所以 +8 之後再分桶。
-async function hours(from: Date) {
-  const rows = await prisma.tarotEvent.findMany({
-    where: { kind: "reading", at: { gte: from } },
-    select: { at: true },
-    take: 20000,
-  });
+async function hours(from: string) {
+  const rows = await all<{ at: string }>(
+    `SELECT at FROM TarotEvent WHERE kind = 'reading' AND at >= ? LIMIT 20000`,
+    from
+  );
   const buckets = new Array(24).fill(0) as number[];
-  for (const r of rows) buckets[(r.at.getUTCHours() + 8) % 24] += 1;
+  for (const r of rows) {
+    const d = toDate(r.at);
+    if (d) buckets[(d.getUTCHours() + 8) % 24] += 1;
+  }
   return buckets;
 }
 
 // 客人打的原話。只給最近的,而且一次不超過 80 筆——這一頁是拿來看語氣與
 // 用詞的,不是拿來當客戶名冊翻的。
-async function recentQuestions(from: Date) {
-  return prisma.tarotEvent.findMany({
-    where: { at: { gte: from }, NOT: { question: null }, kind: { in: ["ask", "reading", "unsuitable"] } },
-    select: { at: true, topic: true, question: true, kind: true, detail: true },
-    orderBy: { at: "desc" },
-    take: 80,
-  });
+type QuestionRow = {
+  at: string;
+  topic: string | null;
+  question: string | null;
+  kind: string;
+  detail: string | null;
+};
+
+async function recentQuestions(from: string) {
+  return all<QuestionRow>(
+    `SELECT at, topic, question, kind, detail
+       FROM TarotEvent
+      WHERE at >= ?
+        AND question IS NOT NULL
+        AND kind IN ('ask', 'reading', 'unsuitable')
+      ORDER BY at DESC
+      LIMIT 80`,
+    from
+  );
 }
 
 const TOPIC_LABEL: Record<string, string> = { love: "感情", career: "工作", money: "金錢" };
 
-function when(d: Date): string {
+function when(v: string): string {
+  const d = toDate(v);
+  if (!d) return "—";
   const t = new Date(d.getTime() + 8 * 3600_000);   // 台灣時間
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(t.getUTCMonth() + 1)}/${p(t.getUTCDate())} ${p(t.getUTCHours())}:${p(t.getUTCMinutes())}`;
@@ -132,14 +156,14 @@ export default async function AdminPage() {
     return (
       <Shell>
         <p style={S.note}>
-          統計頁還沒開啟。請先在 Vercel 的環境變數加一個 <code>ADMIN_PASSWORD</code>,
+          統計頁還沒開啟。請先在 Cloudflare 的 Worker 設定裡加一個 Secret <code>ADMIN_PASSWORD</code>,
           設成你要用的密碼,重新部署之後這一頁才會出現登入框。
         </p>
       </Shell>
     );
   }
 
-  if (!authed()) {
+  if (!(await authed())) {
     return (
       <Shell>
         <form action={login} style={{ display: "grid", gap: 12, maxWidth: 320 }}>

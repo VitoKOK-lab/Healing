@@ -2,7 +2,10 @@ import { z } from "zod";
 
 // 環境變數合約:啟動時驗證一次,缺漏立即報錯而不是在深處炸開。
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1),
+  // 2026-09-21:DATABASE_URL 拿掉了。搬到 Cloudflare D1 之後,資料庫是
+  // Worker 的 binding(env.DB)不是連線字串——見 lib/db.ts。
+  // 留著一個永遠沒人讀的必填變數,只會讓下一個人以為它還有用。
+
   // 對外公開的完整網址(share API 組取圖連結的絕對路徑用)
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
